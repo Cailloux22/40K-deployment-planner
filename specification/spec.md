@@ -67,7 +67,7 @@ Une fois qu'il a sélectionné, parmi celles déjà importées, la liste d'armé
 2. il visualise les plateaux de jeu parmi les **3 plateaux** proposés pour le couple (sa disposition, la disposition adverse retenue à l'étape 1) ;
 3. il accède à l'écran de placement des unités sur le plateau via les actions « Nouveau »/« Éditer » de [[RG_14]] une fois liste, disposition adverse et plateau déjà choisis pour une combinaison antérieure. Le contenu de cet écran de placement est détaillé par [[RG_15]] et [[RG_16]].Son affichage par [[RG_17]].
 
-Chaque étape doit être complétée avant d'accéder à la suivante (pas de placement possible tant que la disposition adverse et le plateau n'ont pas été choisis). Le joueur peut revenir en arrière pour changer un choix précédent ; changer de disposition adverse ou de plateau après coup ne modifie pas les placements déjà enregistrés pour une autre combinaison liste/disposition adverse/plateau (voir [[RG_07]]). Le placement d'un token en dehors de la zone de déploiement autorisée pour son camp est bloqué ou signalé visuellement.
+Chaque étape doit être complétée avant d'accéder à la suivante (pas de placement possible tant que la disposition adverse et le plateau n'ont pas été choisis). Le joueur peut revenir en arrière pour changer un choix précédent ; changer de disposition adverse ou de plateau après coup ne modifie pas les placements déjà enregistrés pour une autre combinaison liste/disposition adverse/plateau (voir [[RG_07]]). 
 
 ### RG_12 — Indicateurs de déploiement déjà enregistré (disposition adverse et plateau)
 
