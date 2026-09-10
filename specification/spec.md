@@ -57,15 +57,15 @@ Le reste de l'arborescence (`rules`, `profiles`, `categories`, coûts en points,
 
 Le joueur doit pouvoir positionner ses unités sur une représentation du plateau de jeu, en tenant compte de la disposition de force qu'il a choisie pour la partie.
 
-Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]].
+Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RG_17]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]], [[RT_19]].
 
 ### RG_03 — Parcours de sélection : liste → disposition adverse → plateau → placement
 
 Une fois qu'il a sélectionné, parmi celles déjà importées, la liste d'armée avec laquelle il joue, le joueur suit un parcours en trois étapes ordonnées avant de pouvoir placer la moindre unité. Sa propre disposition de force est déjà connue à ce stade — elle est fixée dès l'import de la liste ([[RG_02]]) et n'est pas redemandée dans ce parcours :
 
 1. il choisit, parmi les **5 dispositions** proposées par l'application, celle de son **adversaire** ;
-2. il choisit un plateau de jeu parmi les **3 plateaux** proposés pour le couple (sa disposition, la disposition adverse retenue à l'étape 1) ;
-3. il accède à l'écran de placement des unités sur le plateau ainsi sélectionné (également atteint directement via les actions « Nouveau »/« Éditer » de [[RG_14]] une fois liste, disposition adverse et plateau déjà choisis pour une combinaison antérieure). Le contenu de cet écran de placement est détaillé par [[RG_15]] et [[RG_16]].
+2. il visualise les plateaux de jeu parmi les **3 plateaux** proposés pour le couple (sa disposition, la disposition adverse retenue à l'étape 1) ;
+3. il accède à l'écran de placement des unités sur le plateau via les actions « Nouveau »/« Éditer » de [[RG_14]] une fois liste, disposition adverse et plateau déjà choisis pour une combinaison antérieure. Le contenu de cet écran de placement est détaillé par [[RG_15]] et [[RG_16]].Son affichage par [[RG_17]].
 
 Chaque étape doit être complétée avant d'accéder à la suivante (pas de placement possible tant que la disposition adverse et le plateau n'ont pas été choisis). Le joueur peut revenir en arrière pour changer un choix précédent ; changer de disposition adverse ou de plateau après coup ne modifie pas les placements déjà enregistrés pour une autre combinaison liste/disposition adverse/plateau (voir [[RG_07]]). Le placement d'un token en dehors de la zone de déploiement autorisée pour son camp est bloqué ou signalé visuellement.
 
@@ -131,9 +131,13 @@ En haut à droite de l'écran de placement, une icône de menu (burger) ouvre un
 
   Ce code couleur est propre à l'échelle de l'unité, dans ce menu ; il est distinct de ceux définis pour le statut d'un plateau ([[RG_14]]) et pour l'indicateur agrégé par disposition adverse ([[RG_12]]), qui portent sur un périmètre différent (tout le déploiement, pas une unité isolée).
 
+### RG_17 — Affichage du plateau à taille maximale, zoom fixe non pilotable par le joueur
+
+Sur l'écran de placement ([[RG_03]] étape 3), le plateau est affiché à la plus grande taille possible dans l'espace disponible (sous le bandeau de [[RG_15]] et sous l'accès au menu burger de [[RG_16]]), à un **niveau de zoom fixe déterminé automatiquement** par l'application. Contrairement aux visualiseurs de consultation plein écran de [[RG_14]] (« plateau seul » et « Consulter », zoomables/déplaçables au doigt — [[RT_16]]), ce zoom n'est **ni réglable ni déplaçable par le joueur** sur l'écran de placement : pas de pincer-zoomer, pas de pan, pas de défilement du plateau lui-même. Seuls les tokens y sont manipulables, par drag & drop ([[RG_04]]).
+
 ### RT_03 — Rendu du plateau et des tokens
 
-Le plateau et les tokens sont rendus via SVG, pour permettre le zoom, le pan et le drag-and-drop tactile sur mobile sans perte de précision de positionnement.
+Le plateau et les tokens sont rendus via SVG, pour un rendu net à n'importe quelle échelle — notamment au niveau de zoom fixe calculé par [[RT_19]] — et un drag-and-drop tactile précis des tokens sur mobile, sans perte de précision de positionnement. Contrairement aux visualiseurs de consultation ([[RT_16]]), le conteneur du plateau sur l'écran de placement n'expose aucun geste de zoom/pan piloté par le joueur (voir [[RG_17]]) : seul le déplacement des tokens est interactif.
 
 ### RT_04 — Modèle de données de placement
 
@@ -229,6 +233,10 @@ Le bandeau prévu par [[RG_15]] est un composant d'interface distinct de l'édit
 ### RT_18 — Calcul du regroupement par socle et du statut du menu unités
 
 Pour chaque unité, le menu de [[RG_16]] regroupe ses modèles par forme/diamètre de socle (issus du référentiel [[RT_02]] via [[RG_02]]) et calcule, pour chaque groupe, le nombre de modèles déjà placés parmi ceux du groupe, en filtrant les placements de [[RT_04]] par identifiant d'unité et en croisant chaque modèle placé avec le socle qui lui est associé. Le statut global de l'unité (blanc/orange/vert de [[RG_16]]) est dérivé de ces comptes : **blanc** si le nombre total de modèles placés de l'unité est nul, **vert** si ce total égale le nombre total de modèles de l'unité, **orange** dans tous les autres cas. Ce calcul est effectué à l'ouverture du menu burger ainsi qu'après chaque placement réalisé depuis le bandeau ([[RG_15]]), afin que le menu reste synchronisé sans rechargement de l'écran.
+
+### RT_19 — Calcul du zoom fixe d'affichage du plateau
+
+Le zoom fixe prévu par [[RG_17]] se calcule par un simple ajustement « contenir » (contain-fit, ratio unique min(largeur dispo / largeur image, hauteur dispo / hauteur image)) de l'image de plateau ([[RT_12]]) dans l'espace disponible de l'écran de placement (zone restante une fois déduits le bandeau de [[RG_15]] et la zone d'accès au menu de [[RG_16]]). Aucune mesure ni calcul spécifique à chaque plateau n'est nécessaire : tous les assets du référentiel [[RT_12]], quelle que soit la combinaison de dispositions ou la variante (`with-measurements`/`no-measurements`), sont livrés avec exactement les **mêmes dimensions en pixels et le même ratio** (vérifié : 1653×2833, y compris pour les variantes tournées via le suffixe `-portrait`). Le même facteur d'échelle s'applique donc identiquement à n'importe quel plateau chargé ; il n'est recalculé que lorsque l'espace disponible change (rotation de l'écran, redimensionnement de fenêtre), jamais par changement de plateau ou de disposition. Le conteneur du plateau désactive tout geste de zoom/pan natif du navigateur ou de l'OS sur cette zone (ex. `touch-action: none`, `user-scalable=no` équivalent) pour que seul le drag-and-drop des tokens ([[RT_03]]) y reste interactif, conformément à [[RG_17]].
 
 ---
 
