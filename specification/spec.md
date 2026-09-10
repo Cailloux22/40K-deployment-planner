@@ -57,7 +57,7 @@ Le reste de l'arborescence (`rules`, `profiles`, `categories`, coûts en points,
 
 Le joueur doit pouvoir positionner ses unités sur une représentation du plateau de jeu, en tenant compte de la disposition de force qu'il a choisie pour la partie.
 
-Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]].
+Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]].
 
 ### RG_03 — Parcours de sélection : liste → disposition adverse → plateau → placement
 
@@ -65,7 +65,7 @@ Une fois qu'il a sélectionné, parmi celles déjà importées, la liste d'armé
 
 1. il choisit, parmi les **5 dispositions** proposées par l'application, celle de son **adversaire** ;
 2. il choisit un plateau de jeu parmi les **3 plateaux** proposés pour le couple (sa disposition, la disposition adverse retenue à l'étape 1) ;
-3. il accède à l'écran de placement des unités sur le plateau ainsi sélectionné.
+3. il accède à l'écran de placement des unités sur le plateau ainsi sélectionné (également atteint directement via les actions « Nouveau »/« Éditer » de [[RG_14]] une fois liste, disposition adverse et plateau déjà choisis pour une combinaison antérieure). Le contenu de cet écran de placement est détaillé par [[RG_15]] et [[RG_16]].
 
 Chaque étape doit être complétée avant d'accéder à la suivante (pas de placement possible tant que la disposition adverse et le plateau n'ont pas été choisis). Le joueur peut revenir en arrière pour changer un choix précédent ; changer de disposition adverse ou de plateau après coup ne modifie pas les placements déjà enregistrés pour une autre combinaison liste/disposition adverse/plateau (voir [[RG_07]]). Le placement d'un token en dehors de la zone de déploiement autorisée pour son camp est bloqué ou signalé visuellement.
 
@@ -107,6 +107,29 @@ Un token posé sur le plateau représente un seul modèle physique, jamais une u
 ### RG_05 — Unité non totalement déployée
 
 Une unité dont tous les modèles n'ont pas encore été placés reste identifiable comme "en attente de déploiement" (par exemple dans une liste latérale), pour que le joueur n'oublie pas de modèles en réserve ou en attente.
+
+### RG_15 — Sélecteur d'unité à placer (bandeau bas d'écran)
+
+L'écran de placement ouvert par l'étape 3 de [[RG_03]] (y compris via les actions « Nouveau »/« Éditer » de [[RG_14]]) affiche, ancré en bas de l'écran, un bandeau de sélection de l'unité en cours de placement, regroupant dans un même encadré :
+
+- le **nom de l'unité** couramment sélectionnée ;
+- une **flèche de part et d'autre** du bandeau permettant de passer à l'unité précédente/suivante de la liste, sans avoir à repasser par le menu détaillé de [[RG_16]] ;
+- la **liste des modèles individuels** de l'unité sélectionnée, disponibles au drag & drop un par un vers le plateau, conformément à [[RG_04]] (un token = un modèle) : une unité de 10 modèles présente ainsi 10 éléments distincts dans cette liste, jamais un seul élément représentant l'unité entière. Cette liste est **défilable horizontalement** pour rester ergonomique quel que soit le nombre de modèles de l'unité (voir [[RT_17]]).
+
+Un modèle déjà placé sur le plateau reste visible dans la liste (pour permettre son repositionnement par un nouveau drag & drop) mais est visuellement distingué des modèles encore en attente de placement, pour que le joueur identifie en un coup d'œil ce qu'il lui reste à poser sur l'unité couramment sélectionnée — cf. [[RG_05]].
+
+### RG_16 — Menu unités (burger) : vue d'ensemble, regroupement par socle et statut
+
+En haut à droite de l'écran de placement, une icône de menu (burger) ouvre une liste, **défilable verticalement**, de toutes les unités de la liste d'armée en cours de déploiement :
+
+- Chaque entrée affiche le **nom de l'unité**, ainsi que ses socles **regroupés par forme/taille avec un compte** associé à chaque groupe (par exemple, une unité composée de 10 socles de 40 mm, 9 socles de 20 mm et 1 socle ovale 20×40 mm affiche trois groupes avec leurs comptes respectifs : `× 10`, `× 9`, `× 1`). Le regroupement affiche la **forme du socle** (pictogramme, cf. référentiel [[RT_02]]) plutôt que sa valeur en millimètres, pour rester lisible d'un coup d'œil.
+- Cliquer sur une entrée **ferme le menu burger** et **bascule le bandeau de [[RG_15]]** sur l'unité choisie, prête à recevoir des placements.
+- Le fond de chaque entrée reflète l'**état de placement de l'unité** (au sens de [[RG_05]] : une unité dont tous les modèles ne sont pas placés reste identifiable comme en attente) :
+  - **Blanc** : aucun modèle de l'unité n'est encore placé.
+  - **Orange** : au moins un modèle est placé, mais au moins un des groupes de socle de l'unité n'est pas complètement placé.
+  - **Vert** : tous les modèles de l'unité (tous groupes de socle confondus) sont placés.
+
+  Ce code couleur est propre à l'échelle de l'unité, dans ce menu ; il est distinct de ceux définis pour le statut d'un plateau ([[RG_14]]) et pour l'indicateur agrégé par disposition adverse ([[RG_12]]), qui portent sur un périmètre différent (tout le déploiement, pas une unité isolée).
 
 ### RT_03 — Rendu du plateau et des tokens
 
@@ -198,6 +221,14 @@ Chaque enregistrement synchronisable (déploiement, cf. [[RT_04]]/[[RT_07]]) con
 ### RT_16 — Visualiseur plein écran zoomable de plateau
 
 Les deux vues plein écran prévues par [[RG_14]] (plateau seul avec mesures, et déploiement avec placements sans mesures) partagent un même composant de visualisation image plein écran avec pan/zoom tactile, distinct de l'éditeur de placement interactif de [[RT_03]] (celui-ci reste dédié à la saisie drag-and-drop et n'est pas concerné par ce composant). Ce composant sélectionne l'asset du référentiel [[RT_12]] à afficher — variante `with-measurements` pour la consultation du plateau seul, variante `no-measurements` pour la consultation « Consulter » — et, dans ce second cas, superpose par-dessus le rendu SVG des placements existants ([[RT_04]]) en lecture seule (pas d'interaction de déplacement).
+
+### RT_17 — Composant de sélection d'unité et de modèles (bandeau bas)
+
+Le bandeau prévu par [[RG_15]] est un composant d'interface distinct de l'éditeur de plateau ([[RT_03]]), superposé en bas de l'écran de placement. Sa liste de modèles utilise un défilement horizontal natif (avec ancrage/scroll-snap par élément) pour rester ergonomique au doigt quel que soit le nombre de modèles de l'unité (ex. 10 éléments pour une unité de 10 modèles), sans dépendre d'une librairie tierce de carrousel. Chaque élément de la liste est rendu comme un token draggable identique en forme et en couleur au token qui sera posé sur le plateau ([[RG_06]], [[RT_05]]), pour que le joueur identifie visuellement ce qu'il s'apprête à placer avant même de le déposer ; le drag & drop d'un élément du bandeau vers le plateau crée un enregistrement de placement au sens de [[RT_04]].
+
+### RT_18 — Calcul du regroupement par socle et du statut du menu unités
+
+Pour chaque unité, le menu de [[RG_16]] regroupe ses modèles par forme/diamètre de socle (issus du référentiel [[RT_02]] via [[RG_02]]) et calcule, pour chaque groupe, le nombre de modèles déjà placés parmi ceux du groupe, en filtrant les placements de [[RT_04]] par identifiant d'unité et en croisant chaque modèle placé avec le socle qui lui est associé. Le statut global de l'unité (blanc/orange/vert de [[RG_16]]) est dérivé de ces comptes : **blanc** si le nombre total de modèles placés de l'unité est nul, **vert** si ce total égale le nombre total de modèles de l'unité, **orange** dans tous les autres cas. Ce calcul est effectué à l'ouverture du menu burger ainsi qu'après chaque placement réalisé depuis le bandeau ([[RG_15]]), afin que le menu reste synchronisé sans rechargement de l'écran.
 
 ---
 
