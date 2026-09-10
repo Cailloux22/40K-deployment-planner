@@ -58,9 +58,20 @@ Une fois qu'il a sélectionné, parmi celles déjà importées, la liste d'armé
 
 Chaque étape doit être complétée avant d'accéder à la suivante (pas de placement possible tant que la disposition adverse et le plateau n'ont pas été choisis). Le joueur peut revenir en arrière pour changer un choix précédent ; changer de disposition adverse ou de plateau après coup ne modifie pas les placements déjà enregistrés pour une autre combinaison liste/disposition adverse/plateau (voir [[RG_07]]). Le placement d'un token en dehors de la zone de déploiement autorisée pour son camp est bloqué ou signalé visuellement.
 
-### RG_12 — Indicateur de déploiement déjà enregistré
+### RG_12 — Indicateurs de déploiement déjà enregistré (disposition adverse et plateau)
 
-Lors de l'étape 2 du parcours décrit en [[RG_03]] (choix du plateau), l'application indique, pour chacun des 3 plateaux proposés, si le joueur possède déjà au moins un déploiement sauvegardé pour la combinaison liste + disposition adverse couramment sélectionnée sur ce plateau. Cette indication est purement informative : elle n'empêche jamais de créer un nouveau déploiement sur un plateau déjà utilisé, et le joueur choisit explicitement s'il reprend le déploiement existant ou en démarre un nouveau.
+Le parcours décrit en [[RG_03]] affiche, à deux étapes, un indicateur de l'avancement des déploiements déjà sauvegardés pour la liste couramment sélectionnée. Ces indicateurs sont purement informatifs : ils n'empêchent jamais de créer un nouveau déploiement sur une combinaison déjà utilisée, et le joueur choisit explicitement s'il reprend un déploiement existant ou en démarre un nouveau.
+
+**Étape 1 — choix de la disposition adverse.** Pour chacune des 5 dispositions adverses proposées, le bouton correspondant affiche un code couleur reflétant l'état des déploiements sauvegardés pour la combinaison (liste couramment sélectionnée, cette disposition adverse), sur l'ensemble des 3 plateaux qui lui seront associés à l'étape 2 :
+
+- **Blanc** : aucun déploiement commencé sur les 3 plateaux (0 déploiement sur 3).
+- **Jaune** : 1 ou 2 déploiements terminés sur les 3 plateaux (et aucun déploiement commencé mais non terminé parmi les 3).
+- **Orange** : au moins un des 3 plateaux a un déploiement commencé mais non terminé — cet état est prioritaire sur les deux précédents, car il signale un travail interrompu que le joueur voudra probablement reprendre.
+- **Vert** : les 3 déploiements sont terminés (3 déploiements sur 3).
+
+Un déploiement sauvegardé est considéré **terminé** lorsque toutes les unités de la liste ont tous leurs modèles placés (aucune unité restant "en attente de déploiement" au sens de [[RG_05]]) ; dans le cas contraire, il est considéré **commencé mais non terminé**. L'ordre de priorité pour déterminer la couleur est : Orange > Vert > Jaune > Blanc.
+
+**Étape 2 — choix du plateau.** Une fois la disposition adverse retenue, l'application indique, pour chacun des 3 plateaux proposés, si le joueur possède déjà au moins un déploiement sauvegardé pour la combinaison liste + disposition adverse + ce plateau (indicateur booléen ou compteur ; pas de code couleur imposé à ce niveau).
 
 ### RG_04 — Un token = un modèle
 
@@ -78,9 +89,12 @@ Le plateau et les tokens sont rendus via SVG, pour permettre le zoom, le pan et 
 
 Un placement est stocké comme un enregistrement `{ idUnite, idModele, x, y, rotation }` indépendant des autres modèles de la même unité, afin que RG_04 et RG_05 puissent être vérifiées par simple comptage/filtrage sans recalcul géométrique.
 
-### RT_11 — Calcul de l'indicateur de déploiement existant
+### RT_11 — Calcul des indicateurs de déploiement existant
 
-L'indicateur prévu par [[RG_12]] est calculé en interrogeant la bibliothèque locale ([[RT_06]]) par filtrage sur le triplet (identifiant de liste, identifiant de disposition adverse choisie à l'étape 1 de [[RG_03]], identifiant de plateau), avant l'affichage de l'écran de choix du plateau, sans appel réseau (conformément à [[EX_05]]). Le résultat est un simple booléen (ou compteur) par plateau proposé, recalculé à chaque affichage de l'étape pour refléter les sauvegardes les plus récentes.
+Les indicateurs prévus par [[RG_12]] sont calculés en interrogeant la bibliothèque locale ([[RT_06]]), avant l'affichage de l'écran correspondant, sans appel réseau (conformément à [[EX_05]]), et recalculés à chaque affichage de l'étape pour refléter les sauvegardes les plus récentes :
+
+- **Étape 2 (choix du plateau)** : filtrage sur le triplet (identifiant de liste, identifiant de disposition adverse choisie à l'étape 1, identifiant de plateau) ; le résultat est un simple booléen (ou compteur) par plateau proposé.
+- **Étape 1 (choix de la disposition adverse)** : pour chacune des 5 dispositions adverses candidates, filtrage sur le couple (identifiant de liste, identifiant de disposition adverse candidate) sur les 3 plateaux qui lui sont associés. Pour chaque déploiement sauvegardé trouvé, le statut terminé/non terminé est déterminé en comparant, pour chaque unité de la liste, le nombre de placements enregistrés ([[RT_04]]) au nombre de modèles de l'unité (issu de [[RG_02]]). Le code couleur du bouton de disposition en résulte selon l'ordre de priorité défini en [[RG_12]] (Orange > Vert > Jaune > Blanc).
 
 ### RT_12 — Référentiel des plateaux (Battlemaster / gdmissions.app)
 
