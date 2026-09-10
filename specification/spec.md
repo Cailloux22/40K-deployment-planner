@@ -1,6 +1,6 @@
 # Spécification — 40K Deployment Planner
 
-> Périmètre de ce document : l'application de planification de déploiement Warhammer 40k décrite dans [CLAUDE.md](../CLAUDE.md) — import de liste d'armée, plan de déploiement sur plateau avec tokens de socles, bibliothèque de déploiements sauvegardés, fonctionnement hors-ligne, compte utilisateur et synchronisation multi-appareils.
+> Périmètre de ce document : l'application de planification de déploiement Warhammer 40k décrite dans [CLAUDE.md](../CLAUDE.md) — import de liste d'armée, plan de déploiement sur plateau avec tokens de socles, bibliothèque des listes importées avec leurs déploiements sauvegardés, fonctionnement hors-ligne, compte utilisateur et synchronisation multi-appareils.
 >
 > Aucune fonctionnalité n'est implémentée à ce jour (dépôt issu du starter Ionic `blank`). Les règles techniques ci-dessous documentent les décisions d'architecture prises pour la suite du projet ; elles remplacent, au fur et à mesure de leur mise en œuvre, les zones marquées « non tranché » dans le CLAUDE.md.
 
@@ -159,7 +159,7 @@ La rotation d'un token sélectionné ([[RG_20]]) se pilote par un geste dédié 
 
 ### RT_11 — Calcul des indicateurs de déploiement existant
 
-Les indicateurs prévus par [[RG_12]] sont calculés en interrogeant la bibliothèque locale ([[RT_06]]), avant l'affichage de l'écran correspondant, sans appel réseau (conformément à [[EX_05]]), et recalculés à chaque affichage de l'étape pour refléter les sauvegardes les plus récentes :
+Les indicateurs prévus par [[RG_12]] sont calculés en interrogeant les déploiements sauvegardés en local ([[RT_06]]), avant l'affichage de l'écran correspondant, sans appel réseau (conformément à [[EX_05]]), et recalculés à chaque affichage de l'étape pour refléter les sauvegardes les plus récentes :
 
 - **Étape 2 (choix du plateau)** : filtrage sur le triplet (identifiant de liste, identifiant de disposition adverse choisie à l'étape 1, identifiant de plateau). Si aucun déploiement n'existe pour ce triplet, le statut est **Rouge** ([[RG_14]]). Sinon, le nombre de placements enregistrés ([[RT_04]]) est comparé, pour chaque unité de la liste, au nombre de modèles de l'unité (issu de [[RG_02]]) : toutes les unités complètes donnent le statut **Vert**, sinon **Orange**.
 - **Étape 1 (choix de la disposition adverse)** : pour chacune des 5 dispositions adverses candidates, filtrage sur le couple (identifiant de liste, identifiant de disposition adverse candidate) sur les 3 plateaux qui lui sont associés. Pour chaque déploiement sauvegardé trouvé, le statut terminé/non terminé est déterminé en comparant, pour chaque unité de la liste, le nombre de placements enregistrés ([[RT_04]]) au nombre de modèles de l'unité (issu de [[RG_02]]). Le code couleur du bouton de disposition en résulte selon l'ordre de priorité défini en [[RG_12]] (Orange > Vert > Jaune > Blanc).
@@ -190,13 +190,13 @@ La taille d'un token à l'écran est calculée au pixel près à partir du diam�
 
 ---
 
-## EX_04 — Bibliothèque de déploiements sauvegardés
+## EX_04 — Déploiements sauvegardés, liés à la liste d'armée d'origine
 
 Le joueur doit pouvoir sauvegarder un déploiement rempli, le retrouver plus tard, et le relier à la liste d'armée dont il provient.
 
 Satisfait par : [[RG_07]], [[RG_08]], [[RG_21]], [[RT_06]], [[RT_07]].
 
-La bibliothèque n'est pas un écran séparé : elle est intégrée à l'écran d'accueil (cf. [[RG_18]]), où chaque liste d'armée importée donne un accès direct à ses propres déploiements sauvegardés (ouverture, consultation, suppression — [[RG_08]]) sans navigation dédiée supplémentaire.
+Les déploiements sauvegardés ne sont pas présentés sur un écran séparé : ils sont intégrés à l'écran d'accueil — la bibliothèque des listes importées, [[RG_18]] — où chaque liste d'armée importée donne un accès direct à ses propres déploiements sauvegardés (ouverture, consultation, suppression — [[RG_08]]) sans navigation dédiée supplémentaire.
 
 ### RG_07 — Sauvegarde nommée
 
@@ -204,18 +204,18 @@ Un déploiement sauvegardé conserve un nom (par défaut : liste + plateau + dat
 
 ### RG_08 — Suppression
 
-La suppression d'une entrée de la bibliothèque est une action confirmée explicitement par le joueur et ne supprime jamais la liste d'armée associée, qui peut être réutilisée pour d'autres déploiements.
+La suppression d'un déploiement sauvegardé est une action confirmée explicitement par le joueur et ne supprime jamais la liste d'armée associée, qui peut être réutilisée pour d'autres déploiements.
 
 ### RG_21 — Suppression et duplication d'une liste d'armée
 
-Le joueur peut supprimer ou dupliquer une liste d'armée importée directement depuis l'accueil ([[RG_18]]), indépendamment de la suppression d'une entrée de bibliothèque ([[RG_08]]) :
+Le joueur peut supprimer ou dupliquer une liste d'armée importée directement depuis l'accueil ([[RG_18]]), indépendamment de la suppression d'un déploiement sauvegardé ([[RG_08]]) :
 
-- **Suppression** : action confirmée explicitement par le joueur (sur le même principe que [[RG_08]]). Si des déploiements de la bibliothèque référencent cette liste ([[RT_07]]), le joueur en est informé avant confirmation, et ces déploiements sont supprimés avec elle (suppression en cascade) plutôt que laissés en entrées orphelines.
+- **Suppression** : action confirmée explicitement par le joueur (sur le même principe que [[RG_08]]). Si des déploiements sauvegardés référencent cette liste ([[RT_07]]), le joueur en est informé avant confirmation, et ces déploiements sont supprimés avec elle (suppression en cascade) plutôt que laissés en entrées orphelines.
 - **Duplication** : crée une copie indépendante de la liste, avec son propre identifiant stable ([[RT_07]]) et son propre nom (par défaut « nom d'origine (copie) », modifiable) ; la copie démarre sans aucun déploiement associé, au même titre qu'une liste nouvellement importée.
 
-### RT_06 — Persistance locale de la bibliothèque
+### RT_06 — Persistance locale des déploiements sauvegardés
 
-La bibliothèque est persistée localement (mécanisme de stockage à trancher — voir EX_05/RT_08) sous forme d'enregistrements indexés par identifiant de déploiement, pour un accès à la liste sans dépendre du réseau.
+Les déploiements sauvegardés sont persistés localement (mécanisme de stockage à trancher — voir EX_05/RT_08) sous forme d'enregistrements indexés par identifiant de déploiement, pour un accès sans dépendre du réseau.
 
 ### RT_07 — Clé de liaison liste/déploiement
 
@@ -225,7 +225,7 @@ La liaison entre un déploiement et sa liste d'armée d'origine utilise un ident
 
 ## EX_05 — Fonctionnement hors-ligne
 
-L'application doit rester pleinement utilisable sans connexion réseau pour la planification et la consultation de la bibliothèque, qui ne dépendent pas d'un accès serveur. L'import d'une nouvelle liste fait exception à ce principe (voir [[RG_13]]). Lorsque l'application ressort du mode hors-ligne, une éventuelle divergence entre les données locales et celles du serveur doit être arbitrée par le joueur, jamais résolue silencieusement (voir [[RG_11]]).
+L'application doit rester pleinement utilisable sans connexion réseau pour la planification et la consultation des déploiements sauvegardés, qui ne dépendent pas d'un accès serveur. L'import d'une nouvelle liste fait exception à ce principe (voir [[RG_13]]). Lorsque l'application ressort du mode hors-ligne, une éventuelle divergence entre les données locales et celles du serveur doit être arbitrée par le joueur, jamais résolue silencieusement (voir [[RG_11]]).
 
 Satisfait par : [[RG_09]], [[RG_11]], [[RG_13]], [[RT_08]], [[RT_14]], [[RT_15]].
 
@@ -235,11 +235,11 @@ Toute fonctionnalité qui nécessite le réseau (synchronisation de compte notam
 
 ### RG_13 — Import de liste indisponible hors-ligne
 
-L'import d'une nouvelle liste d'armée ([[RG_01]]) n'est pas proposé hors-ligne : contrairement aux autres fonctionnalités couvertes par [[EX_05]] (planification, bibliothèque), qui restent pleinement utilisables sans réseau, l'import est une restriction fonctionnelle volontaire. Si le joueur tente de lancer un import alors que l'application est hors-ligne, l'import est bloqué avant toute tentative de parsing et un message explicite informe le joueur que cette action nécessite une connexion réseau, en l'invitant à réessayer une fois reconnecté. Les listes déjà importées restent consultables et utilisables hors-ligne sans restriction.
+L'import d'une nouvelle liste d'armée ([[RG_01]]) n'est pas proposé hors-ligne : contrairement aux autres fonctionnalités couvertes par [[EX_05]] (planification, déploiements sauvegardés), qui restent pleinement utilisables sans réseau, l'import est une restriction fonctionnelle volontaire. Si le joueur tente de lancer un import alors que l'application est hors-ligne, l'import est bloqué avant toute tentative de parsing et un message explicite informe le joueur que cette action nécessite une connexion réseau, en l'invitant à réessayer une fois reconnecté. Les listes déjà importées restent consultables et utilisables hors-ligne sans restriction.
 
 ### RT_08 — Stockage local
 
-Les données de l'application (listes importées, référentiel de socles, bibliothèque de déploiements) sont persistées via le stockage local du terminal (IndexedDB en environnement web ; `@capacitor/preferences` ou équivalent pour les données de configuration légères sur mobile natif), lu/écrit systématiquement avant toute tentative de synchronisation réseau.
+Les données de l'application (listes importées, référentiel de socles, déploiements sauvegardés) sont persistées via le stockage local du terminal (IndexedDB en environnement web ; `@capacitor/preferences` ou équivalent pour les données de configuration légères sur mobile natif), lu/écrit systématiquement avant toute tentative de synchronisation réseau.
 
 ### RT_14 — Détection de connectivité pour le blocage de l'import
 
@@ -287,7 +287,7 @@ Lorsque le même déploiement a été modifié hors-ligne sur deux appareils ava
 
 ### RG_18 — Point d'accès compte et informations sur l'écran d'accueil (bouton Réglages)
 
-L'écran d'accueil — où le joueur retrouve l'ensemble des listes d'armée déjà importées ([[RG_01]]) — affiche un bouton « Réglages » (icône engrenage), toujours visible quel que soit le nombre de listes déjà importées. Ce bouton ouvre un écran (ou panneau) Réglages qui regroupe, sans quitter l'application, trois blocs distincts :
+L'écran d'accueil — la bibliothèque des listes d'armée déjà importées ([[RG_01]]) — affiche un bouton « Réglages » (icône engrenage), toujours visible quel que soit le nombre de listes déjà importées. Ce bouton ouvre un écran (ou panneau) Réglages qui regroupe, sans quitter l'application, trois blocs distincts :
 
 1. **Compte**, dont le contenu dépend de l'état de connexion du joueur ([[RG_10]]) :
    - non connecté : les actions « Créer un compte » et « Se connecter », menant aux formulaires de sign up / sign in ;
