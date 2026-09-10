@@ -253,6 +253,10 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
+  # Note d'implémentation : le client conserve, en plus des champs décrits
+  # ici, un indicateur local « modifié depuis le dernier sync réussi »
+  # (RT_15). C'est un état d'appareil, pas une donnée partagée : il n'est
+  # jamais transmis et n'apparaît donc dans aucun schéma ci-dessous.
   schemas:
     Error:
       type: object
@@ -313,6 +317,10 @@ components:
           type: string
         idModele:
           type: string
+          description: >-
+            Identité d'un modèle précis au sein de l'unité, de la forme
+            `<idGroupeDeModeles>#<rang>` (RT_18 : le groupe porte le socle du
+            modèle, ce qui permet de recouper un placement avec sa forme).
         x:
           type: number
         y:
@@ -321,11 +329,35 @@ components:
           type: number
           description: Degrés.
 
-    # RG_02/RT_13 : unité importée, résolue vers un socle via le référentiel
-    # RT_02 (le référentiel lui-même reste embarqué, non exposé par l'API).
+    # RG_02/RG_16/RT_18 : un groupe de modèles d'une unité partageant le même
+    # socle. Une unité n'a pas forcément un socle unique — RG_16 affiche
+    # justement ses socles « regroupés par forme/taille avec un compte » —
+    # d'où ce niveau intermédiaire plutôt qu'un `baseShapeId` par unité.
+    UnitModelGroup:
+      type: object
+      required: [id, name, count]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          description: Nom du profil de modèle tel qu'importé (RT_13).
+        count:
+          type: integer
+          minimum: 1
+        baseShapeId:
+          type: string
+          description: >-
+            Référence dans le référentiel de socles embarqué (RT_02).
+            `null` tant que le joueur ne l'a pas assigné à la main (RG_02).
+          nullable: true
+
+    # RG_02/RT_13 : unité importée, résolue vers un ou plusieurs socles via le
+    # référentiel RT_02 (le référentiel lui-même reste embarqué, non exposé
+    # par l'API).
     ArmyUnit:
       type: object
-      required: [id, name, modelCount]
+      required: [id, name, modelCount, modelGroups]
       properties:
         id:
           type: string
@@ -334,10 +366,12 @@ components:
         modelCount:
           type: integer
           minimum: 1
-        baseShapeId:
-          type: string
-          description: Référence dans le référentiel de socles embarqué (RT_02).
-          nullable: true
+          description: Somme des `count` de `modelGroups` (RT_13).
+        modelGroups:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/UnitModelGroup'
         color:
           type: string
           description: Couleur assignée à l'unité (RG_06), format hex CSS.
@@ -361,6 +395,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ArmyUnit'
+        importedAt:
+          type: string
+          format: date-time
+          description: Date de l'import initial, conservée d'un appareil à l'autre.
         updatedAt:
           type: string
           format: date-time
@@ -397,6 +435,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Placement'
+        createdAt:
+          type: string
+          format: date-time
         updatedAt:
           type: string
           format: date-time

@@ -1,0 +1,61 @@
+{
+  "comment": "RT_23 — référentiel statique des 5 dispositions de force. Contrairement aux référentiels de socles (RT_02) et de plateaux (RT_12), celui-ci n'est pas généré depuis une source tierce : il n'ouvre donc droit à aucune attribution (RT_20) et n'expose pas de bloc `source`. Le champ `slug` est la clé de rapprochement avec les noms d'assets du référentiel de plateaux ; `importNames` liste les libellés tels qu'ils apparaissent dans un roster JSON importé (RT_13).",
+  "generatedBy": "hand-authored",
+  "dispositions": [
+    {
+      "id": "take-and-hold",
+      "slug": "take-and-hold",
+      "label": "Take and Hold",
+      "importNames": ["Take and Hold"],
+      "icon": {
+        "viewBox": "0 0 24 24",
+        "mode": "stroke",
+        "paths": ["M4 4h7v7H4z", "M13 13h7v7h-7z", "M11 11l2 2"]
+      }
+    },
+    {
+      "id": "purge-the-foe",
+      "slug": "purge-the-foe",
+      "label": "Purge the Foe",
+      "importNames": ["Purge the Foe"],
+      "icon": {
+        "viewBox": "0 0 24 24",
+        "mode": "stroke",
+        "paths": ["M5 4l14 16", "M19 4L5 20"]
+      }
+    },
+    {
+      "id": "reconnaissance",
+      "slug": "reconnaissance",
+      "label": "Reconnaissance",
+      "importNames": ["Reconnaissance"],
+      "icon": {
+        "viewBox": "0 0 24 24",
+        "mode": "stroke",
+        "paths": ["M2 12s4-6.5 10-6.5S22 12 22 12s-4 6.5-10 6.5S2 12 2 12z", "M12 9a3 3 0 100 6 3 3 0 000-6z"]
+      }
+    },
+    {
+      "id": "priority-assets",
+      "slug": "priority-assets",
+      "label": "Priority Assets",
+      "importNames": ["Priority Assets"],
+      "icon": {
+        "viewBox": "0 0 24 24",
+        "mode": "fill",
+        "paths": ["M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"]
+      }
+    },
+    {
+      "id": "disruption",
+      "slug": "disruption",
+      "label": "Disruption",
+      "importNames": ["Disruption"],
+      "icon": {
+        "viewBox": "0 0 24 24",
+        "mode": "fill",
+        "paths": ["M13.5 2L4 14.2h5.8L8.4 22l11-12.6h-6.3z"]
+      }
+    }
+  ]
+}

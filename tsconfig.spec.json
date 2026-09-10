@@ -3,9 +3,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
-    "types": [
-      "vitest/globals"
-    ]
+    /* `node` n'est activé que pour les tests : ils lisent les référentiels
+       générés (RT_02, RT_12, RT_23) et la fixture d'import (RT_13) depuis le
+       disque, pour vérifier la donnée réellement livrée. Le code applicatif,
+       lui, ne dépend d'aucune API Node. */
+    "types": ["vitest/globals", "node"]
   },
   "include": [
     "src/**/*.spec.ts",

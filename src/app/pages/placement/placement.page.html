@@ -1,0 +1,212 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="back()" aria-label="Revenir au choix du plateau">
+        <ion-icon name="arrow-back" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ list()?.name }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="saveAsNew()" aria-label="Enregistrer sous un nouveau nom">
+        <ion-icon name="save-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+      <!-- RG_16: menu burger en haut à droite de l'écran de placement. -->
+      <ion-button (click)="menuOpen.set(true)" aria-label="Ouvrir le menu des unités">
+        <ion-icon name="menu" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content
+  [scrollY]="false"
+  (pointermove)="onPointerMove($event)"
+  (pointerup)="onPointerUp($event)"
+  (pointercancel)="onPointerUp($event)"
+>
+  <div class="layout">
+    <!-- RG_17/RT_19: le plateau occupe tout l'espace restant, à un zoom fixe
+         calculé par ajustement « contenir ». Aucun geste de zoom/pan n'est
+         branché ici, et les gestes natifs sont neutralisés en CSS. -->
+    <div #boardArea class="board-area">
+      @if (board(); as current) {
+        <div
+          #boardSurface
+          class="board-surface"
+          [style.width.px]="current.width * scale()"
+          [style.height.px]="current.height * scale()"
+        >
+          <img
+            class="board-image"
+            [src]="current.assets['no-measurements']"
+            alt="Plateau de déploiement"
+            draggable="false"
+          />
+
+          <!-- RT_03: tokens rendus en SVG, dans le repère de l'asset. -->
+          <svg
+            class="tokens"
+            [attr.viewBox]="'0 0 ' + current.width + ' ' + current.height"
+            (pointerdown)="selectedPlacementId.set(null)"
+          >
+            @for (token of tokens(); track token.placement.idModele) {
+              <g
+                [attr.transform]="
+                  'translate(' +
+                  token.placement.x +
+                  ',' +
+                  token.placement.y +
+                  ') rotate(' +
+                  token.placement.rotation +
+                  ')'
+                "
+              >
+                <ellipse
+                  class="token"
+                  [class.selected]="token.selected"
+                  [attr.rx]="token.rx"
+                  [attr.ry]="token.ry"
+                  [attr.fill]="token.color"
+                  (pointerdown)="onTokenPointerDown($event, token)"
+                />
+
+                <!-- RG_20/RT_22: poignée de rotation du token sélectionné,
+                     superposée au rendu SVG et indépendante de x/y. -->
+                @if (token.selected) {
+                  <line
+                    class="rotate-arm"
+                    x1="0"
+                    y1="0"
+                    [attr.x2]="0"
+                    [attr.y2]="-(token.ry + 34)"
+                  />
+                  <circle
+                    class="rotate-handle"
+                    cx="0"
+                    [attr.cy]="-(token.ry + 34)"
+                    r="16"
+                    (pointerdown)="onRotatePointerDown($event, token)"
+                  />
+                }
+              </g>
+            }
+          </svg>
+        </div>
+      } @else {
+        <ion-spinner></ion-spinner>
+      }
+    </div>
+
+    <!-- RG_20: rotation également accessible au pas fixe, et retrait du token. -->
+    @if (selectedToken(); as token) {
+      <div class="token-actions">
+        <span>{{ token.placement.rotation }}°</span>
+        <ion-button size="small" fill="clear" (click)="rotateSelected(-15)" aria-label="Pivoter de -15 degrés">
+          <ion-icon name="return-up-back" slot="icon-only"></ion-icon>
+        </ion-button>
+        <ion-button size="small" fill="clear" (click)="rotateSelected(15)" aria-label="Pivoter de +15 degrés">
+          <ion-icon name="return-up-forward" slot="icon-only"></ion-icon>
+        </ion-button>
+        <ion-button size="small" fill="clear" color="danger" (click)="removeSelected()" aria-label="Retirer ce token">
+          <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+      </div>
+    }
+
+    <!-- RG_15/RT_17: bandeau ancré en bas — nom de l'unité, flèches de part et
+         d'autre, et liste défilable horizontalement des modèles individuels. -->
+    <div class="band">
+      <ion-button fill="clear" class="arrow" (click)="previousUnit()" aria-label="Unité précédente">
+        <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
+      </ion-button>
+
+      <div class="band-body">
+        <div class="band-header">
+          <strong>{{ selectedUnit()?.name ?? 'Aucune unité' }}</strong>
+          <!-- RG_05: ce qu'il reste à poser sur l'unité courante. -->
+          <small>
+            @if (remainingInUnit() > 0) {
+              {{ remainingInUnit() }} modèle{{ remainingInUnit() > 1 ? 's' : '' }} à placer
+            } @else {
+              unité complète
+            }
+          </small>
+        </div>
+
+        <div class="models">
+          @for (model of bandModels(); track model.idModele) {
+            <button
+              type="button"
+              class="model"
+              [class.placed]="model.placed"
+              [disabled]="!model.shape"
+              [attr.aria-label]="
+                model.group.name + (model.placed ? ' — déjà placé, glisser pour repositionner' : ' — glisser sur le plateau')
+              "
+              (pointerdown)="onBandPointerDown($event, model)"
+            >
+              <app-base-token
+                [shape]="model.shape"
+                [color]="selectedUnit()?.color ?? '#888888'"
+                [placed]="model.placed"
+                [pixelsPerMm]="0.62"
+              ></app-base-token>
+            </button>
+          }
+        </div>
+      </div>
+
+      <ion-button fill="clear" class="arrow" (click)="nextUnit()" aria-label="Unité suivante">
+        <ion-icon name="chevron-forward" slot="icon-only"></ion-icon>
+      </ion-button>
+    </div>
+  </div>
+
+  <!-- RG_16/RT_24: panneau latéral coulissant depuis le bord droit ; le
+       plateau reste partiellement visible à sa gauche. -->
+  @if (menuOpen()) {
+    <div class="panel-backdrop" (click)="menuOpen.set(false)"></div>
+  }
+  <aside class="units-panel" [class.open]="menuOpen()" aria-label="Choisir votre unité">
+    <header>
+      <h2>Choisir votre unité</h2>
+      <ion-button fill="clear" size="small" (click)="menuOpen.set(false)" aria-label="Fermer le menu">
+        <ion-icon name="close" slot="icon-only"></ion-icon>
+      </ion-button>
+    </header>
+
+    <div class="units-scroll">
+      @for (view of menuViews(); track view.unit.id) {
+        <!-- RG_16: le fond reflète l'état de placement de l'unité
+             (blanc / orange / vert). -->
+        <button
+          type="button"
+          class="unit-entry"
+          [class]="'unit-' + view.status"
+          (click)="selectUnitFromMenu(view)"
+        >
+          <div class="unit-name">
+            <span>{{ view.unit.name }}</span>
+            <small>{{ view.placedCount }}/{{ view.unit.modelCount }}</small>
+          </div>
+
+          <!-- RG_16/RT_18: socles regroupés par forme/taille, avec un compte
+               par groupe — le pictogramme plutôt que la valeur en mm. -->
+          <div class="groups">
+            @for (group of view.groups; track group.group.id) {
+              <span class="group">
+                <app-base-token
+                  [shape]="shapeOf(group.group)"
+                  [color]="view.unit.color"
+                  [pixelsPerMm]="0.42"
+                ></app-base-token>
+                <em>× {{ group.total }}</em>
+                <small>{{ group.placed }} posé{{ group.placed > 1 ? 's' : '' }}</small>
+              </span>
+            }
+          </div>
+        </button>
+      }
+    </div>
+  </aside>
+</ion-content>

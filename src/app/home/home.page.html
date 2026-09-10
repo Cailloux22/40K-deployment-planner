@@ -1,20 +1,103 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
+    <!-- RG_18: accès aux Réglages toujours visible, avec ou sans liste importée. -->
+    <ion-buttons slot="start">
+      <ion-button (click)="openSettings()" aria-label="Réglages">
+        <ion-icon name="settings-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Mes listes</ion-title>
+    <ion-buttons slot="end">
+      <!-- RG_13/RT_14: point d'entrée d'import désactivé hors-ligne. -->
+      @if (online()) {
+        <ion-button (click)="openImport()" aria-label="Importer une liste">
+          <ion-icon name="add" slot="icon-only"></ion-icon>
+        </ion-button>
+      } @else {
+        <ion-button (click)="showOfflineNotice()" aria-label="Import indisponible hors-ligne">
+          <ion-icon name="cloud-offline-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+      }
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
+  <!-- RG_11: un conflit détecté à la resynchronisation est arbitré par le
+       joueur, jamais automatiquement. -->
+  @if (hasConflicts()) {
+    <app-conflict-resolution></app-conflict-resolution>
+  }
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
-  </div>
+  @if (!online()) {
+    <ion-note class="offline-banner">
+      <ion-icon name="cloud-offline-outline"></ion-icon>
+      Hors-ligne — vos listes et déploiements restent utilisables ; l'import d'une nouvelle liste
+      nécessite une connexion.
+    </ion-note>
+  }
+
+  @if (!loaded()) {
+    <div class="placeholder">
+      <ion-spinner></ion-spinner>
+    </div>
+  } @else if (cards().length === 0) {
+    <div class="placeholder empty">
+      <ion-icon name="library-outline"></ion-icon>
+      <h2>Aucune liste importée</h2>
+      <p>
+        Importez une liste d'armée exportée depuis votre list-builder pour préparer vos
+        déploiements.
+      </p>
+      <ion-button (click)="openImport()" [disabled]="!online()">
+        <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+        Importer une liste
+      </ion-button>
+      @if (!online()) {
+        <ion-note>Cette action nécessite une connexion réseau.</ion-note>
+      }
+    </div>
+  } @else {
+    <ion-list lines="none" class="lists">
+      @for (card of cards(); track card.list.id) {
+        <ion-item class="list-card" button detail="false" (click)="openList(card.list)">
+          <!-- RT_23: l'icône de la disposition du joueur, fixée à l'import. -->
+          <app-disposition-icon
+            slot="start"
+            [disposition]="card.disposition"
+            [size]="30"
+          ></app-disposition-icon>
+
+          <ion-label>
+            <h2>{{ card.list.name }}</h2>
+            <p>
+              {{ card.disposition?.label ?? 'Disposition inconnue' }} ·
+              {{ card.unitCount }} unité{{ card.unitCount > 1 ? 's' : '' }} ·
+              {{ card.modelCount }} modèle{{ card.modelCount > 1 ? 's' : '' }}
+            </p>
+            <!-- EX_04: les déploiements sauvegardés se retrouvent en ouvrant
+                 la liste, pas sur un écran séparé. -->
+            <p class="deployments">
+              @if (card.deploymentCount) {
+                {{ card.deploymentCount }} déploiement{{ card.deploymentCount > 1 ? 's' : '' }}
+                sauvegardé{{ card.deploymentCount > 1 ? 's' : '' }}
+              } @else {
+                Aucun déploiement enregistré
+              }
+            </p>
+          </ion-label>
+
+          <!-- RG_21: menu contextuel par liste. -->
+          <ion-button
+            slot="end"
+            fill="clear"
+            aria-label="Actions sur la liste"
+            (click)="$event.stopPropagation(); openMenu(card)"
+          >
+            <ion-icon name="ellipsis-vertical" slot="icon-only"></ion-icon>
+          </ion-button>
+        </ion-item>
+      }
+    </ion-list>
+  }
 </ion-content>

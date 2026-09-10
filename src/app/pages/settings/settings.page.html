@@ -1,0 +1,154 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="back()" aria-label="Retour à mes listes">
+        <ion-icon name="arrow-back" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Réglages</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- RG_11: l'arbitrage d'un conflit est aussi accessible depuis cet écran. -->
+  @if (hasConflicts()) {
+    <app-conflict-resolution></app-conflict-resolution>
+  }
+
+  <!-- ===== Bloc 1 — Compte (RG_18, RG_10) ===== -->
+  <ion-list-header>Compte</ion-list-header>
+
+  @if (signedIn()) {
+    <ion-list lines="full">
+      <ion-item>
+        <ion-icon name="person-circle-outline" slot="start"></ion-icon>
+        <ion-label>
+          <p>Connecté en tant que</p>
+          <h2>{{ user()?.email }}</h2>
+        </ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-label>Synchronisation</ion-label>
+        <ion-note slot="end" [color]="syncStateColor()">{{ syncStateLabel() }}</ion-note>
+      </ion-item>
+      <ion-item lines="none">
+        <ion-buttons>
+          <!-- RT_10: relance non bloquante, désactivée hors-ligne (RG_09). -->
+          <ion-button fill="outline" size="small" [disabled]="!online()" (click)="syncNow()">
+            Synchroniser maintenant
+          </ion-button>
+          <!-- RG_19: déconnexion sans suppression des données locales. -->
+          <ion-button fill="clear" size="small" color="danger" [disabled]="busy()" (click)="logout()">
+            Se déconnecter
+          </ion-button>
+        </ion-buttons>
+      </ion-item>
+    </ion-list>
+  } @else {
+    <div class="account">
+      <!-- RG_10: l'application reste pleinement utilisable sans compte ; la
+           création n'est nécessaire que pour synchroniser un second appareil. -->
+      <ion-note class="local-only">
+        Vous utilisez l'application en local. Créez un compte uniquement si vous souhaitez
+        retrouver vos listes et déploiements sur un autre appareil.
+      </ion-note>
+
+      <ion-segment [value]="mode()" (ionChange)="setMode($any($event.detail.value))">
+        <ion-segment-button value="signIn">Se connecter</ion-segment-button>
+        <ion-segment-button value="signUp">Créer un compte</ion-segment-button>
+      </ion-segment>
+
+      <!-- RT_21/RT_14: actions désactivées hors-ligne, avec message explicite. -->
+      @if (!canAuthenticate()) {
+        <ion-note color="warning" class="offline">
+          <ion-icon name="cloud-offline-outline"></ion-icon>
+          Ces actions nécessitent une connexion réseau. Réessayez une fois reconnecté.
+        </ion-note>
+      }
+
+      <ion-item>
+        <ion-input
+          label="Email"
+          labelPlacement="stacked"
+          type="email"
+          autocomplete="email"
+          inputmode="email"
+          [disabled]="!canAuthenticate()"
+          [value]="email()"
+          (ionInput)="email.set($any($event.target).value)"
+        ></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          label="Mot de passe"
+          labelPlacement="stacked"
+          type="password"
+          autocomplete="current-password"
+          [disabled]="!canAuthenticate()"
+          [value]="password()"
+          (ionInput)="password.set($any($event.target).value)"
+        >
+          <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+        </ion-input>
+      </ion-item>
+      <ion-note class="hint">8 caractères minimum.</ion-note>
+
+      @if (error()) {
+        <ion-note color="danger" class="error">{{ error() }}</ion-note>
+      }
+
+      <ion-button expand="block" [disabled]="!canSubmit()" (click)="submit()">
+        @if (busy()) {
+          <ion-spinner name="dots"></ion-spinner>
+        } @else {
+          {{ mode() === 'signUp' ? 'Créer mon compte' : 'Me connecter' }}
+        }
+      </ion-button>
+    </div>
+  }
+
+  <!-- ===== Bloc 2 — Informations utilisateur (RG_19) ===== -->
+  <ion-list-header>Informations utilisateur</ion-list-header>
+  <ion-list lines="full">
+    <ion-item>
+      <ion-label>Identifiant du compte</ion-label>
+      <ion-note slot="end">{{ user()?.email ?? 'Aucun compte' }}</ion-note>
+    </ion-item>
+    <ion-item>
+      <ion-label>État de synchronisation</ion-label>
+      <ion-note slot="end" [color]="syncStateColor()">{{ syncStateLabel() }}</ion-note>
+    </ion-item>
+    <ion-item>
+      <ion-label>Connectivité</ion-label>
+      <ion-note slot="end">{{ online() ? 'En ligne' : 'Hors-ligne' }}</ion-note>
+    </ion-item>
+    @if (lastSyncedAt()) {
+      <ion-item lines="none">
+        <ion-label>Dernière synchronisation</ion-label>
+        <ion-note slot="end">{{ lastSyncedAt() }}</ion-note>
+      </ion-item>
+    }
+  </ion-list>
+
+  <!-- ===== Bloc 3 — Mentions des sources tierces (RG_18, RT_20) =====
+       Énumération des référentiels embarqués : chaque attribution vient de la
+       donnée générée elle-même, pas de ce gabarit. -->
+  <ion-list-header>Mentions des sources tierces</ion-list-header>
+  <ion-list lines="full" class="attributions">
+    @for (source of attributions(); track source.name) {
+      <ion-item>
+        <ion-label class="attribution">
+          <h2>{{ source.attribution }}</h2>
+          <p>{{ source.url }}</p>
+          @if (source.via) {
+            <p>via {{ source.via }}</p>
+          }
+        </ion-label>
+      </ion-item>
+    } @empty {
+      <ion-item lines="none">
+        <ion-label>Aucun référentiel tiers embarqué dans cette version.</ion-label>
+      </ion-item>
+    }
+  </ion-list>
+</ion-content>

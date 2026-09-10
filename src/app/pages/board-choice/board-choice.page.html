@@ -1,0 +1,112 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="back()" aria-label="Revenir au choix de la disposition adverse">
+        <ion-icon name="arrow-back" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Choix du plateau</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- Bandeau « VS » de la maquette : les 2 dispositions en jeu (RT_23). -->
+  <div class="versus">
+    <div class="side">
+      <app-disposition-icon [disposition]="playerDisposition()" [size]="30"></app-disposition-icon>
+      <span>{{ playerDisposition()?.label }}</span>
+      <small>vous</small>
+    </div>
+    <div class="vs">VS</div>
+    <div class="side">
+      <app-disposition-icon [disposition]="opponentDisposition()" [size]="30"></app-disposition-icon>
+      <span>{{ opponentDisposition()?.label }}</span>
+      <small>adversaire</small>
+    </div>
+  </div>
+
+  @if (slides().length === 0) {
+    <div class="loading"><ion-spinner></ion-spinner></div>
+  } @else {
+    <!-- RG_14: un unique bloc « Statut » et un unique jeu d'actions, en haut à
+         droite du layout, reflétant le seul plateau actuellement affiché. -->
+    <div class="status-bar">
+      <span class="status-label">Statut</span>
+      <div class="status-actions">
+        <span class="badge" [class]="'status-' + (activeSlide()?.status ?? 'missing')">
+          {{ statusLabel() }}
+        </span>
+
+        <!-- RG_14: « Nouveau » toujours disponible, y compris orange/vert. -->
+        <ion-button size="small" fill="solid" (click)="startNew()">Nouveau</ion-button>
+
+        <!-- RG_14: « Éditer » masqué au statut rouge, orange si non fini. -->
+        @if (canEdit()) {
+          <ion-button size="small" fill="solid" [color]="editColor()" (click)="edit()">
+            Éditer
+          </ion-button>
+        }
+
+        <!-- RG_14: « Consulter » seulement au statut vert. -->
+        @if (canConsult()) {
+          <ion-button size="small" fill="outline" (click)="openDeploymentView()">
+            Consulter
+          </ion-button>
+        }
+      </div>
+    </div>
+
+    <!-- Onglets numérotés du pager (maquette « Choix layout »). -->
+    <div class="tabs" role="tablist">
+      @for (slide of slides(); track slide.board.id; let i = $index) {
+        <button
+          type="button"
+          role="tab"
+          class="tab"
+          [class.active]="i === activeIndex()"
+          [class]="'tab status-dot-' + slide.status"
+          [attr.aria-selected]="i === activeIndex()"
+          (click)="goTo(i)"
+        >
+          {{ slide.board.index }}
+        </button>
+      }
+    </div>
+
+    <!-- RG_14: pager glissable horizontalement, un seul plateau visible. -->
+    <div #pager class="pager" (scroll)="onPagerScroll()">
+      @for (slide of slides(); track slide.board.id) {
+        <div class="slide">
+          <!-- RG_14: tap sur l'aperçu -> plein écran avec mesures, quel que
+               soit le statut, sans jamais montrer les placements. -->
+          <button
+            type="button"
+            class="preview"
+            [attr.aria-label]="'Afficher ' + boardLabel(slide.board) + ' en plein écran avec les mesures'"
+            (click)="openBoardOnly(slide)"
+          >
+            <img [src]="slide.board.assets['no-measurements']" [alt]="boardLabel(slide.board)" />
+            <span class="zoom-hint">
+              <ion-icon name="expand-outline"></ion-icon>
+              Plein écran avec mesures
+            </span>
+          </button>
+          <p class="caption">{{ boardLabel(slide.board) }}</p>
+        </div>
+      }
+    </div>
+  }
+</ion-content>
+
+<!-- RT_16: visualiseur plein écran partagé par les deux vues de RG_14. -->
+@if (viewer(); as current) {
+  <app-board-viewer
+    [board]="current.board"
+    [variant]="current.variant"
+    [title]="boardLabel(current.board)"
+    [placements]="viewerPlacements()"
+    [list]="list()"
+    [shapes]="shapes()"
+    (closed)="closeViewer()"
+  ></app-board-viewer>
+}

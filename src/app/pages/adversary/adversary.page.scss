@@ -1,0 +1,131 @@
+.intro {
+  padding: 16px 20px 0;
+  text-align: center;
+
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: var(--ion-color-medium);
+    font-size: 0.85rem;
+  }
+}
+
+.dial {
+  position: relative;
+  width: min(92vw, 420px);
+  aspect-ratio: 1;
+  margin: 16px auto 8px;
+}
+
+.center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 34%;
+  aspect-ratio: 1;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--ion-color-step-100, #e9eaee);
+  color: var(--ion-color-dark);
+  text-align: center;
+  padding: 6px;
+
+  span {
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.1;
+  }
+
+  small {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ion-color-medium);
+  }
+}
+
+.option {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 27%;
+  aspect-ratio: 1;
+  padding: 4px;
+  border: 2px solid var(--ion-color-step-250, #c8cad0);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--ion-color-dark);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+
+  span {
+    font-size: 0.62rem;
+    font-weight: 600;
+    line-height: 1.05;
+  }
+
+  &:active {
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+}
+
+/* RG_12: code couleur agrégé des déploiements enregistrés pour le couple
+   (liste, disposition adverse), sur les 3 plateaux associés. */
+.indicator-white {
+  background: #ffffff;
+}
+
+.indicator-yellow {
+  background: #ffe08a;
+  border-color: #e0a800;
+}
+
+.indicator-orange {
+  background: #ffb066;
+  border-color: #e06c00;
+}
+
+.indicator-green {
+  background: #9fdda6;
+  border-color: #2c8a3a;
+}
+
+.legend {
+  padding: 0 8px 24px;
+
+  ion-item {
+    --min-height: 34px;
+  }
+
+  ion-label {
+    font-size: 0.78rem;
+  }
+
+  .dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid var(--ion-color-step-300, #b8bac1);
+    margin-inline-end: 12px;
+  }
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+}

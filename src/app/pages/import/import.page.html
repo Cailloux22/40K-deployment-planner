@@ -1,0 +1,187 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="cancel()" aria-label="Annuler l'import">
+        <ion-icon name="arrow-back" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Importer une liste</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- RG_13/RT_14: hors-ligne, l'import n'est pas proposé et le message
+       invite à réessayer une fois reconnecté. -->
+  @if (!online()) {
+    <ion-card color="warning">
+      <ion-card-header>
+        <ion-card-title>Import indisponible hors-ligne</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        L'import d'une liste nécessite une connexion réseau. Réessayez une fois reconnecté — vos
+        listes déjà importées et vos déploiements sauvegardés restent utilisables sans réseau.
+      </ion-card-content>
+    </ion-card>
+  }
+
+  @if (!draft()) {
+    <div class="picker">
+      <ion-icon name="document-attach-outline"></ion-icon>
+      <h2>Choisissez votre fichier de liste</h2>
+      <p>
+        Formats acceptés :
+        @for (format of accept.split(','); track format) {
+          <span class="ext">{{ format }}</span>
+        }
+        — export de list-builder BattleScribe / NewRecruit.
+      </p>
+
+      <!-- RT_01: le format est déterminé par la couche de parsing, pas ici. -->
+      <input
+        #fileInput
+        class="file-input"
+        type="file"
+        [accept]="accept"
+        [disabled]="!online() || parsing()"
+        (change)="onFileSelected($event)"
+      />
+
+      @if (parsing()) {
+        <ion-note><ion-spinner name="dots"></ion-spinner> Lecture du fichier…</ion-note>
+      }
+    </div>
+  }
+
+  <!-- RG_01: rejet explicite, aucune liste partiellement interprétée. -->
+  @if (error()) {
+    <ion-card color="danger">
+      <ion-card-header>
+        <ion-card-title>Import refusé</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>{{ error() }}</ion-card-content>
+    </ion-card>
+  }
+
+  <!-- RG_22: récapitulatif avant enregistrement. -->
+  @if (draft(); as current) {
+    <div class="summary">
+      <ion-item>
+        <ion-input
+          label="Nom de la liste"
+          labelPlacement="stacked"
+          [value]="current.name"
+          (ionInput)="onNameChange($any($event.target).value)"
+          placeholder="Nom de la liste"
+        ></ion-input>
+      </ion-item>
+
+      <!-- RT_23: la disposition du joueur, extraite de l'import et fixée dès
+           maintenant (RG_02) — elle n'est plus redemandée par RG_03. -->
+      <ion-item lines="none" class="disposition">
+        <app-disposition-icon
+          slot="start"
+          [disposition]="current.forceDisposition"
+          [size]="34"
+        ></app-disposition-icon>
+        <ion-label>
+          <p>Disposition de force</p>
+          <h2>{{ current.forceDisposition.label }}</h2>
+        </ion-label>
+      </ion-item>
+
+      <div class="counts">
+        <div><strong>{{ current.units.length }}</strong><span>unités</span></div>
+        <div><strong>{{ totalModels() }}</strong><span>modèles</span></div>
+        <div [class.warn]="unresolvedCount() > 0">
+          <strong>{{ unresolvedCount() }}</strong><span>socles à assigner</span>
+        </div>
+      </div>
+
+      @if (unresolvedCount() > 0) {
+        <ion-note class="unresolved-note">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          Certaines unités n'ont pas été reconnues par le référentiel de socles. Assignez-leur un
+          socle ci-dessous pour pouvoir enregistrer la liste.
+        </ion-note>
+      }
+
+      <ion-list lines="full">
+        @for (row of rows(); track row.unit.id) {
+          <ion-item-group class="unit" [class.needs-attention]="row.unresolved > 0">
+            <ion-item-divider>
+              <ion-label>
+                <h2>{{ row.unit.name }}</h2>
+                <p>{{ row.unit.modelCount }} modèle{{ row.unit.modelCount > 1 ? 's' : '' }}</p>
+              </ion-label>
+              <!-- RG_06: couleur de l'unité, réassignable. -->
+              <ion-select
+                slot="end"
+                interface="popover"
+                aria-label="Couleur de l'unité"
+                [value]="row.unit.color"
+                (ionChange)="assignColor(row.unit, $any($event.detail.value))"
+              >
+                @for (color of colors; track color) {
+                  <ion-select-option [value]="color">{{ color }}</ion-select-option>
+                }
+              </ion-select>
+              <span class="swatch" slot="end" [style.background]="row.unit.color"></span>
+            </ion-item-divider>
+
+            <!-- RG_16/RG_22: socles regroupés par forme/taille avec compte. -->
+            @for (entry of row.groups; track entry.group.id) {
+              <ion-item>
+                <app-base-token
+                  slot="start"
+                  [shape]="entry.shape"
+                  [color]="row.unit.color"
+                  [pixelsPerMm]="0.55"
+                ></app-base-token>
+                <ion-label>
+                  <h3>{{ shapeLabel(entry.shape) }} × {{ entry.group.count }}</h3>
+                  <p>{{ entry.group.name }}</p>
+                  @if (!entry.group.baseShapeId && entry.group.unresolvedReason) {
+                    <p class="reason">{{ entry.group.unresolvedReason }}</p>
+                  }
+                </ion-label>
+
+                <!-- RG_02: assignation manuelle, sur cet écran même. -->
+                @if (!entry.group.baseShapeId) {
+                  <ion-select
+                    slot="end"
+                    label="Socle"
+                    labelPlacement="stacked"
+                    interface="alert"
+                    placeholder="Choisir"
+                    (ionChange)="assignShape(row.unit, entry.group, $any($event.detail.value))"
+                  >
+                    @for (shape of availableShapes(); track shape.id) {
+                      <ion-select-option [value]="shape.id">{{ shape.label }}</ion-select-option>
+                    }
+                  </ion-select>
+                }
+              </ion-item>
+            }
+          </ion-item-group>
+        }
+      </ion-list>
+    </div>
+  }
+</ion-content>
+
+<!-- RG_22: la liste n'est persistée qu'après validation explicite ; le joueur
+     peut aussi annuler, auquel cas rien n'est enregistré. -->
+@if (draft()) {
+  <ion-footer>
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-button fill="clear" (click)="cancel()">Annuler</ion-button>
+      </ion-buttons>
+      <ion-buttons slot="end">
+        <ion-button fill="solid" [disabled]="!canConfirm()" (click)="confirm()">
+          Enregistrer la liste
+        </ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-footer>
+}

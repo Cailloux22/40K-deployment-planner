@@ -1,0 +1,49 @@
+.account {
+  padding: 0 12px 16px;
+}
+
+.local-only {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+}
+
+.offline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--ion-color-warning-tint);
+  font-size: 0.8rem;
+}
+
+.hint {
+  display: block;
+  padding: 4px 4px 0;
+  font-size: 0.75rem;
+}
+
+.error {
+  display: block;
+  padding: 8px 4px 0;
+  font-size: 0.82rem;
+}
+
+ion-button[expand='block'] {
+  margin-top: 16px;
+}
+
+.attributions .attribution {
+  h2 {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  p {
+    font-size: 0.75rem;
+    color: var(--ion-color-medium);
+    word-break: break-all;
+  }
+}
