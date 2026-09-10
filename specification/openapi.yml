@@ -1,0 +1,530 @@
+openapi: 3.0.3
+
+# Contrat d'API du backend de synchronisation (RT_09).
+#
+# Portée : ce backend ne sert QUE ce que EX_05/EX_06 exigent comme dépendant
+# du réseau — compte utilisateur (EX_06) et synchronisation delta des listes
+# et déploiements (RT_09, RT_10, RG_11, RT_15). Le parsing d'import (RT_01),
+# le référentiel de socles (RT_02) et le référentiel de plateaux (RT_12) sont
+# des données/traitements embarqués côté client, générés hors-ligne au build :
+# ils ne sont volontairement PAS exposés ici (cf. RT_02/RT_12 : "jamais par
+# appel réseau à l'exécution de l'application").
+#
+# Le blocage de l'import hors-ligne (RG_13/RT_14) est un gate purement côté
+# client (détection de connectivité) : il ne correspond à aucune route ici.
+
+info:
+  title: 40K Deployment Planner — Sync API
+  description: >-
+    API de synchronisation par différence (delta) des listes d'armée et des
+    déploiements, et gestion du compte utilisateur optionnel (RG_10).
+  version: 0.1.0
+
+servers:
+  - url: /v1
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: auth
+    description: Compte utilisateur optionnel (RG_10, EX_06).
+  - name: sync
+    description: Synchronisation delta (RT_09), déclenchement (RT_10), conflits (RG_11, RT_15).
+
+paths:
+  # ---------------------------------------------------------------------
+  # RG_10 : le compte est optionnel — ces routes ne sont appelées que si le
+  # joueur choisit explicitement de synchroniser vers un second appareil.
+  # ---------------------------------------------------------------------
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Créer un compte (RG_10, EX_06)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '201':
+          description: Compte créé et session ouverte.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '409':
+          description: Un compte existe déjà pour cet email.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Authentifier un compte existant
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '200':
+          description: Session ouverte.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '401':
+          description: Identifiants invalides.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Renouveler un access token à partir du refresh token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Nouveau couple de tokens.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '401':
+          description: Refresh token invalide ou expiré.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Invalider la session courante
+      responses:
+        '204':
+          description: Session fermée.
+
+  /auth/me:
+    get:
+      tags: [auth]
+      summary: Profil du compte connecté
+      responses:
+        '200':
+          description: Profil courant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Non authentifié.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ---------------------------------------------------------------------
+  # RT_09 : API de synchronisation delta des enregistrements créés / modifiés
+  # / supprimés depuis le dernier jeton de version connu du client.
+  # RT_10 : déclenchée par le client à la reprise réseau et/ou au retour au
+  # premier plan — jamais bloquante (voir RG_09), donc toujours asynchrone
+  # du point de vue de l'UI qui l'appelle.
+  # EX_06 : couvre à la fois les listes importées et les déploiements, pour
+  # qu'un second appareil retrouve "ses listes et déploiements".
+  # ---------------------------------------------------------------------
+  /sync/changes:
+    get:
+      tags: [sync]
+      summary: Récupérer les changements serveur depuis un jeton de version (RT_09)
+      parameters:
+        - name: since
+          in: query
+          description: >-
+            Jeton de version renvoyé par la dernière synchronisation réussie.
+            Omis (ou vide) lors de la toute première synchronisation d'un
+            appareil, auquel cas le serveur renvoie l'intégralité des
+            enregistrements du compte.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Delta des enregistrements modifiés côté serveur depuis `since`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncPullResult'
+        '401':
+          description: Non authentifié.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags: [sync]
+      summary: Pousser les changements locaux depuis un jeton de version (RT_09)
+      description: >-
+        Le serveur applique chaque enregistrement dont le jeton de version
+        local (RT_15) correspond encore au jeton courant côté serveur.
+        Pour tout enregistrement où les jetons divergent, aucune écriture
+        n'est effectuée : l'enregistrement est renvoyé dans `conflicts`
+        (RG_11) plutôt qu'écrasé, sans bloquer l'acceptation des autres
+        enregistrements non conflictuels de la même requête.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncPushRequest'
+      responses:
+        '200':
+          description: Résultat de la synchronisation (accepté / en conflit).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncPushResult'
+        '401':
+          description: Non authentifié.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sync/conflicts/resolve:
+    post:
+      tags: [sync]
+      summary: Trancher explicitement un conflit de synchronisation (RG_11)
+      description: >-
+        Le joueur a comparé la version locale et la version serveur (avec
+        leurs horodatages respectifs) et choisi laquelle conserver ; ce choix
+        écrase l'autre version pour cet enregistrement précis uniquement.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConflictResolution'
+      responses:
+        '200':
+          description: Enregistrement résolu et nouveau jeton de version.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictResolutionResult'
+        '401':
+          description: Non authentifié.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: >-
+            L'enregistrement a de nouveau changé côté serveur entre la
+            détection du conflit et cette résolution ; le client doit
+            relancer /sync/changes avant de retenter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+
+    Credentials:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+
+    User:
+      type: object
+      required: [id, email]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+
+    AuthTokens:
+      type: object
+      required: [accessToken, refreshToken]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+
+    AuthSession:
+      allOf:
+        - $ref: '#/components/schemas/AuthTokens'
+        - type: object
+          required: [user]
+          properties:
+            user:
+              $ref: '#/components/schemas/User'
+
+    # RG_04/RT_04 : un placement = un modèle, jamais une unité entière.
+    # Champs identiques à RT_04 pour une traçabilité directe.
+    Placement:
+      type: object
+      required: [idUnite, idModele, x, y, rotation]
+      properties:
+        idUnite:
+          type: string
+        idModele:
+          type: string
+        x:
+          type: number
+        y:
+          type: number
+        rotation:
+          type: number
+          description: Degrés.
+
+    # RG_02/RT_13 : unité importée, résolue vers un socle via le référentiel
+    # RT_02 (le référentiel lui-même reste embarqué, non exposé par l'API).
+    ArmyUnit:
+      type: object
+      required: [id, name, modelCount]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        modelCount:
+          type: integer
+          minimum: 1
+        baseShapeId:
+          type: string
+          description: Référence dans le référentiel de socles embarqué (RT_02).
+          nullable: true
+        color:
+          type: string
+          description: Couleur assignée à l'unité (RG_06), format hex CSS.
+
+    # RG_01/RG_02/RT_07/RT_13 : liste d'armée importée. Sert d'ancre stable
+    # (`id`) pour la liaison déploiement -> liste (RT_07), synchronisée pour
+    # être retrouvée sur un second appareil (EX_06).
+    ArmyList:
+      type: object
+      required: [id, name, forceDispositionId, units, updatedAt, versionToken]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          description: Reprend `roster.name` à l'import (RT_13).
+        forceDispositionId:
+          type: string
+          description: Une des 5 dispositions de RG_03, fixée dès l'import (RG_02).
+        units:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArmyUnit'
+        updatedAt:
+          type: string
+          format: date-time
+        versionToken:
+          type: string
+          description: Jeton de version pour la détection de conflit (RT_15).
+
+    # RG_07/RT_04 : un déploiement sauvegardé — nom, liaison à la liste,
+    # plateau/disposition adverse retenus, et l'ensemble des placements.
+    Deployment:
+      type: object
+      required:
+        - id
+        - name
+        - listId
+        - opponentDispositionId
+        - boardId
+        - placements
+        - updatedAt
+        - versionToken
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        listId:
+          type: string
+          description: Identifiant stable de la liste (RT_07), pas son contenu.
+        opponentDispositionId:
+          type: string
+        boardId:
+          type: string
+        placements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Placement'
+        updatedAt:
+          type: string
+          format: date-time
+        versionToken:
+          type: string
+          description: Jeton de version pour la détection de conflit (RT_15).
+
+    SyncPullResult:
+      type: object
+      required: [lists, deployments, deletedListIds, deletedDeploymentIds, nextToken]
+      properties:
+        lists:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArmyList'
+        deployments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Deployment'
+        deletedListIds:
+          type: array
+          items:
+            type: string
+        deletedDeploymentIds:
+          type: array
+          items:
+            type: string
+        nextToken:
+          type: string
+          description: Jeton à conserver localement (RT_15) pour le prochain appel.
+
+    SyncPushRequest:
+      type: object
+      required: [since]
+      properties:
+        since:
+          type: string
+          description: Jeton de version local avant cette poussée (RT_15).
+        lists:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArmyList'
+        deployments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Deployment'
+        deletedListIds:
+          type: array
+          items:
+            type: string
+          description: RG_08 — suppressions confirmées explicitement par le joueur.
+        deletedDeploymentIds:
+          type: array
+          items:
+            type: string
+
+    # RG_11/RT_15 : un enregistrement en conflit n'est jamais écrasé
+    # automatiquement — la version serveur est renvoyée telle quelle pour
+    # être présentée au joueur à côté de la version locale qu'il a soumise.
+    Conflict:
+      type: object
+      required: [resourceType, id, serverRecord]
+      properties:
+        resourceType:
+          type: string
+          enum: [list, deployment]
+        id:
+          type: string
+        serverRecord:
+          description: Version serveur courante (ArmyList ou Deployment selon resourceType).
+          oneOf:
+            - $ref: '#/components/schemas/ArmyList'
+            - $ref: '#/components/schemas/Deployment'
+
+    SyncPushResult:
+      type: object
+      required: [acceptedListIds, acceptedDeploymentIds, conflicts, nextToken]
+      properties:
+        acceptedListIds:
+          type: array
+          items:
+            type: string
+        acceptedDeploymentIds:
+          type: array
+          items:
+            type: string
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Conflict'
+        nextToken:
+          type: string
+
+    ConflictResolution:
+      type: object
+      required: [resourceType, id, resolution]
+      properties:
+        resourceType:
+          type: string
+          enum: [list, deployment]
+        id:
+          type: string
+        resolution:
+          type: string
+          enum: [keepLocal, keepServer]
+          description: >-
+            keepLocal : la version locale soumise écrase la version serveur.
+            keepServer : la version locale est abandonnée au profit du serveur.
+        localRecord:
+          description: >-
+            Requis quand resolution = keepLocal. Version locale du joueur
+            (ArmyList ou Deployment selon resourceType) à faire prévaloir.
+          oneOf:
+            - $ref: '#/components/schemas/ArmyList'
+            - $ref: '#/components/schemas/Deployment'
+
+    ConflictResolutionResult:
+      type: object
+      required: [resourceType, id, record, versionToken]
+      properties:
+        resourceType:
+          type: string
+          enum: [list, deployment]
+        id:
+          type: string
+        record:
+          oneOf:
+            - $ref: '#/components/schemas/ArmyList'
+            - $ref: '#/components/schemas/Deployment'
+        versionToken:
+          type: string

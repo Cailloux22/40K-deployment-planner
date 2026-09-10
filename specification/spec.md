@@ -38,7 +38,7 @@ Le parsing des formats d'import est isolé dans une couche de service dédiée (
 
 Le référentiel unité → socle (forme, diamètre) est livré comme donnée statique versionnée avec l'application (voir [src/assets/shapes.svg](../src/assets/shapes.svg) pour les formes disponibles), rechargeable indépendamment du code pour suivre les mises à jour d'errata sans publication complète.
 
-Cette donnée statique est générée hors-ligne, au moment du build/de la mise à jour du référentiel (jamais par appel réseau à l'exécution de l'application, conformément à EX_05), par un script d'ingestion qui consomme l'export CSV public de Wahapedia (`Datasheets_models.csv`, colonnes `base_size` / `base_size_descr`, cf. [wahapedia.ru/wh40k11ed/the-rules/data-export](https://wahapedia.ru/wh40k11ed/the-rules/data-export)) et le transforme vers le format interne du référentiel. Cet export n'est pas une API garantie (pas de SLA, format/URL susceptibles de changer) : le script d'ingestion doit échouer explicitement plutôt que produire un référentiel partiel en cas d'anomalie de format, et toute utilisation publique de la donnée doit mentionner « Powered by Wahapedia » conformément aux conditions d'usage de l'export (voir [CLAUDE.md](../CLAUDE.md)).
+Cette donnée statique est générée hors-ligne, au moment du build/de la mise à jour du référentiel (jamais par appel réseau à l'exécution de l'application, conformément à EX_05), par un script d'ingestion qui consomme l'export CSV public de Wahapedia (`Datasheets_models.csv`, colonnes `base_size` / `base_size_descr`, cf. [wahapedia.ru/wh40k11ed/the-rules/data-export](https://wahapedia.ru/wh40k11ed/the-rules/data-export)) et le transforme vers le format interne du référentiel. Cet export n'est pas une API garantie (pas de SLA, format/URL susceptibles de changer) : le script d'ingestion doit échouer explicitement plutôt que produire un référentiel partiel en cas d'anomalie de format, et toute utilisation publique de la donnée doit mentionner « Powered by Wahapedia » conformément aux conditions d'usage de l'export (voir [CLAUDE.md](../CLAUDE.md)) — mention reprise par le bloc « Mentions des sources tierces » de l'écran Réglages ([[RG_18]], [[RT_20]]).
 
 ### RT_13 — Format d'import « roster JSON » (BattleScribe / NewRecruit)
 
@@ -152,7 +152,7 @@ Les indicateurs prévus par [[RG_12]] sont calculés en interrogeant la biblioth
 
 ### RT_12 — Référentiel des plateaux (Battlemaster / gdmissions.app)
 
-Le référentiel associant, pour chaque couple (disposition du joueur, disposition adverse), les images des 3 plateaux proposés à l'étape 2 de [[RG_03]] est généré hors-ligne, au moment du build/de la mise à jour du référentiel (jamais par appel réseau à l'exécution de l'application, conformément à [[EX_05]]), par un script d'ingestion qui consomme les images statiques publiées sur [gdmissions.app](https://gdmissions.app/11th/layouts) (`/assets/11th/layouts/{no-measurements|with-measurements}/{disposition}-vs-{adversaire}-{1|2|3}[-portrait].png`, ou `{disposition}-mirror-{1|2|3}.png` lorsque les deux dispositions sont identiques) et les transforme vers le format interne du référentiel. Ces données sont elles-mêmes sourcées par gdmissions.app auprès de Battlemaster (battlemaster.online) et non garanties par une API stable : le script d'ingestion doit échouer explicitement plutôt que produire un référentiel partiel en cas d'anomalie de format ou de changement de structure du site, et toute utilisation publique de ces plateaux doit créditer **Battlemaster** (battlemaster.online).
+Le référentiel associant, pour chaque couple (disposition du joueur, disposition adverse), les images des 3 plateaux proposés à l'étape 2 de [[RG_03]] est généré hors-ligne, au moment du build/de la mise à jour du référentiel (jamais par appel réseau à l'exécution de l'application, conformément à [[EX_05]]), par un script d'ingestion qui consomme les images statiques publiées sur [gdmissions.app](https://gdmissions.app/11th/layouts) (`/assets/11th/layouts/{no-measurements|with-measurements}/{disposition}-vs-{adversaire}-{1|2|3}[-portrait].png`, ou `{disposition}-mirror-{1|2|3}.png` lorsque les deux dispositions sont identiques) et les transforme vers le format interne du référentiel. Ces données sont elles-mêmes sourcées par gdmissions.app auprès de Battlemaster (battlemaster.online) et non garanties par une API stable : le script d'ingestion doit échouer explicitement plutôt que produire un référentiel partiel en cas d'anomalie de format ou de changement de structure du site, et toute utilisation publique de ces plateaux doit créditer **Battlemaster** (battlemaster.online) — mention reprise par le bloc « Mentions des sources tierces » de l'écran Réglages ([[RG_18]], [[RT_20]]).
 
 ---
 
@@ -244,7 +244,7 @@ Le zoom fixe prévu par [[RG_17]] se calcule par un simple ajustement « conteni
 
 Le joueur doit pouvoir associer un compte à ses données pour retrouver ses listes et déploiements sur un autre appareil (ex. bureau puis téléphone).
 
-Satisfait par : [[RG_10]], [[RG_11]], [[RT_09]], [[RT_10]].
+Satisfait par : [[RG_10]], [[RG_11]], [[RG_18]], [[RG_19]], [[RT_09]], [[RT_10]], [[RT_20]], [[RT_21]].
 
 ### RG_10 — Compte optionnel
 
@@ -254,6 +254,22 @@ L'utilisation de l'application sans compte reste possible et fonctionnelle (donn
 
 Lorsque le même déploiement a été modifié hors-ligne sur deux appareils avant resynchronisation, l'application ne doit jamais choisir automatiquement une version au détriment de l'autre. À la détection du conflit — typiquement au retour en ligne après une session hors-ligne, cf. [[EX_05]] — la synchronisation de cet enregistrement est mise en attente et l'application présente explicitement au joueur les deux versions (locale et serveur, avec leur horodatage respectif) ; le joueur choisit celle à conserver, ce choix écrasant l'autre version pour cet enregistrement. Les enregistrements non conflictuels continuent de se synchroniser normalement sans attendre cette décision.
 
+### RG_18 — Point d'accès compte et informations sur l'écran d'accueil (bouton Réglages)
+
+L'écran d'accueil — où le joueur retrouve l'ensemble des listes d'armée déjà importées ([[RG_01]]) — affiche un bouton « Réglages » (icône engrenage), toujours visible quel que soit le nombre de listes déjà importées. Ce bouton ouvre un écran (ou panneau) Réglages qui regroupe, sans quitter l'application, trois blocs distincts :
+
+1. **Compte**, dont le contenu dépend de l'état de connexion du joueur ([[RG_10]]) :
+   - non connecté : les actions « Créer un compte » et « Se connecter », menant aux formulaires de sign up / sign in ;
+   - connecté : les informations du compte prévues par [[RG_19]] et une action de déconnexion (retour à un usage local uniquement, sans suppression des données locales).
+2. **Informations utilisateur**, détaillées par [[RG_19]].
+3. **Mentions des sources tierces** : la liste des attributions requises par les référentiels générés hors-ligne dont l'application dépend — notamment [[RT_02]] (« Powered by Wahapedia ») et [[RT_12]] (Battlemaster) — conformément aux conditions d'usage de ces sources (voir [CLAUDE.md](../CLAUDE.md)).
+
+Le bloc « Mentions des sources tierces » et la consultation des informations déjà connues du bloc « Compte » restent accessibles hors-ligne ; seules les actions qui nécessitent le réseau (création de compte, connexion, synchronisation) sont soumises à la dégradation gracieuse prévue par [[RG_09]].
+
+### RG_19 — Informations utilisateur affichées
+
+Lorsque le joueur est connecté, le bloc « Compte » de l'écran Réglages ([[RG_18]]) affiche a minima l'identifiant du compte (adresse email) et l'état de synchronisation courant (synchronisé / en attente / hors-ligne, conformément à [[RG_09]]). Le joueur peut s'y déconnecter à tout moment ; la déconnexion ne supprime aucune donnée stockée localement ([[RT_08]]), qui reste utilisable en usage local seul ([[RG_10]]).
+
 ### RT_09 — Backend de synchronisation
 
 Un backend nodejs expose une API de synchronisation par différence (delta) des enregistrements créés/modifiés/supprimés depuis la dernière synchronisation réussie, identifiée par un jeton de version côté client.
@@ -261,6 +277,14 @@ Un backend nodejs expose une API de synchronisation par différence (delta) des 
 ### RT_10 — Déclenchement de la synchronisation
 
 La synchronisation se déclenche à la reprise du réseau et/ou au retour au premier plan de l'application, jamais de façon bloquante pour l'interaction en cours, conformément à RG_09.
+
+### RT_20 — Génération de la liste de mentions tierces
+
+La liste affichée par le bloc « Mentions des sources tierces » de [[RG_18]] n'est pas codée en dur dans l'écran Réglages : chaque référentiel généré hors-ligne ([[RT_02]], [[RT_12]]) embarque, au sein de sa donnée statique versionnée, le nom de la source et le texte d'attribution requis par ses conditions d'usage. L'écran Réglages se contente d'énumérer les référentiels effectivement embarqués dans le build courant et d'en afficher l'attribution associée, pour qu'un nouveau référentiel (donc une nouvelle source tierce) ajouté ultérieurement apparaisse automatiquement sans modification du code de l'écran.
+
+### RT_21 — Authentification (sign up / sign in)
+
+Les actions « Créer un compte » / « Se connecter » de [[RG_18]] s'appuient sur le même backend de synchronisation que [[RT_09]] (endpoints d'inscription/connexion). Le jeton de session obtenu est persisté localement au même titre que les autres données de configuration légères ([[RT_08]]), pour que la synchronisation ([[RT_10]]) démarre sans ressaisie dès la connexion établie. La détection de connectivité de [[RT_14]] est réutilisée pour désactiver ces deux actions — et afficher un message explicite — lorsque l'application est hors-ligne, sur le même principe que [[RG_13]] pour l'import.
 
 ---
 
