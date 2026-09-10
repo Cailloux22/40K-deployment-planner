@@ -37,7 +37,9 @@ export interface TokenSize {
 /**
  * RT_05/EX_03: dimensions du token respectant la forme et la taille réelle du
  * socle. Un socle rond donne un cercle, un ovale une ellipse dont le grand
- * axe est orienté par la rotation du placement (RG_20).
+ * axe est orienté par la rotation du placement (RG_20) ; un gabarit
+ * rectangulaire (RT_26) partage les mêmes dimensions, le rendu (cercle/ellipse
+ * ou rectangle) étant décidé par les composants d'affichage sur `shape.shape`.
  */
 export function tokenSize(shape: BaseShape, pixelsPerMm: number): TokenSize {
   return {

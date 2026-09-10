@@ -165,3 +165,100 @@ describe('ReferentialService.resolveBaseShapeId — homonymes (RG_02)', () => {
     expect(resolved.baseShapeId).toBe('round-40');
   });
 });
+
+/**
+ * RT_26: fixtures dédiées (plutôt que les assets réels, livrés vides tant
+ * qu'aucun gabarit n'a été vérifié) pour couvrir la priorité de résolution
+ * sans dépendre du contenu, encore incomplet, de `use-model-footprints.json`.
+ */
+describe('ReferentialService.resolveBaseShapeId — RT_26', () => {
+  let service: ReferentialService;
+
+  const baseReferential = {
+    source: { name: 'Test', attribution: '', url: '' },
+    generatedAt: '2026-09-10',
+    stats: {
+      datasheets: 2,
+      modelLines: 2,
+      resolvedModelLines: 0,
+      baseShapes: 0,
+      orphanModelLines: 0,
+      notedModelLines: 0,
+      variantModelLines: 0,
+      unparsedBaseNotes: [],
+      ambiguousNames: [],
+    },
+    baseShapes: [],
+    datasheets: [
+      {
+        name: 'Test Vehicle',
+        key: 'test vehicle',
+        models: [
+          { name: 'Test Vehicle', key: 'test vehicle', baseShapeId: null, rawBaseSize: 'Use model' },
+        ],
+      },
+      {
+        name: 'Uncovered Vehicle',
+        key: 'uncovered vehicle',
+        models: [
+          {
+            name: 'Uncovered Vehicle',
+            key: 'uncovered vehicle',
+            baseShapeId: null,
+            rawBaseSize: 'Use model',
+          },
+        ],
+      },
+    ],
+  };
+
+  const footprintReferential = {
+    generatedAt: '2026-09-10',
+    footprints: [
+      {
+        key: 'test vehicle::test vehicle',
+        shape: 'rectangle',
+        widthMm: 80,
+        lengthMm: 130,
+        sourceNote: 'Mesure de test',
+      },
+    ],
+  };
+
+  const fixtureHttp = {
+    get: (url: string) => {
+      if (url.endsWith('bases.json')) return of(baseReferential);
+      if (url.endsWith('use-model-footprints.json')) return of(footprintReferential);
+      throw new Error(`URL non gérée par ce test : ${url}`);
+    },
+  };
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: HttpClient, useValue: fixtureHttp },
+        { provide: BaseOverrideService, useClass: FakeBaseOverrideService },
+      ],
+    });
+    service = TestBed.inject(ReferentialService);
+  });
+
+  it('résout automatiquement un « Use model » couvert par un gabarit recherché', async () => {
+    const resolved = await service.resolveBaseShapeId('Test Vehicle', 'Test Vehicle');
+    expect(resolved.baseShapeId).toBe('use-model:test vehicle::test vehicle');
+
+    const shape = await service.baseShape(resolved.baseShapeId);
+    expect(shape).toMatchObject({ shape: 'rectangle', widthMm: 80, lengthMm: 130 });
+  });
+
+  it('expose le gabarit parmi les socles proposés pour une assignation manuelle', async () => {
+    const shapes = await service.allBaseShapes();
+    expect(shapes.some((s) => s.id === 'use-model:test vehicle::test vehicle')).toBe(true);
+  });
+
+  it('retombe sur l’assignation manuelle (RT_25) quand aucun gabarit ne couvre la ligne', async () => {
+    const resolved = await service.resolveBaseShapeId('Uncovered Vehicle', 'Uncovered Vehicle');
+    expect(resolved.baseShapeId).toBeNull();
+    expect(resolved.overrideKey).toBeTruthy();
+  });
+});

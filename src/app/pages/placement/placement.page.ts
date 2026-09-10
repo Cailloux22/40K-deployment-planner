@@ -21,7 +21,7 @@ import {
 } from '../../deployment/deployment-status';
 import { assetPixelsPerMm, clampToPlayArea, containFitScale, tokenSize } from '../../deployment/token-geometry';
 import { ArmyList, ArmyUnit, Deployment, Placement, UnitModelGroup } from '../../models/domain.models';
-import { BaseShape, Board, BoardReferential } from '../../models/referential.models';
+import { BaseShape, BaseShapeKind, Board, BoardReferential } from '../../models/referential.models';
 import { ReferentialService } from '../../referentials/referential.service';
 
 /** Un modèle individuel de l'unité courante, tel que listé par le bandeau. */
@@ -38,6 +38,8 @@ interface TokenView {
   readonly color: string;
   readonly rx: number;
   readonly ry: number;
+  /** RT_26: rectangle rendu comme tel plutôt qu'inscrit dans une ellipse. */
+  readonly shapeKind: BaseShapeKind;
   readonly selected: boolean;
 }
 
@@ -172,6 +174,7 @@ export class PlacementPage implements OnInit {
         color: unitColor.get(placement.idUnite) ?? '#888888',
         rx: size.width / 2,
         ry: size.height / 2,
+        shapeKind: shape.shape,
         selected: placement.idModele === selected,
       });
     }
@@ -234,7 +237,9 @@ export class PlacementPage implements OnInit {
       this.scale.set(
         containFitScale(
           { width: host.clientWidth, height: host.clientHeight },
-          { width: board.width, height: board.height },
+          // RT_19: le facteur se calcule sur le rectangle de jeu mesuré
+          // (`playArea`), pas sur l'image entière.
+          { width: board.playArea.width, height: board.playArea.height },
         ),
       );
     };
@@ -301,9 +306,16 @@ export class PlacementPage implements OnInit {
   private toAssetCoords(event: PointerEvent): { x: number; y: number } | null {
     const surface = this.boardSurface?.nativeElement;
     const scale = this.scale();
-    if (!surface || scale <= 0) return null;
+    const board = this.board();
+    if (!surface || scale <= 0 || !board) return null;
     const rect = surface.getBoundingClientRect();
-    return { x: (event.clientX - rect.left) / scale, y: (event.clientY - rect.top) / scale };
+    return {
+      // RT_19: la surface visible est rognée (bandeau de titre, marges
+      // latérales) — son origine correspond à (playArea.left, playArea.top)
+      // dans le repère de l'asset, pas à (0, 0).
+      x: (event.clientX - rect.left) / scale + board.playArea.left,
+      y: (event.clientY - rect.top) / scale + board.playArea.top,
+    };
   }
 
   /**

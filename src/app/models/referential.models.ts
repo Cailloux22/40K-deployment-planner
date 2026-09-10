@@ -19,7 +19,10 @@ export interface ReferentialSource {
 // RT_02 — référentiel unité -> socle
 // ---------------------------------------------------------------------------
 
-export type BaseShapeKind = 'round' | 'oval';
+// RT_26: le rectangle vient s'ajouter à round/oval — un gabarit recherché
+// pour un modèle « Use model » n'est le plus souvent pas un socle ovale mais
+// l'emprise rectangulaire d'une coque de véhicule.
+export type BaseShapeKind = 'round' | 'oval' | 'rectangle';
 
 /** RT_02/RT_05: forme et dimensions réelles d'un socle, en millimètres. */
 export interface BaseShape {
@@ -94,6 +97,39 @@ export interface BaseReferential {
   };
   readonly baseShapes: readonly BaseShape[];
   readonly datasheets: readonly ReferentialDatasheet[];
+}
+
+// ---------------------------------------------------------------------------
+// RT_26 — référentiel complémentaire des gabarits « Use model »
+// ---------------------------------------------------------------------------
+
+/**
+ * RT_26: gabarit recherché manuellement pour une ligne de [[RT_02]] dont
+ * `base_size` vaut `Use model` (aucun socle indépendant publié). Contrairement
+ * aux entrées de `bases.json`, la forme n'est pas présumée ovale : elle est
+ * établie au cas par cas (`round`, `oval` ou `rectangle`) à partir de ce que la
+ * recherche donne à voir de la silhouette réelle du modèle.
+ */
+export interface UseModelFootprint {
+  /** `<clé de la datasheet>::<clé de la ligne de modèle>`, comme RT_25. */
+  readonly key: string;
+  readonly shape: BaseShapeKind;
+  readonly widthMm: number;
+  readonly lengthMm: number;
+  /** D'où vient la mesure (page produit, contenu de boîte, mesure tierce...). */
+  readonly sourceNote: string;
+}
+
+/**
+ * Contrairement à [[BaseReferential]]/[[BoardReferential]], ce référentiel
+ * n'est pas généré par un script consommant un export structuré unique : il
+ * est constitué manuellement, entrée par entrée (RT_26), et ne porte donc pas
+ * de `ReferentialSource` unique à attribuer (RT_20) — chaque entrée cite sa
+ * propre source via `sourceNote`.
+ */
+export interface UseModelFootprintReferential {
+  readonly generatedAt: string;
+  readonly footprints: readonly UseModelFootprint[];
 }
 
 // ---------------------------------------------------------------------------

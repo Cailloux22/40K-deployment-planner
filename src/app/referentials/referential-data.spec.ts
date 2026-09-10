@@ -4,6 +4,7 @@ import {
   BaseReferential,
   BoardReferential,
   DispositionReferential,
+  UseModelFootprintReferential,
 } from '../models/referential.models';
 
 /**
@@ -122,6 +123,45 @@ describe('RT_02 — référentiel de socles', () => {
     for (const model of flagged) {
       expect(model.baseVariants).toBeUndefined();
       expect(model.baseSizeNote).toBeTruthy();
+    }
+  });
+});
+
+describe('RT_26 — référentiel complémentaire des gabarits « Use model »', () => {
+  const referential = load<UseModelFootprintReferential>('use-model-footprints.json');
+  const bases = load<BaseReferential>('bases.json');
+
+  it('n’a, à ce stade, aucune entrée non vérifiée — il grossit au fil des recherches', () => {
+    // RT_26: ne jamais introduire une dimension qui ne soit pas une mesure
+    // vérifiée et sourcée (`sourceNote`) — une entrée non fiable serait pire
+    // que l'assignation manuelle qu'elle est censée éviter.
+    expect(Array.isArray(referential.footprints)).toBe(true);
+  });
+
+  it('ne porte que des gabarits bien formés, chacun avec sa source', () => {
+    for (const footprint of referential.footprints) {
+      expect(['round', 'oval', 'rectangle']).toContain(footprint.shape);
+      expect(footprint.widthMm).toBeGreaterThan(0);
+      expect(footprint.lengthMm).toBeGreaterThan(0);
+      expect(footprint.sourceNote.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it('n’a pas deux entrées pour la même ligne de référentiel', () => {
+    const keys = referential.footprints.map((f) => f.key);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('ne couvre que des lignes « Use model » réellement sans socle publié (RT_02)', () => {
+    const useModelKeys = new Set(
+      bases.datasheets.flatMap((sheet) =>
+        sheet.models
+          .filter((m) => !m.baseShapeId && m.rawBaseSize?.trim().toLowerCase() === 'use model')
+          .map((m) => `${sheet.key}::${m.key}`),
+      ),
+    );
+    for (const footprint of referential.footprints) {
+      expect(useModelKeys.has(footprint.key)).toBe(true);
     }
   });
 });

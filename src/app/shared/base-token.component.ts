@@ -12,7 +12,8 @@ import { contrastingTextColor } from '../import/unit-colors';
  * d'import / le menu unités pour figurer une forme de socle.
  *
  * La forme respecte le socle réel : cercle pour un socle rond, ellipse pour un
- * ovale, avec son grand axe vertical avant rotation.
+ * ovale (grand axe vertical avant rotation), rectangle pour un gabarit
+ * rectangulaire (RT_26 — emprise d'une coque de véhicule, par exemple).
  */
 @Component({
   selector: 'app-base-token',
@@ -28,15 +29,30 @@ import { contrastingTextColor } from '../import/unit-colors';
       [attr.aria-label]="ariaLabel()"
     >
       <g [attr.transform]="'translate(' + box() / 2 + ',' + box() / 2 + ') rotate(' + rotation + ')'">
-        <ellipse
-          [attr.rx]="rx()"
-          [attr.ry]="ry()"
-          [attr.fill]="color"
-          [attr.fill-opacity]="placed ? 0.35 : 1"
-          [attr.stroke]="placed ? color : 'rgba(0, 0, 0, 0.55)'"
-          [attr.stroke-width]="placed ? 2 : 1"
-          [attr.stroke-dasharray]="placed ? '3 3' : null"
-        />
+        <!-- RT_26: gabarit rectangulaire, distinct du rond/ovale. -->
+        @if (isRectangle()) {
+          <rect
+            [attr.x]="-rx()"
+            [attr.y]="-ry()"
+            [attr.width]="rx() * 2"
+            [attr.height]="ry() * 2"
+            [attr.fill]="color"
+            [attr.fill-opacity]="placed ? 0.35 : 1"
+            [attr.stroke]="placed ? color : 'rgba(0, 0, 0, 0.55)'"
+            [attr.stroke-width]="placed ? 2 : 1"
+            [attr.stroke-dasharray]="placed ? '3 3' : null"
+          />
+        } @else {
+          <ellipse
+            [attr.rx]="rx()"
+            [attr.ry]="ry()"
+            [attr.fill]="color"
+            [attr.fill-opacity]="placed ? 0.35 : 1"
+            [attr.stroke]="placed ? color : 'rgba(0, 0, 0, 0.55)'"
+            [attr.stroke-width]="placed ? 2 : 1"
+            [attr.stroke-dasharray]="placed ? '3 3' : null"
+          />
+        }
         @if (label) {
           <text
             class="label"
@@ -96,6 +112,7 @@ export class BaseTokenComponent {
 
   readonly rx = computed(() => ((this.currentShape()?.widthMm ?? 25) * this.pixelsPerMm) / 2);
   readonly ry = computed(() => ((this.currentShape()?.lengthMm ?? 25) * this.pixelsPerMm) / 2);
+  readonly isRectangle = computed(() => this.currentShape()?.shape === 'rectangle');
 
   /** Le viewBox est carré pour que la rotation ne rogne jamais le token. */
   readonly box = computed(() => 2 * Math.max(this.rx(), this.ry()) + 4);

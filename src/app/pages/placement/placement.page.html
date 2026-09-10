@@ -27,26 +27,40 @@
   <div class="layout">
     <!-- RG_17/RT_19: le plateau occupe tout l'espace restant, à un zoom fixe
          calculé par ajustement « contenir ». Aucun geste de zoom/pan n'est
-         branché ici, et les gestes natifs sont neutralisés en CSS. -->
+         branché ici, et les gestes natifs sont neutralisés en CSS.
+         RT_19: l'affichage est rogné au rectangle de jeu mesuré (`playArea`)
+         — bandeau de titre, pied de légende et marges latérales exclus. -->
     <div #boardArea class="board-area">
       @if (board(); as current) {
         <div
           #boardSurface
           class="board-surface"
-          [style.width.px]="current.width * scale()"
-          [style.height.px]="current.height * scale()"
+          [style.width.px]="current.playArea.width * scale()"
+          [style.height.px]="current.playArea.height * scale()"
         >
           <img
             class="board-image"
             [src]="current.assets['no-measurements']"
             alt="Plateau de déploiement"
             draggable="false"
+            [style.width.px]="current.width * scale()"
+            [style.height.px]="current.height * scale()"
+            [style.left.px]="-(current.playArea.left * scale())"
+            [style.top.px]="-(current.playArea.top * scale())"
           />
 
-          <!-- RT_03: tokens rendus en SVG, dans le repère de l'asset. -->
+          <!-- RT_03/RT_19: tokens rendus en SVG ; le viewBox démarre à
+               (playArea.left, playArea.top) pour rester aligné avec le
+               rognage, sans changer le repère de coordonnées des placements
+               (RT_04). -->
           <svg
             class="tokens"
-            [attr.viewBox]="'0 0 ' + current.width + ' ' + current.height"
+            [attr.viewBox]="
+              current.playArea.left +
+              ' ' + current.playArea.top +
+              ' ' + current.playArea.width +
+              ' ' + current.playArea.height
+            "
             (pointerdown)="selectedPlacementId.set(null)"
           >
             @for (token of tokens(); track token.placement.idModele) {
@@ -61,14 +75,28 @@
                   ')'
                 "
               >
-                <ellipse
-                  class="token"
-                  [class.selected]="token.selected"
-                  [attr.rx]="token.rx"
-                  [attr.ry]="token.ry"
-                  [attr.fill]="token.color"
-                  (pointerdown)="onTokenPointerDown($event, token)"
-                />
+                <!-- RT_26: un gabarit rectangulaire se rend comme tel. -->
+                @if (token.shapeKind === 'rectangle') {
+                  <rect
+                    class="token"
+                    [class.selected]="token.selected"
+                    [attr.x]="-token.rx"
+                    [attr.y]="-token.ry"
+                    [attr.width]="token.rx * 2"
+                    [attr.height]="token.ry * 2"
+                    [attr.fill]="token.color"
+                    (pointerdown)="onTokenPointerDown($event, token)"
+                  />
+                } @else {
+                  <ellipse
+                    class="token"
+                    [class.selected]="token.selected"
+                    [attr.rx]="token.rx"
+                    [attr.ry]="token.ry"
+                    [attr.fill]="token.color"
+                    (pointerdown)="onTokenPointerDown($event, token)"
+                  />
+                }
 
                 <!-- RG_20/RT_22: poignée de rotation du token sélectionné,
                      superposée au rendu SVG et indépendante de x/y. -->

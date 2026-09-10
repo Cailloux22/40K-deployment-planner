@@ -23,7 +23,15 @@ export const STORE_TOMBSTONES = 'tombstones';
 export const STORE_BASE_OVERRIDES = 'baseOverrides';
 
 const DB_NAME = '40k-deployment-planner';
-const DB_VERSION = 2;
+// RT_25: bump obligatoire à chaque ajout de store — `onupgradeneeded` ne
+// s'exécute que si la version demandée dépasse celle déjà stockée par le
+// navigateur ; une base existante resterait sinon privée du nouveau store
+// (`baseOverrides`), et toute transaction qui le cible échouerait.
+// RT_25: bump obligatoire à chaque ajout de store — `onupgradeneeded` ne
+// s'exécute que si la version demandée dépasse celle déjà stockée par le
+// navigateur ; une base existante resterait sinon privée du nouveau store
+// (`baseOverrides`), et toute transaction qui le cible échouerait.
+const DB_VERSION = 3;
 const CONFIG_PREFIX = '40kdp.';
 
 export interface Tombstone {

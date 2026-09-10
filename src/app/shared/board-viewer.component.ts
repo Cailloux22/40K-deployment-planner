@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 
 import { ArmyList, Placement } from '../models/domain.models';
-import { BaseShape, Board, BoardVariant } from '../models/referential.models';
+import { BaseShape, BaseShapeKind, Board, BoardVariant } from '../models/referential.models';
 import { tokenSize } from '../deployment/token-geometry';
 
 interface PlacementView {
@@ -19,6 +19,8 @@ interface PlacementView {
   readonly color: string;
   readonly rx: number;
   readonly ry: number;
+  /** RT_26: rectangle rendu comme tel plutôt qu'inscrit dans une ellipse. */
+  readonly shapeKind: BaseShapeKind;
 }
 
 /**
@@ -89,25 +91,48 @@ interface PlacementView {
                 aria-hidden="true"
               >
                 @for (view of placementViews(); track view.placement.idModele) {
-                  <ellipse
-                    [attr.cx]="view.placement.x"
-                    [attr.cy]="view.placement.y"
-                    [attr.rx]="view.rx"
-                    [attr.ry]="view.ry"
-                    [attr.fill]="view.color"
-                    fill-opacity="0.85"
-                    stroke="rgba(0, 0, 0, 0.6)"
-                    stroke-width="2"
-                    [attr.transform]="
-                      'rotate(' +
-                      view.placement.rotation +
-                      ' ' +
-                      view.placement.x +
-                      ' ' +
-                      view.placement.y +
-                      ')'
-                    "
-                  />
+                  <!-- RT_26: un gabarit rectangulaire se rend comme tel. -->
+                  @if (view.shapeKind === 'rectangle') {
+                    <rect
+                      [attr.x]="view.placement.x - view.rx"
+                      [attr.y]="view.placement.y - view.ry"
+                      [attr.width]="view.rx * 2"
+                      [attr.height]="view.ry * 2"
+                      [attr.fill]="view.color"
+                      fill-opacity="0.85"
+                      stroke="rgba(0, 0, 0, 0.6)"
+                      stroke-width="2"
+                      [attr.transform]="
+                        'rotate(' +
+                        view.placement.rotation +
+                        ' ' +
+                        view.placement.x +
+                        ' ' +
+                        view.placement.y +
+                        ')'
+                      "
+                    />
+                  } @else {
+                    <ellipse
+                      [attr.cx]="view.placement.x"
+                      [attr.cy]="view.placement.y"
+                      [attr.rx]="view.rx"
+                      [attr.ry]="view.ry"
+                      [attr.fill]="view.color"
+                      fill-opacity="0.85"
+                      stroke="rgba(0, 0, 0, 0.6)"
+                      stroke-width="2"
+                      [attr.transform]="
+                        'rotate(' +
+                        view.placement.rotation +
+                        ' ' +
+                        view.placement.x +
+                        ' ' +
+                        view.placement.y +
+                        ')'
+                      "
+                    />
+                  }
                 }
               </svg>
             }
@@ -247,6 +272,7 @@ export class BoardViewerComponent {
         color: unitColor.get(placement.idUnite) ?? '#888888',
         rx: size.width / 2,
         ry: size.height / 2,
+        shapeKind: shape.shape,
       });
     }
     return views;

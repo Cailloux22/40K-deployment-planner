@@ -11,6 +11,7 @@ import {
   DispositionReferential,
   ForceDisposition,
   ReferentialSource,
+  UseModelFootprintReferential,
 } from '../models/referential.models';
 import { BaseOverrideService } from './base-override.service';
 import {
@@ -35,6 +36,7 @@ export class ReferentialService {
   private readonly overrides = inject(BaseOverrideService);
 
   private bases?: Promise<BaseReferential>;
+  private footprints?: Promise<UseModelFootprintReferential>;
   private boards?: Promise<BoardReferential>;
   private dispositions?: Promise<DispositionReferential>;
 
@@ -44,6 +46,11 @@ export class ReferentialService {
 
   baseReferential(): Promise<BaseReferential> {
     return (this.bases ??= this.load<BaseReferential>('bases.json'));
+  }
+
+  /** RT_26: référentiel complémentaire des gabarits « Use model ». */
+  footprintReferential(): Promise<UseModelFootprintReferential> {
+    return (this.footprints ??= this.load<UseModelFootprintReferential>('use-model-footprints.json'));
   }
 
   boardReferential(): Promise<BoardReferential> {
@@ -81,15 +88,42 @@ export class ReferentialService {
   // RT_02 — socles
   // -------------------------------------------------------------------------
 
+  /** RT_26: identifiant synthétique d'un socle dérivé d'un gabarit recherché. */
+  private static footprintShapeId(key: string): string {
+    return `use-model:${key}`;
+  }
+
+  /**
+   * RT_26: les socles de [[RT_02]] (`bases.json`, non modifié) complétés par
+   * les gabarits recherchés manuellement, exposés comme des `BaseShape`
+   * synthétiques pour que le reste de l'application (rendu des tokens,
+   * assignation manuelle) n'ait pas à distinguer les deux origines.
+   */
+  private async mergedBaseShapes(): Promise<readonly BaseShape[]> {
+    const [{ baseShapes }, { footprints }] = await Promise.all([
+      this.baseReferential(),
+      this.footprintReferential(),
+    ]);
+    const fromFootprints: BaseShape[] = footprints.map((footprint) => ({
+      id: ReferentialService.footprintShapeId(footprint.key),
+      shape: footprint.shape,
+      widthMm: footprint.widthMm,
+      lengthMm: footprint.lengthMm,
+      flying: false,
+      label: `${footprint.widthMm} x ${footprint.lengthMm}mm (${footprint.sourceNote})`,
+    }));
+    return [...baseShapes, ...fromFootprints];
+  }
+
   async baseShape(id: string | null): Promise<BaseShape | undefined> {
     if (!id) return undefined;
-    return (await this.baseReferential()).baseShapes.find((s) => s.id === id);
+    return (await this.mergedBaseShapes()).find((s) => s.id === id);
   }
 
   /** Socles proposés au joueur pour une assignation manuelle (RG_02). */
   async allBaseShapes(): Promise<readonly BaseShape[]> {
-    const referential = await this.baseReferential();
-    return [...referential.baseShapes].sort(
+    const shapes = await this.mergedBaseShapes();
+    return [...shapes].sort(
       (a, b) => a.shape.localeCompare(b.shape) || a.lengthMm - b.lengthMm || a.widthMm - b.widthMm,
     );
   }
@@ -147,9 +181,20 @@ export class ReferentialService {
     }
 
     if (!line.baseShapeId) {
-      // RT_25: aucune source externe ne publie ce socle (« Use model ») —
-      // seule une assignation manuelle déjà mémorisée pour cette ligne peut
-      // l'appliquer silencieusement.
+      // RT_26: pour un « Use model » précisément, un gabarit recherché
+      // manuellement peut résoudre le profil sans solliciter le joueur —
+      // consulté avant le mécanisme de mémorisation de RT_25.
+      if (line.rawBaseSize?.trim().toLowerCase() === 'use model') {
+        const footprint = (await this.footprintReferential()).footprints.find(
+          (f) => f.key === overrideKey,
+        );
+        if (footprint) {
+          return { baseShapeId: ReferentialService.footprintShapeId(footprint.key), overrideKey };
+        }
+      }
+
+      // RT_25: à défaut de gabarit RT_26, seule une assignation manuelle déjà
+      // mémorisée pour cette ligne peut l'appliquer silencieusement.
       const remembered = await this.overrides.get(overrideKey);
       if (remembered) return { baseShapeId: remembered, overrideKey };
       return {
