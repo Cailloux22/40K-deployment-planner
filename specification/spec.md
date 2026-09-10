@@ -104,7 +104,7 @@ Un déploiement sauvegardé est considéré **terminé** lorsque toutes les unit
 
 - **« Nouveau »** : toujours disponible, y compris quand un déploiement existe déjà (orange ou vert). Écrase le déploiement existant du triplet (remise à zéro des placements) et ouvre l'écran de placement ([[RG_03]] étape 3) vide. Une action destructrice de ce type est confirmée explicitement par le joueur avant d'écraser quoi que ce soit, sur le même principe que [[RG_08]]. L'identifiant du déploiement du triplet ([[RT_07]]) est conservé (mise à jour en place, cf. [[RG_07]]) ; une sauvegarde distincte n'est créée que si le joueur choisit ensuite explicitement d'enregistrer sous un nouveau nom.
 - **« Éditer »** : disponible uniquement quand un déploiement existe déjà pour ce triplet (statut orange ou vert) ; masqué/désactivé au statut rouge. Ouvre l'écran de placement préchargé avec les placements existants. Ce bouton est affiché en **orange** lorsque le déploiement existant est non fini, pour renforcer le signal donné par le statut du plateau.
-- **« Consulter »** : disponible uniquement quand un déploiement existe déjà pour ce triplet (statut orange ou vert) ; masqué/désactivé au statut rouge. Affiche en plein écran, zoomable, le plateau avec les placements du joueur superposés, en lecture seule (aucune édition possible), en utilisant cette fois la variante du plateau **sans** repères de mesure (« no-measurements » de [[RT_12]]).
+- **« Consulter »** : disponible uniquement quand le déploiement de ce triplet est **terminé** (statut vert) ; masqué/désactivé aux statuts rouge et orange — un déploiement encore en cours de remplissage se reprend via « Éditer », pas via cette vue en lecture seule. Affiche en plein écran, zoomable, le plateau avec les placements du joueur superposés, en lecture seule (aucune édition possible), en utilisant cette fois la variante du plateau **sans** repères de mesure (« no-measurements » de [[RT_12]]).
 
 ### RG_04 — Un token = un modèle
 
@@ -192,11 +192,11 @@ La taille d'un token à l'écran est calculée au pixel près à partir du diam�
 
 ## EX_04 — Déploiements sauvegardés, liés à la liste d'armée d'origine
 
-Le joueur doit pouvoir sauvegarder un déploiement rempli, le retrouver plus tard, et le relier à la liste d'armée dont il provient.
+Le joueur doit pouvoir sauvegarder un déploiement aussi bien **rempli** qu'**en cours de remplissage** : la sauvegarde n'est pas une action ponctuelle déclenchée uniquement en fin de saisie, elle reflète en continu l'état courant du placement au fil de la saisie ([[RG_07]]). Ce déploiement est automatiquement lié à la liste d'armée qu'il utilise pour le remplir ([[RT_07]]), sans étape de liaison manuelle.
 
 Satisfait par : [[RG_07]], [[RG_08]], [[RG_21]], [[RT_06]], [[RT_07]].
 
-Les déploiements sauvegardés ne sont pas présentés sur un écran séparé : ils sont intégrés à l'écran d'accueil — la bibliothèque des listes importées, [[RG_18]] — où chaque liste d'armée importée donne un accès direct à ses propres déploiements sauvegardés (ouverture, consultation, suppression — [[RG_08]]) sans navigation dédiée supplémentaire.
+Les déploiements sauvegardés ne sont pas présentés sur un écran séparé : le joueur les retrouve en cliquant sur sa liste depuis la bibliothèque des listes importées de l'écran d'accueil ([[RG_18]]), puis en suivant le même cheminement que pour un nouveau déploiement ([[RG_03]]) : choix de la disposition adverse (étape 1, indicateur [[RG_12]]) → choix du plateau parmi les 3 layouts proposés (étape 2) → bouton **« Consulter »**, qui n'apparaît que lorsque le statut du plateau est **vert**, c'est-à-dire le déploiement terminé ([[RG_14]]) — ou bouton **« Éditer »**, déjà visible au statut orange, pour reprendre un déploiement encore en cours de remplissage.
 
 ### RG_07 — Sauvegarde nommée
 
