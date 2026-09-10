@@ -20,7 +20,7 @@ Chaque exigence renvoie aux règles de gestion et/ou techniques qui la satisfont
 
 Le joueur doit pouvoir importer sa liste d'armée dans l'application pour que celle-ci connaisse les unités à déployer (nombre de modèles, forme et taille de socle par unité).
 
-Satisfait par : [[RG_01]], [[RG_02]], [[RT_01]], [[RT_02]], [[RT_13]].
+Satisfait par : [[RG_01]], [[RG_02]], [[RG_13]], [[RT_01]], [[RT_02]], [[RT_13]].
 
 ### RG_01 — Formats d'import acceptés
 
@@ -155,17 +155,29 @@ La liaison entre un déploiement et sa liste d'armée d'origine utilise un ident
 
 ## EX_05 — Fonctionnement hors-ligne
 
-L'application doit rester pleinement utilisable sans connexion réseau : import, planification et consultation de la bibliothèque ne dépendent pas d'un accès serveur.
+L'application doit rester pleinement utilisable sans connexion réseau pour la planification et la consultation de la bibliothèque, qui ne dépendent pas d'un accès serveur. L'import d'une nouvelle liste fait exception à ce principe (voir [[RG_13]]). Lorsque l'application ressort du mode hors-ligne, une éventuelle divergence entre les données locales et celles du serveur doit être arbitrée par le joueur, jamais résolue silencieusement (voir [[RG_11]]).
 
-Satisfait par : [[RG_09]], [[RT_08]].
+Satisfait par : [[RG_09]], [[RG_11]], [[RG_13]], [[RT_08]], [[RT_14]], [[RT_15]].
 
 ### RG_09 — Dégradation gracieuse du réseau
 
 Toute fonctionnalité qui nécessite le réseau (synchronisation de compte notamment) échoue silencieusement en arrière-plan sans bloquer ni interrompre le travail en cours du joueur ; l'état "non synchronisé" reste visible mais non bloquant.
 
+### RG_13 — Import de liste indisponible hors-ligne
+
+L'import d'une nouvelle liste d'armée ([[RG_01]]) n'est pas proposé hors-ligne : contrairement aux autres fonctionnalités couvertes par [[EX_05]] (planification, bibliothèque), qui restent pleinement utilisables sans réseau, l'import est une restriction fonctionnelle volontaire. Si le joueur tente de lancer un import alors que l'application est hors-ligne, l'import est bloqué avant toute tentative de parsing et un message explicite informe le joueur que cette action nécessite une connexion réseau, en l'invitant à réessayer une fois reconnecté. Les listes déjà importées restent consultables et utilisables hors-ligne sans restriction.
+
 ### RT_08 — Stockage local
 
 Les données de l'application (listes importées, référentiel de socles, bibliothèque de déploiements) sont persistées via le stockage local du terminal (IndexedDB en environnement web ; `@capacitor/preferences` ou équivalent pour les données de configuration légères sur mobile natif), lu/écrit systématiquement avant toute tentative de synchronisation réseau.
+
+### RT_14 — Détection de connectivité pour le blocage de l'import
+
+L'état de connectivité réseau est surveillé côté client (`@capacitor/network` sur mobile natif ; évènements `online`/`offline` du navigateur en environnement web) pour piloter le point d'entrée d'import : celui-ci est désactivé (ou son déclenchement intercepté) et le message prévu par [[RG_13]] est affiché tant que l'application est détectée hors-ligne, sans attendre l'échec d'un appel réseau.
+
+### RT_15 — Détection de conflit à la resynchronisation
+
+Chaque enregistrement synchronisable (déploiement, cf. [[RT_04]]/[[RT_07]]) conserve localement le jeton de version ([[RT_09]]) reçu lors de sa dernière synchronisation réussie. Au retour en ligne ([[RT_10]]), pour tout enregistrement modifié localement depuis ce jeton, le client compare son jeton local au jeton courant renvoyé par le serveur pour ce même enregistrement : s'ils divergent, un conflit est déclaré et l'interface de choix prévue par [[RG_11]] est présentée pour cet enregistrement précis, sans bloquer la synchronisation des autres enregistrements non conflictuels.
 
 ---
 
@@ -181,7 +193,7 @@ L'utilisation de l'application sans compte reste possible et fonctionnelle (donn
 
 ### RG_11 — Résolution de conflit
 
-Lorsque le même déploiement a été modifié hors-ligne sur deux appareils avant resynchronisation, l'application ne doit jamais faire disparaître silencieusement une des deux versions : la version la plus récente est retenue par défaut, l'autre reste accessible pour récupération manuelle par le joueur.
+Lorsque le même déploiement a été modifié hors-ligne sur deux appareils avant resynchronisation, l'application ne doit jamais choisir automatiquement une version au détriment de l'autre. À la détection du conflit — typiquement au retour en ligne après une session hors-ligne, cf. [[EX_05]] — la synchronisation de cet enregistrement est mise en attente et l'application présente explicitement au joueur les deux versions (locale et serveur, avec leur horodatage respectif) ; le joueur choisit celle à conserver, ce choix écrasant l'autre version pour cet enregistrement. Les enregistrements non conflictuels continuent de se synchroniser normalement sans attendre cette décision.
 
 ### RT_09 — Backend de synchronisation
 
