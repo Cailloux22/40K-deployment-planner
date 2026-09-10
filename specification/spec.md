@@ -57,7 +57,7 @@ Le reste de l'arborescence (`rules`, `profiles`, `categories`, coûts en points,
 
 Le joueur doit pouvoir positionner ses unités sur une représentation du plateau de jeu, en tenant compte de la disposition de force qu'il a choisie pour la partie.
 
-Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]].
+Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]].
 
 ### RG_03 — Parcours de sélection : liste → disposition adverse → plateau → placement
 
@@ -82,7 +82,23 @@ Le parcours décrit en [[RG_03]] affiche, à deux étapes, un indicateur de l'av
 
 Un déploiement sauvegardé est considéré **terminé** lorsque toutes les unités de la liste ont tous leurs modèles placés (aucune unité restant "en attente de déploiement" au sens de [[RG_05]]) ; dans le cas contraire, il est considéré **commencé mais non terminé**. L'ordre de priorité pour déterminer la couleur est : Orange > Vert > Jaune > Blanc.
 
-**Étape 2 — choix du plateau.** Une fois la disposition adverse retenue, l'application indique, pour chacun des 3 plateaux proposés, si le joueur possède déjà au moins un déploiement sauvegardé pour la combinaison liste + disposition adverse + ce plateau (indicateur booléen ou compteur ; pas de code couleur imposé à ce niveau).
+**Étape 2 — choix du plateau.** Une fois la disposition adverse retenue, l'application indique, pour chacun des 3 plateaux proposés, un statut individuel détaillé (code couleur à 3 états, distinct de celui de l'étape 1) ainsi que les actions de consultation/édition disponibles pour ce plateau — voir [[RG_14]].
+
+### RG_14 — Statut individuel, consultation et actions par plateau (étape 2)
+
+À l'étape 2 de [[RG_03]] (choix du plateau, une fois la disposition adverse retenue), chacun des 3 plateaux proposés affiche, en plus de son image, un **statut individuel** et jusqu'à trois actions contextuelles. Contrairement à l'indicateur agrégé de l'étape 1 ([[RG_12]]), ce statut porte sur le déploiement du triplet précis (liste, disposition adverse, ce plateau) :
+
+- **Rouge** : déploiement manquant — aucun placement enregistré pour ce triplet.
+- **Orange** : déploiement non fini — au moins un placement enregistré, mais toutes les unités de la liste n'ont pas tous leurs modèles placés (au sens de [[RG_05]]).
+- **Vert** : déploiement fait — toutes les unités de la liste ont tous leurs modèles placés.
+
+**Consultation du plateau seul, avec mesures.** Indépendamment du statut (y compris rouge), le joueur peut cliquer sur l'aperçu de chaque plateau pour l'afficher en plein écran avec les repères de mesure superposés (variante « with-measurements » de [[RT_12]]), avec possibilité de zoomer/dézoomer ; cette vue ne montre jamais les placements du joueur, seulement le plateau vierge, et sert à étudier le layout avant de s'engager sur un déploiement.
+
+**Actions contextuelles, selon le statut :**
+
+- **« Nouveau »** : toujours disponible, y compris quand un déploiement existe déjà (orange ou vert). Écrase le déploiement existant du triplet (remise à zéro des placements) et ouvre l'écran de placement ([[RG_03]] étape 3) vide. Une action destructrice de ce type est confirmée explicitement par le joueur avant d'écraser quoi que ce soit, sur le même principe que [[RG_08]]. L'identifiant du déploiement du triplet ([[RT_07]]) est conservé (mise à jour en place, cf. [[RG_07]]) ; une sauvegarde distincte n'est créée que si le joueur choisit ensuite explicitement d'enregistrer sous un nouveau nom.
+- **« Éditer »** : disponible uniquement quand un déploiement existe déjà pour ce triplet (statut orange ou vert) ; masqué/désactivé au statut rouge. Ouvre l'écran de placement préchargé avec les placements existants. Ce bouton est affiché en **orange** lorsque le déploiement existant est non fini, pour renforcer le signal donné par le statut du plateau.
+- **« Consulter »** : disponible uniquement quand un déploiement existe déjà pour ce triplet (statut orange ou vert) ; masqué/désactivé au statut rouge. Affiche en plein écran, zoomable, le plateau avec les placements du joueur superposés, en lecture seule (aucune édition possible), en utilisant cette fois la variante du plateau **sans** repères de mesure (« no-measurements » de [[RT_12]]).
 
 ### RG_04 — Un token = un modèle
 
@@ -104,7 +120,7 @@ Un placement est stocké comme un enregistrement `{ idUnite, idModele, x, y, rot
 
 Les indicateurs prévus par [[RG_12]] sont calculés en interrogeant la bibliothèque locale ([[RT_06]]), avant l'affichage de l'écran correspondant, sans appel réseau (conformément à [[EX_05]]), et recalculés à chaque affichage de l'étape pour refléter les sauvegardes les plus récentes :
 
-- **Étape 2 (choix du plateau)** : filtrage sur le triplet (identifiant de liste, identifiant de disposition adverse choisie à l'étape 1, identifiant de plateau) ; le résultat est un simple booléen (ou compteur) par plateau proposé.
+- **Étape 2 (choix du plateau)** : filtrage sur le triplet (identifiant de liste, identifiant de disposition adverse choisie à l'étape 1, identifiant de plateau). Si aucun déploiement n'existe pour ce triplet, le statut est **Rouge** ([[RG_14]]). Sinon, le nombre de placements enregistrés ([[RT_04]]) est comparé, pour chaque unité de la liste, au nombre de modèles de l'unité (issu de [[RG_02]]) : toutes les unités complètes donnent le statut **Vert**, sinon **Orange**.
 - **Étape 1 (choix de la disposition adverse)** : pour chacune des 5 dispositions adverses candidates, filtrage sur le couple (identifiant de liste, identifiant de disposition adverse candidate) sur les 3 plateaux qui lui sont associés. Pour chaque déploiement sauvegardé trouvé, le statut terminé/non terminé est déterminé en comparant, pour chaque unité de la liste, le nombre de placements enregistrés ([[RT_04]]) au nombre de modèles de l'unité (issu de [[RG_02]]). Le code couleur du bouton de disposition en résulte selon l'ordre de priorité défini en [[RG_12]] (Orange > Vert > Jaune > Blanc).
 
 ### RT_12 — Référentiel des plateaux (Battlemaster / gdmissions.app)
@@ -179,6 +195,10 @@ L'état de connectivité réseau est surveillé côté client (`@capacitor/netwo
 
 Chaque enregistrement synchronisable (déploiement, cf. [[RT_04]]/[[RT_07]]) conserve localement le jeton de version ([[RT_09]]) reçu lors de sa dernière synchronisation réussie. Au retour en ligne ([[RT_10]]), pour tout enregistrement modifié localement depuis ce jeton, le client compare son jeton local au jeton courant renvoyé par le serveur pour ce même enregistrement : s'ils divergent, un conflit est déclaré et l'interface de choix prévue par [[RG_11]] est présentée pour cet enregistrement précis, sans bloquer la synchronisation des autres enregistrements non conflictuels.
 
+### RT_16 — Visualiseur plein écran zoomable de plateau
+
+Les deux vues plein écran prévues par [[RG_14]] (plateau seul avec mesures, et déploiement avec placements sans mesures) partagent un même composant de visualisation image plein écran avec pan/zoom tactile, distinct de l'éditeur de placement interactif de [[RT_03]] (celui-ci reste dédié à la saisie drag-and-drop et n'est pas concerné par ce composant). Ce composant sélectionne l'asset du référentiel [[RT_12]] à afficher — variante `with-measurements` pour la consultation du plateau seul, variante `no-measurements` pour la consultation « Consulter » — et, dans ce second cas, superpose par-dessus le rendu SVG des placements existants ([[RT_04]]) en lecture seule (pas d'interaction de déplacement).
+
 ---
 
 ## EX_06 — Compte utilisateur et synchronisation multi-appareils
@@ -209,4 +229,4 @@ La synchronisation se déclenche à la reprise du réseau et/ou au retour au pre
 
 Les règles techniques suivantes contiennent un choix encore ouvert et doivent être mises à jour dès que la décision est prise :
 
-aucune
+- [[RT_16]] : technologie précise du composant de pan/zoom plein écran (librairie tierce vs implémentation SVG/CSS custom) non tranchée.
