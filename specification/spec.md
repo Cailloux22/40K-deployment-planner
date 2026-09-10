@@ -20,7 +20,7 @@ Chaque exigence renvoie aux règles de gestion et/ou techniques qui la satisfont
 
 Le joueur doit pouvoir importer sa liste d'armée dans l'application pour que celle-ci connaisse les unités à déployer (nombre de modèles, forme et taille de socle par unité).
 
-Satisfait par : [[RG_01]], [[RG_02]], [[RT_01]], [[RT_02]].
+Satisfait par : [[RG_01]], [[RG_02]], [[RT_01]], [[RT_02]], [[RT_13]].
 
 ### RG_01 — Formats d'import acceptés
 
@@ -39,6 +39,17 @@ Le parsing des formats d'import est isolé dans une couche de service dédiée (
 Le référentiel unité → socle (forme, diamètre) est livré comme donnée statique versionnée avec l'application (voir [src/assets/shapes.svg](../src/assets/shapes.svg) pour les formes disponibles), rechargeable indépendamment du code pour suivre les mises à jour d'errata sans publication complète.
 
 Cette donnée statique est générée hors-ligne, au moment du build/de la mise à jour du référentiel (jamais par appel réseau à l'exécution de l'application, conformément à EX_05), par un script d'ingestion qui consomme l'export CSV public de Wahapedia (`Datasheets_models.csv`, colonnes `base_size` / `base_size_descr`, cf. [wahapedia.ru/wh40k11ed/the-rules/data-export](https://wahapedia.ru/wh40k11ed/the-rules/data-export)) et le transforme vers le format interne du référentiel. Cet export n'est pas une API garantie (pas de SLA, format/URL susceptibles de changer) : le script d'ingestion doit échouer explicitement plutôt que produire un référentiel partiel en cas d'anomalie de format, et toute utilisation publique de la donnée doit mentionner « Powered by Wahapedia » conformément aux conditions d'usage de l'export (voir [CLAUDE.md](../CLAUDE.md)).
+
+### RT_13 — Format d'import « roster JSON » (BattleScribe / NewRecruit)
+
+Un des formats supportés par [[RT_01]] est le roster JSON exporté par les list-builders de la famille BattleScribe/NewRecruit (structure `roster.forces[].selections[]`). [src/assets/list_import.example.json](../src/assets/list_import.example.json) sert de jeu de données de référence (fixture de test) pour ce parseur. Ce format expose, sans ambiguïté et sans appel réseau :
+
+- **Nom de la liste** : `roster.name` (chaîne libre saisie par le joueur dans le list-builder).
+- **Disposition de force** : le nœud `force.selections[]` dont `type = "upgrade"` et `name = "Force Disposition"` porte lui-même une sous-sélection (`selections[0]`) avec `from = "group"` et `group = "Force Disposition"` ; le `name` de cette sous-sélection (ex. `"Priority Assets"`) est la disposition choisie par le joueur, à faire correspondre à l'une des 5 dispositions de [[RG_03]].
+- **Nom de chaque unité** : chaque entrée de premier niveau de `force.selections[]` dont `type = "unit"` ou `type = "model"` (les catégories de configuration — `"Battle Size"`, `"Detachment"`, `"Force Disposition"` — sont de `type = "upgrade"` et donc explicitement exclues) ; son `name` est le nom d'unité à résoudre par [[RG_02]] contre le référentiel de socles ([[RT_02]]).
+- **Nombre de modèles par unité** : pour une entrée de `type = "model"`, son propre champ `number` est le compte de modèles. Pour une entrée de `type = "unit"` (unité composée de plusieurs profils de modèle distincts, ex. meneur + troupe), le compte de modèles est la **somme des `number`** de ses `selections[]` directes de `type = "model"` (chaque profil de modèle différent au sein de l'unité étant une entrée séparée).
+
+Le reste de l'arborescence (`rules`, `profiles`, `categories`, coûts en points, mots-clés d'armes...) est ignoré par ce parseur : seuls `roster.name`, le nœud `"Force Disposition"` et les champs `name`/`number`/`type` des sélections de premier niveau (et de leurs enfants directs de `type = "model"`) sont consommés. Ce format ne fournit pas la forme/taille de socle : celle-ci reste résolue séparément via [[RG_02]]/[[RT_02]] à partir du nom d'unité extrait ci-dessus.
 
 ---
 
@@ -174,7 +185,7 @@ Lorsque le même déploiement a été modifié hors-ligne sur deux appareils ava
 
 ### RT_09 — Backend de synchronisation
 
-[Backend à trancher] expose une API de synchronisation par différence (delta) des enregistrements créés/modifiés/supprimés depuis la dernière synchronisation réussie, identifiée par un jeton de version côté client.
+Un backend nodejs expose une API de synchronisation par différence (delta) des enregistrements créés/modifiés/supprimés depuis la dernière synchronisation réussie, identifiée par un jeton de version côté client.
 
 ### RT_10 — Déclenchement de la synchronisation
 
@@ -186,5 +197,4 @@ La synchronisation se déclenche à la reprise du réseau et/ou au retour au pre
 
 Les règles techniques suivantes contiennent un choix encore ouvert et doivent être mises à jour dès que la décision est prise :
 
-- [[RT_03]] — approche de rendu du plateau (SVG vs Canvas).
-- [[RT_09]] — choix du backend de synchronisation.
+aucune
