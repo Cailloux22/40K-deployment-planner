@@ -20,7 +20,7 @@ Chaque exigence renvoie aux règles de gestion et/ou techniques qui la satisfont
 
 Le joueur doit pouvoir importer sa liste d'armée dans l'application pour que celle-ci connaisse les unités à déployer (nombre de modèles, forme et taille de socle par unité).
 
-Satisfait par : [[RG_01]], [[RG_02]], [[RG_13]], [[RT_01]], [[RT_02]], [[RT_13]].
+Satisfait par : [[RG_01]], [[RG_02]], [[RG_13]], [[RG_22]], [[RT_01]], [[RT_02]], [[RT_13]].
 
 ### RG_01 — Formats d'import acceptés
 
@@ -28,7 +28,11 @@ L'import accepte un ou plusieurs formats de liste d'armée standards du jeu (à 
 
 ### RG_02 — Association socle/unité
 
-Chaque unité importée doit être résolue vers une forme et un diamètre de socle (ronde, ovale, etc.) via un référentiel d'unités connu de l'application. Une unité non reconnue par le référentiel est signalée au joueur, qui doit pouvoir lui assigner manuellement un socle avant de pouvoir la déployer.
+Chaque unité importée doit être résolue vers une forme et un diamètre de socle (ronde, ovale, etc.) via un référentiel d'unités connu de l'application. Une unité non reconnue par le référentiel est signalée au joueur, qui doit pouvoir lui assigner manuellement un socle avant de pouvoir la déployer. Cette assignation manuelle se fait directement sur l'écran d'import, au sein du récapitulatif prévu par [[RG_22]] — il n'existe pas d'écran séparé dédié à cette assignation.
+
+### RG_22 — Récapitulatif et confirmation avant enregistrement d'un import
+
+Une fois le fichier importé interprété avec succès ([[RG_01]]) et chaque unité résolue vers un socle ([[RG_02]]), l'application affiche un récapitulatif — nombre d'unités, nombre de modèles et socles associés par unité — avant d'enregistrer la liste. Le nom de la liste, pré-rempli à partir de la donnée source (`roster.name`, [[RT_13]]), reste modifiable par le joueur sur cet écran. La liste n'est persistée qu'après validation explicite de ce récapitulatif ; le joueur peut aussi l'annuler, auquel cas rien n'est enregistré.
 
 ### RT_01 — Parsing d'import
 
@@ -44,7 +48,7 @@ Cette donnée statique est générée hors-ligne, au moment du build/de la mise 
 
 Un des formats supportés par [[RT_01]] est le roster JSON exporté par les list-builders de la famille BattleScribe/NewRecruit (structure `roster.forces[].selections[]`). [src/assets/list_import.example.json](../src/assets/list_import.example.json) sert de jeu de données de référence (fixture de test) pour ce parseur. Ce format expose, sans ambiguïté et sans appel réseau :
 
-- **Nom de la liste** : `roster.name` (chaîne libre saisie par le joueur dans le list-builder).
+- **Nom de la liste** : `roster.name` (chaîne libre saisie par le joueur dans le list-builder) ; cette valeur sert de pré-remplissage éditable au récapitulatif d'import, [[RG_22]].
 - **Disposition de force** : le nœud `force.selections[]` dont `type = "upgrade"` et `name = "Force Disposition"` porte lui-même une sous-sélection (`selections[0]`) avec `from = "group"` et `group = "Force Disposition"` ; le `name` de cette sous-sélection (ex. `"Priority Assets"`) est la disposition choisie par le joueur, à faire correspondre à l'une des 5 dispositions de [[RG_03]].
 - **Nom de chaque unité** : chaque entrée de premier niveau de `force.selections[]` dont `type = "unit"` ou `type = "model"` (les catégories de configuration — `"Battle Size"`, `"Detachment"`, `"Force Disposition"` — sont de `type = "upgrade"` et donc explicitement exclues) ; son `name` est le nom d'unité à résoudre par [[RG_02]] contre le référentiel de socles ([[RT_02]]).
 - **Nombre de modèles par unité** : pour une entrée de `type = "model"`, son propre champ `number` est le compte de modèles. Pour une entrée de `type = "unit"` (unité composée de plusieurs profils de modèle distincts, ex. meneur + troupe), le compte de modèles est la **somme des `number`** de ses `selections[]` directes de `type = "model"` (chaque profil de modèle différent au sein de l'unité étant une entrée séparée).
@@ -57,17 +61,17 @@ Le reste de l'arborescence (`rules`, `profiles`, `categories`, coûts en points,
 
 Le joueur doit pouvoir positionner ses unités sur une représentation du plateau de jeu, en tenant compte de la disposition de force qu'il a choisie pour la partie.
 
-Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RG_17]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]], [[RT_19]].
+Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_23]], [[RT_24]].
 
 ### RG_03 — Parcours de sélection : liste → disposition adverse → plateau → placement
 
 Une fois qu'il a sélectionné, parmi celles déjà importées, la liste d'armée avec laquelle il joue, le joueur suit un parcours en trois étapes ordonnées avant de pouvoir placer la moindre unité. Sa propre disposition de force est déjà connue à ce stade — elle est fixée dès l'import de la liste ([[RG_02]]) et n'est pas redemandée dans ce parcours :
 
-1. il choisit, parmi les **5 dispositions** proposées par l'application, celle de son **adversaire** ;
+1. il choisit, parmi les **5 dispositions** proposées par l'application, celle de son **adversaire** — ces 5 dispositions (identifiant, libellé, icône) forment un référentiel statique embarqué, voir [[RT_23]] ;
 2. il visualise les plateaux de jeu parmi les **3 plateaux** proposés pour le couple (sa disposition, la disposition adverse retenue à l'étape 1) ;
 3. il accède à l'écran de placement des unités sur le plateau via les actions « Nouveau »/« Éditer » de [[RG_14]] une fois liste, disposition adverse et plateau déjà choisis pour une combinaison antérieure. Le contenu de cet écran de placement est détaillé par [[RG_15]] et [[RG_16]].Son affichage par [[RG_17]].
 
-Chaque étape doit être complétée avant d'accéder à la suivante (pas de placement possible tant que la disposition adverse et le plateau n'ont pas été choisis). Le joueur peut revenir en arrière pour changer un choix précédent ; changer de disposition adverse ou de plateau après coup ne modifie pas les placements déjà enregistrés pour une autre combinaison liste/disposition adverse/plateau (voir [[RG_07]]). 
+Chaque étape doit être complétée avant d'accéder à la suivante (pas de placement possible tant que la disposition adverse et le plateau n'ont pas été choisis). Le joueur peut revenir en arrière pour changer un choix précédent ; changer de disposition adverse ou de plateau après coup ne modifie pas les placements déjà enregistrés pour une autre combinaison liste/disposition adverse/plateau (voir [[RG_07]]). Aucune zone de déploiement n'est matérialisée ni validée automatiquement par l'application à l'étape 3 : le placement des tokens reste libre sur l'ensemble du plateau affiché, le joueur s'appuyant visuellement sur l'image (et sur la variante « with-measurements » en consultation, [[RG_14]]) pour respecter les règles de zone du jeu physique — c'est un choix de périmètre assumé, pas un oubli.
 
 ### RG_12 — Indicateurs de déploiement déjà enregistré (disposition adverse et plateau)
 
@@ -92,6 +96,8 @@ Un déploiement sauvegardé est considéré **terminé** lorsque toutes les unit
 - **Orange** : déploiement non fini — au moins un placement enregistré, mais toutes les unités de la liste n'ont pas tous leurs modèles placés (au sens de [[RG_05]]).
 - **Vert** : déploiement fait — toutes les unités de la liste ont tous leurs modèles placés.
 
+**Présentation à l'écran.** Les 3 plateaux sont présentés un par un, dans un pager glissable horizontalement (un seul plateau visible à la fois) plutôt que juxtaposés côte à côte. Dans cette présentation, un unique bloc « Statut » et un unique jeu d'actions contextuelles sont affichés — en haut à droite du layout, immédiatement à droite du libellé « Statut » — et ne reflètent jamais que le plateau actuellement affiché par le pager ; ce statut individuel par plateau reste distinct de l'indicateur agrégé sur les 3 plateaux calculé à l'étape 1 ([[RG_12]]).
+
 **Consultation du plateau seul, avec mesures.** Indépendamment du statut (y compris rouge), le joueur peut cliquer sur l'aperçu de chaque plateau pour l'afficher en plein écran avec les repères de mesure superposés (variante « with-measurements » de [[RT_12]]), avec possibilité de zoomer/dézoomer ; cette vue ne montre jamais les placements du joueur, seulement le plateau vierge, et sert à étudier le layout avant de s'engager sur un déploiement.
 
 **Actions contextuelles, selon le statut :**
@@ -103,6 +109,10 @@ Un déploiement sauvegardé est considéré **terminé** lorsque toutes les unit
 ### RG_04 — Un token = un modèle
 
 Un token posé sur le plateau représente un seul modèle physique, jamais une unité entière. Une unité de 10 modèles nécessite donc 10 placements distincts ; le joueur peut néanmoins déplacer/dupliquer rapidement les tokens restants d'une même unité pour accélérer la saisie.
+
+### RG_20 — Rotation des tokens
+
+Le joueur doit pouvoir faire pivoter un token déjà placé sur le plateau, notamment pour orienter correctement un socle non circulaire (ovale, rectangulaire...) par rapport à la disposition réelle du modèle sur la table. La rotation se manipule indépendamment de la position du token, à tout moment tant que l'écran de placement reste ouvert, et ne modifie ni son appartenance à une unité ni son statut de placement ([[RG_05]]).
 
 ### RG_05 — Unité non totalement déployée
 
@@ -120,7 +130,7 @@ Un modèle déjà placé sur le plateau reste visible dans la liste (pour permet
 
 ### RG_16 — Menu unités (burger) : vue d'ensemble, regroupement par socle et statut
 
-En haut à droite de l'écran de placement, une icône de menu (burger) ouvre une liste, **défilable verticalement**, de toutes les unités de la liste d'armée en cours de déploiement :
+En haut à droite de l'écran de placement, une icône de menu (burger) ouvre une liste, **défilable verticalement**, de toutes les unités de la liste d'armée en cours de déploiement, rendue comme un panneau latéral coulissant depuis le bord droit de l'écran (le plateau reste partiellement visible sur sa gauche pendant que le panneau est ouvert — voir [[RT_24]]) :
 
 - Chaque entrée affiche le **nom de l'unité**, ainsi que ses socles **regroupés par forme/taille avec un compte** associé à chaque groupe (par exemple, une unité composée de 10 socles de 40 mm, 9 socles de 20 mm et 1 socle ovale 20×40 mm affiche trois groupes avec leurs comptes respectifs : `× 10`, `× 9`, `× 1`). Le regroupement affiche la **forme du socle** (pictogramme, cf. référentiel [[RT_02]]) plutôt que sa valeur en millimètres, pour rester lisible d'un coup d'œil.
 - Cliquer sur une entrée **ferme le menu burger** et **bascule le bandeau de [[RG_15]]** sur l'unité choisie, prête à recevoir des placements.
@@ -141,7 +151,11 @@ Le plateau et les tokens sont rendus via SVG, pour un rendu net à n'importe que
 
 ### RT_04 — Modèle de données de placement
 
-Un placement est stocké comme un enregistrement `{ idUnite, idModele, x, y, rotation }` indépendant des autres modèles de la même unité, afin que RG_04 et RG_05 puissent être vérifiées par simple comptage/filtrage sans recalcul géométrique.
+Un placement est stocké comme un enregistrement `{ idUnite, idModele, x, y, rotation }` indépendant des autres modèles de la même unité, afin que RG_04 et RG_05 puissent être vérifiées par simple comptage/filtrage sans recalcul géométrique. Le champ `rotation` est celui manipulé par [[RG_20]]/[[RT_22]].
+
+### RT_22 — Interaction de rotation d'un token
+
+La rotation d'un token sélectionné ([[RG_20]]) se pilote par un geste dédié (poignée de rotation affichée sur le token sélectionné, ou geste tactile à deux doigts) superposé au rendu SVG du plateau ([[RT_03]]) ; elle met à jour le seul champ `rotation` de l'enregistrement de placement ([[RT_04]]) sans toucher à `x`/`y`.
 
 ### RT_11 — Calcul des indicateurs de déploiement existant
 
@@ -149,6 +163,10 @@ Les indicateurs prévus par [[RG_12]] sont calculés en interrogeant la biblioth
 
 - **Étape 2 (choix du plateau)** : filtrage sur le triplet (identifiant de liste, identifiant de disposition adverse choisie à l'étape 1, identifiant de plateau). Si aucun déploiement n'existe pour ce triplet, le statut est **Rouge** ([[RG_14]]). Sinon, le nombre de placements enregistrés ([[RT_04]]) est comparé, pour chaque unité de la liste, au nombre de modèles de l'unité (issu de [[RG_02]]) : toutes les unités complètes donnent le statut **Vert**, sinon **Orange**.
 - **Étape 1 (choix de la disposition adverse)** : pour chacune des 5 dispositions adverses candidates, filtrage sur le couple (identifiant de liste, identifiant de disposition adverse candidate) sur les 3 plateaux qui lui sont associés. Pour chaque déploiement sauvegardé trouvé, le statut terminé/non terminé est déterminé en comparant, pour chaque unité de la liste, le nombre de placements enregistrés ([[RT_04]]) au nombre de modèles de l'unité (issu de [[RG_02]]). Le code couleur du bouton de disposition en résulte selon l'ordre de priorité défini en [[RG_12]] (Orange > Vert > Jaune > Blanc).
+
+### RT_23 — Référentiel des dispositions de force
+
+Les 5 dispositions de force manipulées par [[RG_03]] (étapes 1 et 2) sont un référentiel statique embarqué (identifiant, libellé textuel, icône), au même titre que les référentiels de socles ([[RT_02]]) et de plateaux ([[RT_12]]) — et non une simple énumération de chaînes de caractères codée en dur dans les écrans. Ce référentiel fait correspondre le libellé texte extrait d'un import ([[RT_13]]) à un identifiant stable de disposition, et fournit l'icône affichée par les différents sélecteurs de disposition de l'application (récapitulatif d'import [[RG_22]], choix de la disposition adverse, en-tête du choix de plateau).
 
 ### RT_12 — Référentiel des plateaux (Battlemaster / gdmissions.app)
 
@@ -176,7 +194,9 @@ La taille d'un token à l'écran est calculée au pixel près à partir du diam�
 
 Le joueur doit pouvoir sauvegarder un déploiement rempli, le retrouver plus tard, et le relier à la liste d'armée dont il provient.
 
-Satisfait par : [[RG_07]], [[RG_08]], [[RT_06]], [[RT_07]].
+Satisfait par : [[RG_07]], [[RG_08]], [[RG_21]], [[RT_06]], [[RT_07]].
+
+La bibliothèque n'est pas un écran séparé : elle est intégrée à l'écran d'accueil (cf. [[RG_18]]), où chaque liste d'armée importée donne un accès direct à ses propres déploiements sauvegardés (ouverture, consultation, suppression — [[RG_08]]) sans navigation dédiée supplémentaire.
 
 ### RG_07 — Sauvegarde nommée
 
@@ -185,6 +205,13 @@ Un déploiement sauvegardé conserve un nom (par défaut : liste + plateau + dat
 ### RG_08 — Suppression
 
 La suppression d'une entrée de la bibliothèque est une action confirmée explicitement par le joueur et ne supprime jamais la liste d'armée associée, qui peut être réutilisée pour d'autres déploiements.
+
+### RG_21 — Suppression et duplication d'une liste d'armée
+
+Le joueur peut supprimer ou dupliquer une liste d'armée importée directement depuis l'accueil ([[RG_18]]), indépendamment de la suppression d'une entrée de bibliothèque ([[RG_08]]) :
+
+- **Suppression** : action confirmée explicitement par le joueur (sur le même principe que [[RG_08]]). Si des déploiements de la bibliothèque référencent cette liste ([[RT_07]]), le joueur en est informé avant confirmation, et ces déploiements sont supprimés avec elle (suppression en cascade) plutôt que laissés en entrées orphelines.
+- **Duplication** : crée une copie indépendante de la liste, avec son propre identifiant stable ([[RT_07]]) et son propre nom (par défaut « nom d'origine (copie) », modifiable) ; la copie démarre sans aucun déploiement associé, au même titre qu'une liste nouvellement importée.
 
 ### RT_06 — Persistance locale de la bibliothèque
 
@@ -224,7 +251,7 @@ Chaque enregistrement synchronisable (déploiement, cf. [[RT_04]]/[[RT_07]]) con
 
 ### RT_16 — Visualiseur plein écran zoomable de plateau
 
-Les deux vues plein écran prévues par [[RG_14]] (plateau seul avec mesures, et déploiement avec placements sans mesures) partagent un même composant de visualisation image plein écran avec pan/zoom tactile, distinct de l'éditeur de placement interactif de [[RT_03]] (celui-ci reste dédié à la saisie drag-and-drop et n'est pas concerné par ce composant). Ce composant sélectionne l'asset du référentiel [[RT_12]] à afficher — variante `with-measurements` pour la consultation du plateau seul, variante `no-measurements` pour la consultation « Consulter » — et, dans ce second cas, superpose par-dessus le rendu SVG des placements existants ([[RT_04]]) en lecture seule (pas d'interaction de déplacement).
+Les deux vues plein écran prévues par [[RG_14]] (plateau seul avec mesures, et déploiement avec placements sans mesures) partagent un même composant de visualisation image plein écran avec pan/zoom tactile, distinct de l'éditeur de placement interactif de [[RT_03]] (celui-ci reste dédié à la saisie drag-and-drop et n'est pas concerné par ce composant). Ce composant sélectionne l'asset du référentiel [[RT_12]] à afficher — variante `with-measurements` pour la consultation du plateau seul, variante `no-measurements` pour la consultation « Consulter » — et, dans ce second cas, superpose par-dessus le rendu SVG des placements existants ([[RT_04]]) en lecture seule (pas d'interaction de déplacement). L'entrée dans ce mode se fait par un simple tap sur l'aperçu du plateau ; une fois en plein écran, le pincement (pinch-to-zoom) pilote le niveau de zoom, et un bouton de fermeture (croix), toujours affiché en haut à gauche de l'écran, permet de sortir de ce mode et de revenir à l'écran d'origine.
 
 ### RT_17 — Composant de sélection d'unité et de modèles (bandeau bas)
 
@@ -233,6 +260,10 @@ Le bandeau prévu par [[RG_15]] est un composant d'interface distinct de l'édit
 ### RT_18 — Calcul du regroupement par socle et du statut du menu unités
 
 Pour chaque unité, le menu de [[RG_16]] regroupe ses modèles par forme/diamètre de socle (issus du référentiel [[RT_02]] via [[RG_02]]) et calcule, pour chaque groupe, le nombre de modèles déjà placés parmi ceux du groupe, en filtrant les placements de [[RT_04]] par identifiant d'unité et en croisant chaque modèle placé avec le socle qui lui est associé. Le statut global de l'unité (blanc/orange/vert de [[RG_16]]) est dérivé de ces comptes : **blanc** si le nombre total de modèles placés de l'unité est nul, **vert** si ce total égale le nombre total de modèles de l'unité, **orange** dans tous les autres cas. Ce calcul est effectué à l'ouverture du menu burger ainsi qu'après chaque placement réalisé depuis le bandeau ([[RG_15]]), afin que le menu reste synchronisé sans rechargement de l'écran.
+
+### RT_24 — Conteneur du menu unités (panneau latéral)
+
+Le menu de [[RG_16]] est implémenté comme un panneau latéral (« side sheet ») ancré au bord droit de l'écran de placement et superposé par-dessus le plateau sans le masquer entièrement, plutôt que comme un écran séparé ou une feuille modale plein écran. Son ouverture/fermeture n'interrompt ni ne recalcule l'affichage à zoom fixe du plateau ([[RG_17]]/[[RT_19]]).
 
 ### RT_19 — Calcul du zoom fixe d'affichage du plateau
 
