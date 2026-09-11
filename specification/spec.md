@@ -118,7 +118,7 @@ Le second niveau est un compromis assumé : un gabarit approché à quelques mil
 
 Le joueur doit pouvoir positionner ses unités sur une représentation du plateau de jeu, en tenant compte de la disposition de force qu'il a choisie pour la partie.
 
-Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_23]], [[RT_24]], [[RT_27]].
+Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_23]], [[RT_24]], [[RT_27]], [[RT_34]].
 
 ### RG_03 — Parcours de sélection : liste → disposition adverse → plateau → placement
 
@@ -220,7 +220,7 @@ Tout ce qui entoure le rectangle de jeu dans l'image du plateau ([[RT_05]] : ban
 
 ### RT_03 — Rendu du plateau et des tokens
 
-Le plateau et les tokens sont rendus via SVG, pour un rendu net à n'importe quelle échelle — notamment au niveau de zoom fixe calculé par [[RT_19]] — et un drag-and-drop tactile précis des tokens sur mobile, sans perte de précision de positionnement. Contrairement aux visualiseurs de consultation ([[RT_16]]), le conteneur du plateau sur l'écran de placement n'expose aucun geste de zoom/pan piloté par le joueur (voir [[RG_17]]) : seul le déplacement des tokens est interactif.
+Le plateau et les tokens sont rendus via SVG, pour un rendu net à n'importe quelle échelle — notamment au niveau de zoom fixe calculé par [[RT_19]] — et un drag-and-drop tactile précis des tokens sur mobile, sans perte de précision de positionnement. Contrairement aux visualiseurs de consultation ([[RT_16]]), le conteneur du plateau sur l'écran de placement n'expose aucun geste de zoom/pan piloté par le joueur (voir [[RG_17]]) : seul le déplacement des tokens est interactif. Le retour visuel de ce déplacement pendant le geste — token suivant le doigt ou le curseur — est décrit par [[RT_34]].
 
 ### RT_04 — Modèle de données de placement
 
@@ -229,6 +229,18 @@ Un placement est stocké comme un enregistrement `{ idUnite, idModele, x, y, rot
 ### RT_22 — Interaction de rotation d'un token
 
 La rotation d'un token sélectionné ([[RG_20]]) se pilote par un geste dédié (poignée de rotation affichée sur le token sélectionné, ou geste tactile à deux doigts) superposé au rendu SVG du plateau ([[RT_03]]) ; elle met à jour le seul champ `rotation` de l'enregistrement de placement ([[RT_04]]) sans toucher à `x`/`y`.
+
+### RT_34 — Retour visuel du geste de glisser d'un token
+
+**Principe.** Tout glisser de token de l'écran de placement est matérialisé **sous le point de contact, pendant toute la durée du geste** : le token suit le doigt (ou le curseur) du premier contact au relâchement, plutôt que de n'exister qu'une fois déposé. Sans ce retour, le glisser d'un modèle depuis le bandeau de [[RG_15]] ne produit aucun changement visible avant le dépôt : rien ne distingue un glisser en cours d'un appui sans effet, et le joueur ne voit pas où son modèle va se poser avant qu'il ne s'y trouve.
+
+**Glisser depuis le bandeau ([[RG_15]]/[[RT_17]]).** Aucun enregistrement de placement ([[RT_04]]) n'est créé avant le relâchement — la règle reste inchangée : le retour est un **rendu seul**, sans écriture ni sauvegarde ([[RG_07]]) pendant le geste. Le token provisoire est dessiné dans la forme et la couleur du socle concerné ([[RG_06]], [[RT_05]]), **à la taille exacte qu'il aura une fois posé**, pour que le joueur juge l'emprise réelle du socle sur le plateau avant de lâcher. Il est rendu **hors du conteneur rogné** du plateau ([[RT_19]]) afin de rester visible tant que le doigt n'a pas encore quitté le bandeau. L'élément d'origine dans le bandeau s'affiche pendant ce temps comme **saisi** (et non retiré : le retirer rétrécirait la rangée sous le doigt, ce qu'interdit [[RT_33]]).
+
+**Lisibilité sous le doigt.** Au zoom fixe de [[RT_19]], un socle de 32 mm mesure une dizaine de pixels CSS — moins que la surface de contact d'un doigt, qui le masque donc intégralement. Le token provisoire est par conséquent accompagné d'un **cercle de visée**, de rayon supérieur à celui du doigt, centré sur le point exact où le centre du socle se posera : c'est lui, et non le token, qui reste visible pendant le geste tactile.
+
+**Dépôt refusé.** Un dépôt hors du rectangle de jeu ([[RT_19]]) ne crée aucun placement. Cette issue est annoncée **avant** le relâchement : dès que le point de contact sort du rectangle de jeu, le token provisoire et son cercle de visée passent dans un état distinct, pour que le joueur sache que lâcher ici ne posera rien.
+
+**Déplacement d'un token déjà posé ([[RG_04]]).** Le token lui-même suit déjà le doigt, ses coordonnées [[RT_04]] étant mises à jour en continu ; le geste conserve l'écart entre le point de contact et le centre du socle relevé à la saisie, pour que le token ne saute pas sous le doigt au premier déplacement. S'y ajoute le seul retour manquant : le token saisi est rendu dans un état **saisi** distinct de l'état sélectionné, et porte le même cercle de visée, pour la même raison de lisibilité sous le doigt.
 
 ### RT_11 — Calcul des indicateurs de déploiement existant
 
@@ -371,7 +383,7 @@ Les deux vues plein écran prévues par [[RG_14]] (plateau seul avec mesures, et
 
 ### RT_17 — Composant de sélection d'unité et de modèles (bandeau bas)
 
-Le bandeau prévu par [[RG_15]] est un composant d'interface distinct de l'éditeur de plateau ([[RT_03]]), superposé en bas de l'écran de placement. Sa liste de modèles utilise un défilement horizontal natif (avec ancrage/scroll-snap par élément) pour rester ergonomique au doigt quel que soit le nombre de modèles de l'unité (ex. 10 éléments pour une unité de 10 modèles), sans dépendre d'une librairie tierce de carrousel. Chaque élément de la liste est rendu comme un token draggable identique en forme et en couleur au token qui sera posé sur le plateau ([[RG_06]], [[RT_05]]), pour que le joueur identifie visuellement ce qu'il s'apprête à placer avant même de le déposer ; le drag & drop d'un élément du bandeau vers le plateau crée un enregistrement de placement au sens de [[RT_04]].
+Le bandeau prévu par [[RG_15]] est un composant d'interface distinct de l'éditeur de plateau ([[RT_03]]), superposé en bas de l'écran de placement. Sa liste de modèles utilise un défilement horizontal natif (avec ancrage/scroll-snap par élément) pour rester ergonomique au doigt quel que soit le nombre de modèles de l'unité (ex. 10 éléments pour une unité de 10 modèles), sans dépendre d'une librairie tierce de carrousel. Chaque élément de la liste est rendu comme un token draggable identique en forme et en couleur au token qui sera posé sur le plateau ([[RG_06]], [[RT_05]]), pour que le joueur identifie visuellement ce qu'il s'apprête à placer avant même de le déposer ; le drag & drop d'un élément du bandeau vers le plateau crée un enregistrement de placement au sens de [[RT_04]], le geste lui-même étant matérialisé sous le doigt conformément à [[RT_34]].
 
 Le contenu du bandeau est **dérivé** des placements de [[RT_04]] et non d'un état propre : la liste des modèles de l'unité courante est celle de ses identifiants de modèle (`idModele`) qui n'apparaissent dans aucun placement, et les flèches ne parcourent que les unités ayant encore au moins un tel identifiant. Le retrait d'un modèle placé du bandeau ([[RG_15]]) comme sa réapparition après suppression du token ([[RG_20]]) découlent donc du seul recalcul de cette différence, sans code de synchronisation dédié ni divergence possible entre le bandeau et le plateau. L'avance automatique à l'unité suivante est évaluée après chaque dépôt, sur ce même critère.
 
