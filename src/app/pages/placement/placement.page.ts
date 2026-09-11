@@ -28,6 +28,7 @@ import {
 } from '../../deployment/token-geometry';
 import { ArmyList, ArmyUnit, Deployment, Placement, UnitModelGroup } from '../../models/domain.models';
 import { BaseShape, BaseShapeKind, Board, BoardReferential } from '../../models/referential.models';
+import { UNIT_COLOR_FALLBACK } from '../../import/unit-colors';
 import { ReferentialService } from '../../referentials/referential.service';
 
 /** Un modèle individuel de l'unité courante, tel que listé par le bandeau. */
@@ -96,6 +97,9 @@ export class PlacementPage implements OnInit {
   private readonly boardId = signal('');
   private readonly boardReferential = signal<BoardReferential | undefined>(undefined);
   private readonly shapes = signal<ReadonlyMap<string, BaseShape>>(new Map());
+
+  /** RT_32: repli de couleur d’unité, exposé au gabarit du bandeau. */
+  readonly fallbackColor = UNIT_COLOR_FALLBACK;
   private saveTimer?: ReturnType<typeof setTimeout>;
   private drag: DragState | null = null;
 
@@ -179,7 +183,8 @@ export class PlacementPage implements OnInit {
       const size = tokenSize(shape, perMm);
       views.push({
         placement,
-        color: unitColor.get(placement.idUnite) ?? '#888888',
+        // RT_32: repli unique, partagé avec le visualiseur.
+        color: unitColor.get(placement.idUnite) ?? UNIT_COLOR_FALLBACK,
         rx: size.width / 2,
         ry: size.height / 2,
         shapeKind: shape.shape,

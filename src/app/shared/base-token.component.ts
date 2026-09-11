@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, Input, computed, signal } from '@angular/core';
 
 import { BaseShape } from '../models/referential.models';
-import { contrastingTextColor } from '../import/unit-colors';
+import { UNIT_COLOR_FALLBACK, contrastingTextColor } from '../import/unit-colors';
 
 /**
  * EX_03 / RG_06 / RT_05 — token de socle autonome.
@@ -97,7 +97,8 @@ export class BaseTokenComponent {
   }
 
   /** RG_06: couleur de l'unité, partagée par tous ses tokens. */
-  @Input() color = '#888888';
+  // RT_32: repli tenant les seuils de contraste, contrairement à #888888.
+  @Input() color = UNIT_COLOR_FALLBACK;
   /** RG_20: rotation en degrés, appliquée au rendu comme au placement. */
   @Input() rotation = 0;
   /** RG_15: un modèle déjà placé reste visible mais visuellement distingué. */

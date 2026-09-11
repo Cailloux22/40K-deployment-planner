@@ -13,6 +13,7 @@ import {
 import { ArmyList, Placement } from '../models/domain.models';
 import { BaseShape, BaseShapeKind, Board, BoardVariant } from '../models/referential.models';
 import { resolveGroupShape, tokenSize } from '../deployment/token-geometry';
+import { UNIT_COLOR_FALLBACK } from '../import/unit-colors';
 
 interface PlacementView {
   readonly placement: Placement;
@@ -271,7 +272,8 @@ export class BoardViewerComponent {
       const size = tokenSize(shape, pixelsPerMm);
       views.push({
         placement,
-        color: unitColor.get(placement.idUnite) ?? '#888888',
+        // RT_32: repli unique, partagé avec l’éditeur de placement.
+        color: unitColor.get(placement.idUnite) ?? UNIT_COLOR_FALLBACK,
         rx: size.width / 2,
         ry: size.height / 2,
         shapeKind: shape.shape,

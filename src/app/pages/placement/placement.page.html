@@ -175,7 +175,7 @@
             >
               <app-base-token
                 [shape]="model.shape"
-                [color]="selectedUnit()?.color ?? '#888888'"
+                [color]="selectedUnit()?.color ?? fallbackColor"
                 [placed]="model.placed"
                 [pixelsPerMm]="0.62"
               ></app-base-token>

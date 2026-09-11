@@ -140,8 +140,10 @@
                 [value]="row.unit.color"
                 (ionChange)="assignColor(row.unit, $any($event.detail.value))"
               >
-                @for (color of colors; track color) {
-                  <ion-select-option [value]="color">{{ color }}</ion-select-option>
+                <!-- RG_06: le joueur choisit une couleur par son libellé, pas
+                     par sa notation technique (« #e6194b » était affiché). -->
+                @for (color of colors; track color.value) {
+                  <ion-select-option [value]="color.value">{{ color.label }}</ion-select-option>
                 }
               </ion-select>
               <span class="swatch" slot="end" [style.background]="row.unit.color"></span>
