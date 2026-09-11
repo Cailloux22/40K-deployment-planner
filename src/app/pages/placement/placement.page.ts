@@ -19,7 +19,13 @@ import {
   placedModelIds,
   unitMenuViews,
 } from '../../deployment/deployment-status';
-import { assetPixelsPerMm, clampToPlayArea, containFitScale, tokenSize } from '../../deployment/token-geometry';
+import {
+  assetPixelsPerMm,
+  clampToPlayArea,
+  containFitScale,
+  resolveGroupShape,
+  tokenSize,
+} from '../../deployment/token-geometry';
 import { ArmyList, ArmyUnit, Deployment, Placement, UnitModelGroup } from '../../models/domain.models';
 import { BaseShape, BaseShapeKind, Board, BoardReferential } from '../../models/referential.models';
 import { ReferentialService } from '../../referentials/referential.service';
@@ -131,7 +137,8 @@ export class PlacementPage implements OnInit {
       modelIdsOfGroup(group).map((idModele) => ({
         idModele,
         group,
-        shape: group.baseShapeId ? shapes.get(group.baseShapeId) : undefined,
+        // RT_28: un rectangle sur mesure se rend comme n'importe quel socle.
+        shape: resolveGroupShape(group, shapes),
         placed: placed.has(idModele),
       })),
     );
@@ -157,16 +164,17 @@ export class PlacementPage implements OnInit {
     const perMm = this.pixelsPerMm();
     const selected = this.selectedPlacementId();
 
-    const groupShape = new Map<string, string | null>();
+    // RT_28: le socle effectif d'un groupe, rectangle sur mesure inclus.
+    const groupShape = new Map<string, BaseShape | undefined>();
     const unitColor = new Map<string, string>();
     for (const unit of list.units) {
       unitColor.set(unit.id, unit.color);
-      for (const group of unit.modelGroups) groupShape.set(group.id, group.baseShapeId);
+      for (const group of unit.modelGroups) groupShape.set(group.id, resolveGroupShape(group, shapes));
     }
 
     const views: TokenView[] = [];
     for (const placement of this.placements()) {
-      const shape = shapes.get(groupShape.get(placement.idModele.split('#')[0]) ?? '');
+      const shape = groupShape.get(placement.idModele.split('#')[0]);
       if (!shape) continue;
       const size = tokenSize(shape, perMm);
       views.push({
@@ -540,11 +548,10 @@ export class PlacementPage implements OnInit {
 
   /** Libellé du groupe de socles affiché par le menu unités (RG_16). */
   shapeLabel(group: UnitModelGroup): string {
-    const shape = group.baseShapeId ? this.shapes().get(group.baseShapeId) : undefined;
-    return shape?.label ?? 'socle non assigné';
+    return this.shapeOf(group)?.label ?? 'socle non assigné';
   }
 
   shapeOf(group: UnitModelGroup): BaseShape | undefined {
-    return group.baseShapeId ? this.shapes().get(group.baseShapeId) : undefined;
+    return resolveGroupShape(group, this.shapes());
   }
 }

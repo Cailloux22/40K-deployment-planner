@@ -13,7 +13,6 @@ import {
   ReferentialSource,
   UseModelFootprintReferential,
 } from '../models/referential.models';
-import { BaseOverrideService } from './base-override.service';
 import {
   findDatasheet,
   findModelLine,
@@ -33,7 +32,6 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ReferentialService {
   private readonly http = inject(HttpClient);
-  private readonly overrides = inject(BaseOverrideService);
 
   private bases?: Promise<BaseReferential>;
   private footprints?: Promise<UseModelFootprintReferential>;
@@ -131,19 +129,15 @@ export class ReferentialService {
   /**
    * RG_02: résout un profil de modèle importé vers un identifiant de socle.
    * `null` signale une unité que le joueur devra compléter à la main sur
-   * l'écran d'import — jamais un socle deviné.
-   *
-   * `overrideKey`, quand présent, identifie une ligne de référentiel reconnue
-   * mais sans socle exploitable : RT_25 mémorise l'assignation manuelle sous
-   * cette clé pour ne plus la redemander aux imports suivants du même
-   * profil. Son absence signale que la datasheet ou la ligne elle-même n'a
-   * pas été reconnue — rien de stable à quoi rattacher un souvenir.
+   * l'écran d'import — jamais un socle deviné, et jamais mémorisé d'un
+   * import à l'autre : un profil non résolu (hors [[RT_26]]) repart en
+   * assignation manuelle à chaque import qui le rencontre.
    */
   async resolveBaseShapeId(
     unitName: string,
     modelName: string,
     equipment: readonly string[] = [],
-  ): Promise<{ baseShapeId: string | null; reason?: string; overrideKey?: string }> {
+  ): Promise<{ baseShapeId: string | null; reason?: string }> {
     const { datasheets } = await this.baseReferential();
 
     const datasheet = findDatasheet(datasheets, unitName);
@@ -164,16 +158,11 @@ export class ReferentialService {
     const variant = matchBaseVariant(line, modelName, equipment);
     if (variant) return { baseShapeId: variant.baseShapeId };
 
-    const overrideKey = BaseOverrideService.key(datasheet.key, line.key);
-
     // RT_02: note de socle présente mais non interprétable — le socle par
     // défaut pourrait ne pas s'appliquer à ce modèle, on ne devine pas.
     if (line.baseNoteUnresolved) {
-      const remembered = await this.overrides.get(overrideKey);
-      if (remembered) return { baseShapeId: remembered, overrideKey };
       return {
         baseShapeId: null,
-        overrideKey,
         reason:
           `Socle conditionnel pour « ${line.name} » (« ${line.baseSizeNote} ») : ` +
           `à confirmer par le joueur`,
@@ -182,24 +171,17 @@ export class ReferentialService {
 
     if (!line.baseShapeId) {
       // RT_26: pour un « Use model » précisément, un gabarit recherché
-      // manuellement peut résoudre le profil sans solliciter le joueur —
-      // consulté avant le mécanisme de mémorisation de RT_25.
+      // manuellement peut résoudre le profil sans solliciter le joueur.
       if (line.rawBaseSize?.trim().toLowerCase() === 'use model') {
-        const footprint = (await this.footprintReferential()).footprints.find(
-          (f) => f.key === overrideKey,
-        );
+        const key = `${datasheet.key}::${line.key}`;
+        const footprint = (await this.footprintReferential()).footprints.find((f) => f.key === key);
         if (footprint) {
-          return { baseShapeId: ReferentialService.footprintShapeId(footprint.key), overrideKey };
+          return { baseShapeId: ReferentialService.footprintShapeId(footprint.key) };
         }
       }
 
-      // RT_25: à défaut de gabarit RT_26, seule une assignation manuelle déjà
-      // mémorisée pour cette ligne peut l'appliquer silencieusement.
-      const remembered = await this.overrides.get(overrideKey);
-      if (remembered) return { baseShapeId: remembered, overrideKey };
       return {
         baseShapeId: null,
-        overrideKey,
         reason: line.rawBaseSize
           ? `Socle non publié pour « ${line.name} » (« ${line.rawBaseSize} »)`
           : `Socle non publié pour « ${line.name} »`,

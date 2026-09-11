@@ -146,19 +146,55 @@
                 </ion-label>
 
                 <!-- RG_02: assignation manuelle, sur cet écran même. -->
-                @if (!entry.group.baseShapeId) {
-                  <ion-select
-                    slot="end"
-                    label="Socle"
-                    labelPlacement="stacked"
-                    interface="alert"
-                    placeholder="Choisir"
-                    (ionChange)="assignShape(row.unit, entry.group, $any($event.detail.value))"
-                  >
-                    @for (shape of availableShapes(); track shape.id) {
-                      <ion-select-option [value]="shape.id">{{ shape.label }}</ion-select-option>
-                    }
-                  </ion-select>
+                @if (!entry.group.baseShapeId && !entry.group.customRectangleMm) {
+                  <div class="manual-assign" slot="end">
+                    <ion-select
+                      label="Socle"
+                      labelPlacement="stacked"
+                      interface="alert"
+                      placeholder="Choisir"
+                      (ionChange)="assignShape(row.unit, entry.group, $any($event.detail.value))"
+                    >
+                      @for (shape of availableShapes(); track shape.id) {
+                        <ion-select-option [value]="shape.id">{{ shape.label }}</ion-select-option>
+                      }
+                    </ion-select>
+
+                    <!-- RG_02/RT_28: socle rectangulaire sur mesure, en dernier
+                         recours, mesuré par le joueur sur son modèle physique. -->
+                    <div class="custom-rectangle">
+                      <ion-input
+                        #lengthInput
+                        type="number"
+                        inputmode="decimal"
+                        min="1"
+                        placeholder="Long. (mm)"
+                        aria-label="Longueur du socle sur mesure, en millimètres"
+                      ></ion-input>
+                      <ion-input
+                        #widthInput
+                        type="number"
+                        inputmode="decimal"
+                        min="1"
+                        placeholder="Larg. (mm)"
+                        aria-label="Largeur du socle sur mesure, en millimètres"
+                      ></ion-input>
+                      <ion-button
+                        size="small"
+                        fill="outline"
+                        (click)="
+                          assignCustomRectangle(
+                            row.unit,
+                            entry.group,
+                            +widthInput.value!,
+                            +lengthInput.value!
+                          )
+                        "
+                      >
+                        Socle sur mesure
+                      </ion-button>
+                    </div>
+                  </div>
                 }
               </ion-item>
             }

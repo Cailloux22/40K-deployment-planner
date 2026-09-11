@@ -19,18 +19,8 @@ export const STORE_LISTS = 'lists';
 export const STORE_DEPLOYMENTS = 'deployments';
 /** RT_15: identifiants supprimés localement, à pousser au prochain sync. */
 export const STORE_TOMBSTONES = 'tombstones';
-/** RT_25: socles assignés manuellement à un profil non publié, mémorisés. */
-export const STORE_BASE_OVERRIDES = 'baseOverrides';
 
 const DB_NAME = '40k-deployment-planner';
-// RT_25: bump obligatoire à chaque ajout de store — `onupgradeneeded` ne
-// s'exécute que si la version demandée dépasse celle déjà stockée par le
-// navigateur ; une base existante resterait sinon privée du nouveau store
-// (`baseOverrides`), et toute transaction qui le cible échouerait.
-// RT_25: bump obligatoire à chaque ajout de store — `onupgradeneeded` ne
-// s'exécute que si la version demandée dépasse celle déjà stockée par le
-// navigateur ; une base existante resterait sinon privée du nouveau store
-// (`baseOverrides`), et toute transaction qui le cible échouerait.
 const DB_VERSION = 3;
 const CONFIG_PREFIX = '40kdp.';
 
@@ -61,10 +51,6 @@ export class LocalStoreService {
         }
         if (!db.objectStoreNames.contains(STORE_TOMBSTONES)) {
           db.createObjectStore(STORE_TOMBSTONES, { keyPath: 'id' });
-        }
-        // RT_25: un enregistrement par clé de ligne de référentiel non publiée.
-        if (!db.objectStoreNames.contains(STORE_BASE_OVERRIDES)) {
-          db.createObjectStore(STORE_BASE_OVERRIDES, { keyPath: 'key' });
         }
       };
       request.onsuccess = () => resolve(request.result);

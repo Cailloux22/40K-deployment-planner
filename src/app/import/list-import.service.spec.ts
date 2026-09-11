@@ -4,7 +4,6 @@ import { HttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
-import { BaseOverrideService } from '../referentials/base-override.service';
 import { ImportDraft, ListImportService } from './list-import.service';
 
 /**
@@ -17,9 +16,6 @@ const FIXTURE_PATH = 'src/assets/list_import.example.json';
 const http = {
   get: (url: string) => of(JSON.parse(readFileSync(`src/${url}`, 'utf8'))),
 };
-
-/** RT_25: pas d'IndexedDB sous jsdom — mémorisation en mémoire pour le test. */
-const noOverrides = { get: async () => undefined, remember: async () => undefined };
 
 /** Socles de l'unité, sous la forme affichée par le menu de RG_16. */
 function groupsOf(draft: ImportDraft, unitName: string): Record<string, number> {
@@ -37,10 +33,7 @@ describe('ListImportService.buildDraft — RG_02/RG_16', () => {
 
   beforeEach(async () => {
     TestBed.configureTestingModule({
-      providers: [
-        { provide: HttpClient, useValue: http },
-        { provide: BaseOverrideService, useValue: noOverrides },
-      ],
+      providers: [{ provide: HttpClient, useValue: http }],
     });
     service = TestBed.inject(ListImportService);
     draft = await service.buildDraft('roster.json', readFileSync(FIXTURE_PATH, 'utf8'));
@@ -77,8 +70,11 @@ describe('ListImportService.buildDraft — RG_02/RG_16', () => {
     expect(service.isDraftComplete(draft)).toBe(false);
   });
 
-  it('porte une clé de mémorisation sur le socle non publié (RT_25)', () => {
-    const { group } = service.unresolvedGroups(draft)[0];
-    expect(group.overrideKey).toBeTruthy();
+  it('RG_02/RT_28 : un rectangle sur mesure résout le groupe au même titre qu’un socle', () => {
+    const unit = draft.units.find((u) => u.name === 'Skorpius Disintegrator')!;
+    unit.modelGroups[0].customRectangleMm = { widthMm: 60, lengthMm: 120 };
+
+    expect(service.unresolvedGroups(draft)).toEqual([]);
+    expect(service.isDraftComplete(draft)).toBe(true);
   });
 });

@@ -110,7 +110,6 @@ export class ListImportService {
           count: profile.count,
           baseShapeId: resolved.baseShapeId,
           unresolvedReason: resolved.reason,
-          overrideKey: resolved.overrideKey,
         });
       }
 
@@ -161,10 +160,20 @@ export class ListImportService {
     return merged.map((group, index) => ({ ...group, id: `${unitId}_g${index}` }));
   }
 
+  /**
+   * RG_02/RT_28: un groupe est résolu soit par un socle du référentiel, soit
+   * par un rectangle sur mesure saisi à la main — les deux sont mutuellement
+   * exclusifs, mais l'un ou l'autre suffit à sortir le groupe de l'assignation
+   * manuelle du récapitulatif.
+   */
+  private isGroupResolved(group: UnitModelGroup): boolean {
+    return group.baseShapeId !== null || group.customRectangleMm !== undefined;
+  }
+
   /** RG_22: le récapitulatif signale les unités à compléter à la main. */
   unresolvedGroups(draft: ImportDraft): { unit: ArmyUnit; group: UnitModelGroup }[] {
     return draft.units.flatMap((unit) =>
-      unit.modelGroups.filter((g) => !g.baseShapeId).map((group) => ({ unit, group })),
+      unit.modelGroups.filter((g) => !this.isGroupResolved(g)).map((group) => ({ unit, group })),
     );
   }
 

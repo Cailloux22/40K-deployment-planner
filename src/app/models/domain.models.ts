@@ -23,12 +23,13 @@ export interface UnitModelGroup {
   /** Libellé brut du socle non résolu, affiché pour expliquer le défaut. */
   readonly unresolvedReason?: string;
   /**
-   * RT_25: clé de mémorisation de l'assignation manuelle, présente quand la
-   * ligne de référentiel est reconnue mais ne publie pas de socle. N'a de
-   * sens que pendant l'import — pas destinée à voyager avec la liste
-   * enregistrée.
+   * RG_02/RT_28: socle rectangulaire sur mesure, saisi à la main par le joueur
+   * en dernier recours quand aucun socle du référentiel ne convient.
+   * Mutuellement exclusif avec `baseShapeId` (l'un des deux est renseigné,
+   * jamais les deux) — propre à ce groupe de cette liste, jamais mémorisé
+   * ailleurs ni reversé au référentiel partagé [[RT_26]].
    */
-  readonly overrideKey?: string;
+  customRectangleMm?: { widthMm: number; lengthMm: number };
 }
 
 /** RG_02/RT_13: une unité de la liste importée. */

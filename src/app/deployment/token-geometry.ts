@@ -12,6 +12,7 @@
  * zoom, de terminal ou d'orientation.
  */
 
+import { UnitModelGroup } from '../models/domain.models';
 import { BaseShape, Board, BoardReferential } from '../models/referential.models';
 
 export const MM_PER_INCH = 25.4;
@@ -46,6 +47,33 @@ export function tokenSize(shape: BaseShape, pixelsPerMm: number): TokenSize {
     width: shape.widthMm * pixelsPerMm,
     height: shape.lengthMm * pixelsPerMm,
   };
+}
+
+/**
+ * RG_02/RT_28: le socle effectif d'un groupe, qu'il vienne du référentiel
+ * (RT_02/RT_26, via `baseShapeId`) ou d'un rectangle sur mesure saisi par le
+ * joueur (`customRectangleMm`) — les deux champs sont mutuellement exclusifs.
+ * Un socle sur mesure n'existe dans aucun référentiel : il est synthétisé ici
+ * à la volée, comme [[ReferentialService]] le fait déjà pour les gabarits
+ * [[RT_26]], pour que le reste de l'affichage (RT_03/RT_05) n'ait pas à
+ * distinguer les trois origines possibles d'un `BaseShape`.
+ */
+export function resolveGroupShape(
+  group: UnitModelGroup,
+  shapesById: ReadonlyMap<string, BaseShape>,
+): BaseShape | undefined {
+  const custom = group.customRectangleMm;
+  if (custom) {
+    return {
+      id: `custom:${group.id}`,
+      shape: 'rectangle',
+      widthMm: custom.widthMm,
+      lengthMm: custom.lengthMm,
+      flying: false,
+      label: `${custom.widthMm} x ${custom.lengthMm}mm (sur mesure)`,
+    };
+  }
+  return group.baseShapeId ? shapesById.get(group.baseShapeId) : undefined;
 }
 
 /** Bornes du plateau, pour empêcher un token de sortir de l'aire de jeu. */

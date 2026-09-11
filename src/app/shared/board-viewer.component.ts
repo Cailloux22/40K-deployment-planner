@@ -12,7 +12,7 @@ import {
 
 import { ArmyList, Placement } from '../models/domain.models';
 import { BaseShape, BaseShapeKind, Board, BoardVariant } from '../models/referential.models';
-import { tokenSize } from '../deployment/token-geometry';
+import { resolveGroupShape, tokenSize } from '../deployment/token-geometry';
 
 interface PlacementView {
   readonly placement: Placement;
@@ -254,17 +254,18 @@ export class BoardViewerComponent {
     if (!list || !board || this.placements.length === 0) return [];
 
     const pixelsPerMm = this.assetPixelsPerMm(board);
-    const groupBaseShapeId = new Map<string, string | null>();
+    // RT_28: le socle effectif d'un groupe, rectangle sur mesure inclus.
+    const groupShape = new Map<string, BaseShape | undefined>();
     const unitColor = new Map<string, string>();
     for (const unit of list.units) {
       unitColor.set(unit.id, unit.color);
-      for (const group of unit.modelGroups) groupBaseShapeId.set(group.id, group.baseShapeId);
+      for (const group of unit.modelGroups) groupShape.set(group.id, resolveGroupShape(group, this.shapes));
     }
 
     const views: PlacementView[] = [];
     for (const placement of this.placements) {
       const groupId = placement.idModele.split('#')[0];
-      const shape = this.shapes.get(groupBaseShapeId.get(groupId) ?? '');
+      const shape = groupShape.get(groupId);
       if (!shape) continue;
       const size = tokenSize(shape, pixelsPerMm);
       views.push({

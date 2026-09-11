@@ -1,5 +1,12 @@
+import { UnitModelGroup } from '../models/domain.models';
 import { BaseShape, Board, BoardReferential } from '../models/referential.models';
-import { assetPixelsPerMm, clampToPlayArea, containFitScale, tokenSize } from './token-geometry';
+import {
+  assetPixelsPerMm,
+  clampToPlayArea,
+  containFitScale,
+  resolveGroupShape,
+  tokenSize,
+} from './token-geometry';
 
 /** Rectangle réellement mesuré sur les assets du référentiel (RT_12). */
 const board: Board = {
@@ -92,6 +99,47 @@ describe('RT_19 — zoom fixe d’affichage du plateau (contain-fit)', () => {
 
   it('renvoie 0 quand aucun espace n’est encore disponible', () => {
     expect(containFitScale({ width: 0, height: 0 }, referential.assetSize)).toBe(0);
+  });
+});
+
+describe('RG_02/RT_28 — résolution du socle effectif d’un groupe', () => {
+  const shapesById = new Map<string, BaseShape>([[round32.id, round32]]);
+
+  function group(overrides: Partial<UnitModelGroup> = {}): UnitModelGroup {
+    return { id: 'u1_g0', name: 'Profil', count: 1, baseShapeId: null, ...overrides };
+  }
+
+  it('résout un socle du référentiel via baseShapeId', () => {
+    expect(resolveGroupShape(group({ baseShapeId: 'round-32' }), shapesById)).toEqual(round32);
+  });
+
+  it('synthétise un socle rectangulaire à partir d’un rectangle sur mesure', () => {
+    const shape = resolveGroupShape(
+      group({ customRectangleMm: { widthMm: 60, lengthMm: 120 } }),
+      shapesById,
+    );
+    expect(shape).toEqual({
+      id: 'custom:u1_g0',
+      shape: 'rectangle',
+      widthMm: 60,
+      lengthMm: 120,
+      flying: false,
+      label: '60 x 120mm (sur mesure)',
+    });
+  });
+
+  it('donne la priorité au rectangle sur mesure si les deux champs sont renseignés', () => {
+    // Cas normalement impossible (mutuellement exclusifs, RT_28) : le
+    // rectangle sur mesure l'emporte plutôt que de lever une erreur.
+    const shape = resolveGroupShape(
+      group({ baseShapeId: 'round-32', customRectangleMm: { widthMm: 60, lengthMm: 120 } }),
+      shapesById,
+    );
+    expect(shape?.shape).toBe('rectangle');
+  });
+
+  it('ne résout rien pour un groupe non assigné', () => {
+    expect(resolveGroupShape(group(), shapesById)).toBeUndefined();
   });
 });
 

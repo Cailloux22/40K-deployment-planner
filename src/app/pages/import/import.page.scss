@@ -103,3 +103,36 @@
 app-base-token {
   margin-inline-end: 12px;
 }
+
+.manual-assign {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 160px;
+
+  ion-select {
+    max-width: 100%;
+  }
+}
+
+/* RG_02/RT_28: socle rectangulaire sur mesure, en dernier recours. */
+.custom-rectangle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  ion-input {
+    --padding-start: 6px;
+    --padding-end: 6px;
+    max-width: 72px;
+    border: 1px solid var(--ion-color-step-150, #d7d8da);
+    border-radius: 6px;
+    font-size: 0.8rem;
+  }
+
+  ion-button {
+    margin: 0;
+    font-size: 0.7rem;
+  }
+}

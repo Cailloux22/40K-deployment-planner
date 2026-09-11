@@ -3,13 +3,13 @@ import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular/lazy';
 
 import { LibraryService } from '../../data/library.service';
+import { resolveGroupShape } from '../../deployment/token-geometry';
 import { ImportDraft, ListImportService } from '../../import/list-import.service';
 import { RosterParseError } from '../../import/roster-json.parser';
 import { selectableUnitColors } from '../../import/unit-colors';
 import { ArmyUnit, UnitModelGroup } from '../../models/domain.models';
 import { BaseShape } from '../../models/referential.models';
 import { ConnectivityService } from '../../net/connectivity.service';
-import { BaseOverrideService } from '../../referentials/base-override.service';
 import { ReferentialService } from '../../referentials/referential.service';
 
 interface UnitRow {
@@ -40,7 +40,6 @@ interface UnitRow {
 export class ImportPage implements OnInit {
   private readonly imports = inject(ListImportService);
   private readonly referential = inject(ReferentialService);
-  private readonly overrides = inject(BaseOverrideService);
   private readonly library = inject(LibraryService);
   private readonly connectivity = inject(ConnectivityService);
   private readonly router = inject(Router);
@@ -67,9 +66,11 @@ export class ImportPage implements OnInit {
       unit,
       groups: unit.modelGroups.map((group) => ({
         group,
-        shape: group.baseShapeId ? shapes.get(group.baseShapeId) : undefined,
+        // RT_28: un rectangle sur mesure est résolu au même titre qu'un socle
+        // du référentiel — resolveGroupShape masque l'origine des deux.
+        shape: resolveGroupShape(group, shapes),
       })),
-      unresolved: unit.modelGroups.filter((g) => !g.baseShapeId).length,
+      unresolved: unit.modelGroups.filter((g) => !g.baseShapeId && !g.customRectangleMm).length,
     }));
   });
 
@@ -136,12 +137,30 @@ export class ImportPage implements OnInit {
 
   /**
    * RG_02: assignation manuelle d'un socle, directement dans le récapitulatif.
-   *
-   * RT_25: quand la ligne de référentiel est reconnue mais ne publie pas de
-   * socle (`overrideKey` présent), ce choix est aussi mémorisé pour ne plus
-   * être redemandé aux imports suivants du même profil.
+   * Écrase un éventuel rectangle sur mesure ([[RT_28]]) déjà saisi pour ce
+   * groupe : les deux façons d'assigner sont mutuellement exclusives.
    */
   assignShape(unit: ArmyUnit, group: UnitModelGroup, baseShapeId: string): void {
+    this.updateGroup(unit, group, { baseShapeId, customRectangleMm: undefined, unresolvedReason: undefined });
+  }
+
+  /**
+   * RG_02/RT_28: assignation d'un socle rectangulaire sur mesure — deux
+   * dimensions en millimètres saisies par le joueur, en dernier recours,
+   * quand aucun socle du référentiel ne convient. Une valeur non strictement
+   * positive est ignorée : elle ne peut pas remplacer une assignation
+   * existante par une valeur invalide.
+   */
+  assignCustomRectangle(unit: ArmyUnit, group: UnitModelGroup, widthMm: number, lengthMm: number): void {
+    if (!(widthMm > 0) || !(lengthMm > 0)) return;
+    this.updateGroup(unit, group, {
+      baseShapeId: null,
+      customRectangleMm: { widthMm, lengthMm },
+      unresolvedReason: undefined,
+    });
+  }
+
+  private updateGroup(unit: ArmyUnit, group: UnitModelGroup, patch: Partial<UnitModelGroup>): void {
     const draft = this.draft();
     if (!draft) return;
     this.draft.set({
@@ -152,12 +171,11 @@ export class ImportPage implements OnInit {
           : {
               ...candidate,
               modelGroups: candidate.modelGroups.map((g) =>
-                g.id === group.id ? { ...g, baseShapeId, unresolvedReason: undefined } : g,
+                g.id === group.id ? { ...g, ...patch } : g,
               ),
             },
       ),
     });
-    if (group.overrideKey) void this.overrides.remember(group.overrideKey, baseShapeId);
   }
 
   /** RG_06: réassignation manuelle de la couleur d'une unité. */

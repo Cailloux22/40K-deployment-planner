@@ -4,7 +4,6 @@ import { HttpClient } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
-import { BaseOverrideService } from './base-override.service';
 import { ReferentialService } from './referential.service';
 
 /**
@@ -16,31 +15,12 @@ const http = {
   get: (url: string) => of(JSON.parse(readFileSync(`src/${url}`, 'utf8'))),
 };
 
-/**
- * RT_25: mémorisation en mémoire, sans passer par IndexedDB (indisponible
- * sous jsdom) — seul le contrat de BaseOverrideService compte ici.
- */
-class FakeBaseOverrideService {
-  private readonly byKey = new Map<string, string>();
-
-  async get(key: string): Promise<string | undefined> {
-    return this.byKey.get(key);
-  }
-
-  async remember(key: string, baseShapeId: string): Promise<void> {
-    this.byKey.set(key, baseShapeId);
-  }
-}
-
 describe('ReferentialService.resolveBaseShapeId — RG_02', () => {
   let service: ReferentialService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        { provide: HttpClient, useValue: http },
-        { provide: BaseOverrideService, useClass: FakeBaseOverrideService },
-      ],
+      providers: [{ provide: HttpClient, useValue: http }],
     });
     service = TestBed.inject(ReferentialService);
   });
@@ -104,41 +84,13 @@ describe('ReferentialService.resolveBaseShapeId — RG_02', () => {
       'Skorpius Disintegrator',
     );
     expect(useModel.baseShapeId).toBeNull();
-    // RT_25: pas de source externe pour ce cas, mais une clé stable est
-    // fournie pour qu'une assignation manuelle future puisse s'y rattacher.
-    expect(useModel.overrideKey).toBeTruthy();
   });
 
-  it('applique silencieusement un socle « Use model » déjà mémorisé (RT_25)', async () => {
-    const first = await service.resolveBaseShapeId(
-      'Skorpius Disintegrator',
-      'Skorpius Disintegrator',
-    );
-    expect(first.baseShapeId).toBeNull();
-    const overrides = TestBed.inject(BaseOverrideService);
-    await overrides.remember(first.overrideKey!, 'round-60');
-
-    const second = await service.resolveBaseShapeId(
-      'Skorpius Disintegrator',
-      'Skorpius Disintegrator',
-    );
-    expect(second).toEqual({ baseShapeId: 'round-60', overrideKey: first.overrideKey });
-  });
-
-  it('applique silencieusement une note conditionnelle non interprétable déjà mémorisée (RT_25)', async () => {
-    const first = await service.resolveBaseShapeId(
-      'Chaos Lord On Steed Of Slaanesh',
-      'Chaos Lord On Steed Of Slaanesh',
-    );
-    expect(first.baseShapeId).toBeNull();
-    const overrides = TestBed.inject(BaseOverrideService);
-    await overrides.remember(first.overrideKey!, 'oval-60x35');
-
-    const second = await service.resolveBaseShapeId(
-      'Chaos Lord On Steed Of Slaanesh',
-      'Chaos Lord On Steed Of Slaanesh',
-    );
-    expect(second.baseShapeId).toBe('oval-60x35');
+  it('ne mémorise rien d’un appel à l’autre : un profil non résolu le reste', async () => {
+    const first = await service.resolveBaseShapeId('Skorpius Disintegrator', 'Skorpius Disintegrator');
+    const second = await service.resolveBaseShapeId('Skorpius Disintegrator', 'Skorpius Disintegrator');
+    expect(first).toEqual(second);
+    expect(second.baseShapeId).toBeNull();
   });
 });
 
@@ -147,10 +99,7 @@ describe('ReferentialService.resolveBaseShapeId — homonymes (RG_02)', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        { provide: HttpClient, useValue: http },
-        { provide: BaseOverrideService, useClass: FakeBaseOverrideService },
-      ],
+      providers: [{ provide: HttpClient, useValue: http }],
     });
     service = TestBed.inject(ReferentialService);
   });
@@ -235,10 +184,7 @@ describe('ReferentialService.resolveBaseShapeId — RT_26', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        { provide: HttpClient, useValue: fixtureHttp },
-        { provide: BaseOverrideService, useClass: FakeBaseOverrideService },
-      ],
+      providers: [{ provide: HttpClient, useValue: fixtureHttp }],
     });
     service = TestBed.inject(ReferentialService);
   });
@@ -256,9 +202,8 @@ describe('ReferentialService.resolveBaseShapeId — RT_26', () => {
     expect(shapes.some((s) => s.id === 'use-model:test vehicle::test vehicle')).toBe(true);
   });
 
-  it('retombe sur l’assignation manuelle (RT_25) quand aucun gabarit ne couvre la ligne', async () => {
+  it('retombe sur l’assignation manuelle simple quand aucun gabarit ne couvre la ligne', async () => {
     const resolved = await service.resolveBaseShapeId('Uncovered Vehicle', 'Uncovered Vehicle');
     expect(resolved.baseShapeId).toBeNull();
-    expect(resolved.overrideKey).toBeTruthy();
   });
 });

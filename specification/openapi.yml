@@ -350,7 +350,23 @@ components:
           description: >-
             Référence dans le référentiel de socles embarqué (RT_02).
             `null` tant que le joueur ne l'a pas assigné à la main (RG_02).
+            Mutuellement exclusif avec `customRectangleMm` (RT_28).
           nullable: true
+        customRectangleMm:
+          type: object
+          description: >-
+            RG_02/RT_28 : socle rectangulaire sur mesure, saisi à la main par
+            le joueur en dernier recours (mesuré sur le modèle physique).
+            Propre à ce groupe de cette liste, jamais reversé au référentiel
+            partagé (RT_26). Mutuellement exclusif avec `baseShapeId`.
+          required: [widthMm, lengthMm]
+          properties:
+            widthMm:
+              type: number
+              exclusiveMinimum: 0
+            lengthMm:
+              type: number
+              exclusiveMinimum: 0
 
     # RG_02/RT_13 : unité importée, résolue vers un ou plusieurs socles via le
     # référentiel RT_02 (le référentiel lui-même reste embarqué, non exposé

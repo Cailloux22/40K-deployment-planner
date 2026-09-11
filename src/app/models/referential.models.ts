@@ -111,7 +111,7 @@ export interface BaseReferential {
  * recherche donne à voir de la silhouette réelle du modèle.
  */
 export interface UseModelFootprint {
-  /** `<clé de la datasheet>::<clé de la ligne de modèle>`, comme RT_25. */
+  /** `<clé de la datasheet>::<clé de la ligne de modèle>` (RG_02). */
   readonly key: string;
   readonly shape: BaseShapeKind;
   readonly widthMm: number;
