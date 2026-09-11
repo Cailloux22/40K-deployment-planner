@@ -124,7 +124,7 @@ Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]]
 
 Une fois qu'il a sélectionné, parmi celles déjà importées, la liste d'armée avec laquelle il joue, le joueur suit un parcours en trois étapes ordonnées avant de pouvoir placer la moindre unité. Sa propre disposition de force est déjà connue à ce stade — elle est fixée dès l'import de la liste ([[RG_02]]) et n'est pas redemandée dans ce parcours :
 
-1. il choisit, parmi les **5 dispositions** proposées par l'application, celle de son **adversaire** — ces 5 dispositions (identifiant, libellé, icône) forment un référentiel statique embarqué, voir [[RT_23]] ;
+1. il choisit, parmi les **5 dispositions** proposées par l'application, celle de son **adversaire** — ces 5 dispositions (identifiant, libellé, icône) forment un référentiel statique embarqué, voir [[RT_23]]. Le rappel de la disposition du joueur affiché au centre du sélecteur n'est pas un choix : il est présenté dans une forme qui le distingue sans ambiguïté des 5 dispositions adverses sélectionnables, et ne porte jamais de code couleur de [[RG_12]] ;
 2. il visualise les plateaux de jeu parmi les **3 plateaux** proposés pour le couple (sa disposition, la disposition adverse retenue à l'étape 1) ;
 3. il accède à l'écran de placement des unités sur le plateau via les actions « Nouveau »/« Éditer » de [[RG_14]] une fois liste, disposition adverse et plateau déjà choisis pour une combinaison antérieure. Le contenu de cet écran de placement est détaillé par [[RG_15]] et [[RG_16]].Son affichage par [[RG_17]].
 
@@ -134,7 +134,7 @@ Chaque étape doit être complétée avant d'accéder à la suivante (pas de pla
 
 Le parcours décrit en [[RG_03]] affiche, à deux étapes, un indicateur de l'avancement des déploiements déjà sauvegardés pour la liste couramment sélectionnée. Ces indicateurs sont purement informatifs : ils n'empêchent jamais de créer un nouveau déploiement sur une combinaison déjà utilisée, et le joueur choisit explicitement s'il reprend un déploiement existant ou en démarre un nouveau.
 
-**Étape 1 — choix de la disposition adverse.** Pour chacune des 5 dispositions adverses proposées, le bouton correspondant affiche un code couleur reflétant l'état des déploiements sauvegardés pour la combinaison (liste couramment sélectionnée, cette disposition adverse), sur l'ensemble des 3 plateaux qui lui seront associés à l'étape 2 :
+**Étape 1 — choix de la disposition adverse.** Pour chacune des 5 dispositions adverses proposées, le bouton correspondant affiche un code couleur **et un compte** reflétant l'état des déploiements sauvegardés pour la combinaison (liste couramment sélectionnée, cette disposition adverse), sur l'ensemble des 3 plateaux qui lui seront associés à l'étape 2 :
 
 - **Blanc** : aucun déploiement commencé sur les 3 plateaux (0 déploiement sur 3).
 - **Jaune** : 1 ou 2 déploiements terminés sur les 3 plateaux (et aucun déploiement commencé mais non terminé parmi les 3).
@@ -142,6 +142,10 @@ Le parcours décrit en [[RG_03]] affiche, à deux étapes, un indicateur de l'av
 - **Vert** : les 3 déploiements sont terminés (3 déploiements sur 3).
 
 Un déploiement sauvegardé est considéré **terminé** lorsque toutes les unités de la liste ont tous leurs modèles placés (aucune unité restant "en attente de déploiement" au sens de [[RG_05]]) ; dans le cas contraire, il est considéré **commencé mais non terminé**. L'ordre de priorité pour déterminer la couleur est : Orange > Vert > Jaune > Blanc.
+
+**Second canal ([[RG_24]]).** La couleur du bouton ne porte jamais seule l'information : chaque bouton affiche, sous le libellé de la disposition, le compte des déploiements terminés sur le nombre de plateaux du couple — `0/3`, `1/3`, `2/3`, `3/3` — suffixé de la mention « à reprendre » lorsque l'état orange s'applique, celui-ci n'étant pas déductible du seul compte (un déploiement commencé mais non terminé ne compte pas comme terminé et ne se distinguerait sinon pas de l'état blanc ou jaune). Une disposition sans aucun déploiement affiche donc `0/3`, une disposition avec deux plateaux terminés et un troisième interrompu affiche `2/3 · à reprendre`.
+
+La légende des quatre couleurs, désormais redondante avec ce second canal, n'occupe plus l'écran en permanence : elle est repliée par défaut et dépliable à la demande, l'espace libéré revenant au sélecteur de disposition lui-même.
 
 **Étape 2 — choix du plateau.** Une fois la disposition adverse retenue, l'application indique, pour chacun des 3 plateaux proposés, un statut individuel détaillé (code couleur à 3 états, distinct de celui de l'étape 1) ainsi que les actions de consultation/édition disponibles pour ce plateau — voir [[RG_14]].
 
@@ -155,7 +159,11 @@ Un déploiement sauvegardé est considéré **terminé** lorsque toutes les unit
 
 **Présentation à l'écran.** Les 3 plateaux sont présentés un par un, dans un pager glissable horizontalement (un seul plateau visible à la fois) plutôt que juxtaposés côte à côte. Dans cette présentation, un unique bloc « Statut » et un unique jeu d'actions contextuelles sont affichés — en haut à droite du layout, immédiatement à droite du libellé « Statut » — et ne reflètent jamais que le plateau actuellement affiché par le pager ; ce statut individuel par plateau reste distinct de l'indicateur agrégé sur les 3 plateaux calculé à l'étape 1 ([[RG_12]]).
 
-**Consultation du plateau seul, avec mesures.** Indépendamment du statut (y compris rouge), le joueur peut cliquer sur l'aperçu de chaque plateau pour l'afficher en plein écran avec les repères de mesure superposés (variante « with-measurements » de [[RT_12]]), avec possibilité de zoomer/dézoomer ; cette vue ne montre jamais les placements du joueur, seulement le plateau vierge, et sert à étudier le layout avant de s'engager sur un déploiement.
+**Second canal et identification du plateau ([[RG_24]]).** Le libellé de statut affiché dans le bloc « Statut » — « Déploiement manquant », « Déploiement non fini », « Déploiement fait » — est le second canal de ce code couleur, et l'application ne présente jamais le statut du plateau affiché sans lui. Les pastilles de navigation du pager, trop petites pour porter ce libellé, ne sont pas les porteuses du statut : elles reprennent sa couleur en rappel, exposent le libellé complet par leur nom accessible, et le numéro qu'elles portent désigne le plateau, pas son état.
+
+Le plateau affiché est par ailleurs **identifié une seule fois** par cet écran, sous le pager, dans le même sens de lecture que le bandeau des deux dispositions qui le surmonte (la disposition du joueur d'abord, celle de l'adversaire ensuite) : une identification répétée, et *a fortiori* dans un ordre différent d'une occurrence à l'autre, empêche le joueur de savoir laquelle des deux dispositions est la sienne. Le bandeau de titre imprimé dans l'image du plateau par la source ([[RT_12]]) n'est pas une identification produite par l'application et ne compte pas comme telle ; il est masqué du cadrage de l'aperçu, sur le même principe que le rognage déjà retenu à l'écran de placement ([[RG_17]]/[[RT_19]]).
+
+**Consultation du plateau seul, avec mesures.** Indépendamment du statut (y compris rouge), le joueur peut cliquer sur l'aperçu de chaque plateau pour l'afficher en plein écran avec les repères de mesure superposés (variante « with-measurements » de [[RT_12]]), avec possibilité de zoomer/dézoomer ; cette vue ne montre jamais les placements du joueur, seulement le plateau vierge, et sert à étudier le layout avant de s'engager sur un déploiement. L'invite indiquant que l'aperçu est agrandissable est placée en dehors de l'image, la légende imprimée en pied de celle-ci par la source ([[RT_12]]) étant un contenu porteur d'information qu'aucun élément superposé ne doit recouvrir ([[RT_31]]).
 
 **Actions contextuelles, selon le statut :**
 
@@ -191,12 +199,14 @@ En haut à droite de l'écran de placement, une icône de menu (burger) ouvre un
 
 - Chaque entrée affiche le **nom de l'unité**, ainsi que ses socles **regroupés par forme/taille avec un compte** associé à chaque groupe (par exemple, une unité composée de 10 socles de 40 mm, 9 socles de 20 mm et 1 socle ovale 20×40 mm affiche trois groupes avec leurs comptes respectifs : `× 10`, `× 9`, `× 1`). Le regroupement affiche la **forme du socle** (pictogramme, cf. référentiel [[RT_02]]) plutôt que sa valeur en millimètres, pour rester lisible d'un coup d'œil.
 - Cliquer sur une entrée **ferme le menu burger** et **bascule le bandeau de [[RG_15]]** sur l'unité choisie, prête à recevoir des placements.
-- Le fond de chaque entrée reflète l'**état de placement de l'unité** (au sens de [[RG_05]] : une unité dont tous les modèles ne sont pas placés reste identifiable comme en attente) :
+- Le fond de chaque entrée reflète l'**état de placement de l'unité** (au sens de [[RG_05]] : une unité dont tous les modèles ne sont pas placés reste identifiable comme en attente) **et ce même état est énoncé par un compte**, `modèles placés / modèles de l'unité`, affiché dans l'entrée à un cran typographique et une couleur de texte qui ne l'effacent pas devant le nom de l'unité ([[RT_30]]) :
   - **Blanc** : aucun modèle de l'unité n'est encore placé.
   - **Orange** : au moins un modèle est placé, mais au moins un des groupes de socle de l'unité n'est pas complètement placé.
   - **Vert** : tous les modèles de l'unité (tous groupes de socle confondus) sont placés.
 
   Ce code couleur est propre à l'échelle de l'unité, dans ce menu ; il est distinct de ceux définis pour le statut d'un plateau ([[RG_14]]) et pour l'indicateur agrégé par disposition adverse ([[RG_12]]), qui portent sur un périmètre différent (tout le déploiement, pas une unité isolée).
+
+**Second canal ([[RG_24]]).** Le compte `placés/total` de l'unité est le second canal de ce code couleur ; il est affiché pour toutes les unités, y compris à `0/10` et à `10/10`, et jamais seulement pour les unités partiellement placées. Le compte propre à chaque groupe de socle suit la même forme — `placés/total` — plutôt qu'une multiplication suivie d'un compte séparé : deux nombres consécutifs séparés par un simple espace (« × 1 0 posé ») se lisent comme un seul nombre et rendent le groupe inintelligible.
 
 ### RG_17 — Affichage du plateau à taille maximale, zoom fixe non pilotable par le joueur
 
@@ -246,11 +256,13 @@ Plutôt que de figer ces conventions, le client énumère les noms candidats pou
 
 Les tokens affichés doivent respecter la forme et la taille réelle du socle de chaque unité, et permettre de distinguer visuellement les unités entre elles.
 
-Satisfait par : [[RG_02]], [[RG_06]], [[RT_05]].
+Satisfait par : [[RG_02]], [[RG_06]], [[RT_05]], [[RT_32]].
 
 ### RG_06 — Couleur par unité
 
 Chaque unité importée se voit attribuer une couleur distincte (automatiquement, avec possibilité de réassignation manuelle par le joueur) ; tous les tokens d'une même unité partagent cette couleur pour rester identifiables sur un plateau chargé.
+
+Les couleurs proposées au joueur pour une réassignation sont désignées par un libellé lisible en français accompagné d'un aperçu de la couleur, jamais par leur notation technique.
 
 ### RT_05 — Échelle des tokens
 
@@ -259,6 +271,18 @@ La taille d'un token à l'écran est calculée au pixel près à partir du diam�
 **Calibrage millimètres → pixels.** Les images du référentiel [[RT_12]] ne contiennent pas que le plateau : elles portent un bandeau de titre et un pied de légende. Les dimensions de l'image (1653×2833, cf. [[RT_19]]) ne donnent donc pas l'échelle. Le rectangle du plateau dans l'image (`playArea`, détecté par son rapport de forme 44″×60″) doit être connu pour en déduire l'échelle par rapport à la taille physique du plateau (`boardInches`, 44″ × 60″, valeur également imprimée en pied des images) — soit ≈ 1,007 px d'asset par millimètre réel. Deux gabarits d'image coexistent (layouts standards et layouts `-portrait`), dont les rectangles diffèrent de ~0,5 %. Tant que [[RT_12]] produisait sa donnée par ingestion hors-ligne, cette mesure était faite une fois par asset au moment de l'ingestion et enregistrée dans le référentiel ; son passage en chargement réseau à l'exécution ([[RT_12]]) retire l'étape offline qui la portait — la façon dont `playArea` est désormais obtenue (les deux constantes par gabarit, standard/`-portrait`, suffisent-elles à la précision déjà tolérée de ~0,5 %, ou faut-il une détection du cadre côté client à chaque image chargée) est un choix technique encore ouvert, voir « Suivi des décisions non tranchées ».
 
 **Repère des coordonnées.** Les coordonnées de placement de [[RT_04]] sont exprimées dans le repère de l'image d'asset, en pixels d'asset — jamais en pixels d'écran. Un déploiement enregistré reste donc valide quel que soit le terminal, le niveau de zoom ou l'orientation, et se superpose correctement à l'autre variante d'image en consultation ([[RT_16]]), les deux variantes cadrant le plateau au même endroit (vérifié sur le corpus au 2026-09-10).
+
+### RT_32 — Choix de la couleur de texte lisible sur une couleur d'unité
+
+La couleur de texte superposée à un token coloré ([[RG_06]]) — libellé d'un socle dans le bandeau ([[RT_17]]) ou dans le menu unités ([[RG_16]]) — est choisie **par calcul**, et non par convention, de façon à rester lisible sur n'importe quelle couleur d'unité.
+
+Le calcul utilise la **luminance relative** telle que définie par les règles d'accessibilité du web : composantes ramenées à l'intervalle [0, 1], linéarisées individuellement, puis pondérées. Une moyenne pondérée appliquée directement aux composantes non linéarisées (formule de luminance vidéo, dite BT.601) n'est pas cette grandeur et ne prédit pas le contraste perçu ; elle ne peut donc pas servir ici.
+
+Aucun seuil de luminance n'est retenu. La couleur de texte est celle des deux candidates — une quasi-noire et une quasi-blanche — dont le **rapport de contraste réellement calculé** avec la couleur de fond est le plus élevé : un seuil arbitraire produit inévitablement une frange de couleurs pour lesquelles il choisit la moins lisible des deux.
+
+La fonction accepte toutes les notations de couleur que l'application est susceptible de produire, y compris les couleurs générées au-delà de la palette de base de [[RG_06]]. Une notation qu'elle ne sait pas interpréter est une erreur de programmation et doit être signalée comme telle : retomber silencieusement sur une couleur par défaut produit exactement le défaut que cette règle existe pour empêcher — un texte blanc sur un fond clair, sans que rien ne le signale.
+
+La couleur de repli employée lorsqu'une unité n'a pas de couleur résolue respecte les mêmes seuils de contraste que les tokens de [[RT_29]].
 
 ---
 
@@ -353,6 +377,8 @@ Pour chaque unité, le menu de [[RG_16]] regroupe ses modèles par forme/diamèt
 
 Le menu de [[RG_16]] est implémenté comme un panneau latéral (« side sheet ») ancré au bord droit de l'écran de placement et superposé par-dessus le plateau sans le masquer entièrement, plutôt que comme un écran séparé ou une feuille modale plein écran. Son ouverture/fermeture n'interrompt ni ne recalcule l'affichage à zoom fixe du plateau ([[RG_17]]/[[RT_19]]).
 
+La largeur du panneau est bornée de sorte qu'une bande de plateau d'au moins 160 pixels CSS reste visible à sa gauche sur les largeurs d'écran les plus étroites visées : « partiellement visible » n'est pas satisfait par un liseré.
+
 ### RT_19 — Calcul du zoom fixe d'affichage du plateau
 
 Le zoom fixe prévu par [[RG_17]] se calcule par un ajustement « contenir » (contain-fit, ratio unique min(largeur dispo / `playArea.width`, hauteur dispo / `playArea.height`)), non pas sur l'image de plateau entière, mais directement sur le **rectangle de jeu mesuré** (`playArea`, [[RT_05]]) : tout ce qui l'entoure dans l'image (bandeau de titre, pied de légende, marges latérales) est en dehors du cadre affiché. Ce rognage est purement visuel : il déplace la portion visible de l'image/du SVG (dont l'origine du cadre affiché correspond à `(playArea.left, playArea.top)` dans le repère de l'asset), sans toucher au repère de coordonnées des placements ([[RT_04]]/[[RT_05]], toujours exprimé dans le repère de l'image entière) ni au rectangle utilisé pour borner les tokens (`playArea`, [[RT_05]]) — ce même rectangle sert donc à la fois de cadre visible et de borne de placement.
@@ -383,7 +409,7 @@ L'écran d'accueil — la bibliothèque des listes d'armée déjà importées ([
    - non connecté : les actions « Créer un compte » et « Se connecter », menant aux formulaires de sign up / sign in ;
    - connecté : les informations du compte prévues par [[RG_19]] et une action de déconnexion (retour à un usage local uniquement, sans suppression des données locales).
 2. **Informations utilisateur**, détaillées par [[RG_19]].
-3. **Mentions des sources tierces** : la liste des attributions requises par les référentiels tiers dont l'application dépend, qu'ils soient générés hors-ligne ([[RT_02]], « Powered by Wahapedia ») ou chargés par le réseau à l'exécution ([[RT_12]], Battlemaster) — conformément aux conditions d'usage de ces sources (voir [CLAUDE.md](../CLAUDE.md)).
+3. **Mentions des sources tierces** : la liste des attributions requises par les référentiels tiers dont l'application dépend, qu'ils soient générés hors-ligne ([[RT_02]], « Powered by Wahapedia ») ou chargés par le réseau à l'exécution ([[RT_12]], Battlemaster) — conformément aux conditions d'usage de ces sources (voir [CLAUDE.md](../CLAUDE.md)). Chaque mention indique l'adresse de la source et la rend directement ouvrable, plutôt que de l'afficher comme un texte inerte : c'est par cette adresse que le joueur vérifie l'attribution.
 
 Le bloc « Mentions des sources tierces » et la consultation des informations déjà connues du bloc « Compte » restent accessibles hors-ligne ; seules les actions qui nécessitent le réseau (création de compte, connexion, synchronisation) sont soumises à la dégradation gracieuse prévue par [[RG_09]].
 
@@ -409,6 +435,64 @@ Les actions « Créer un compte » / « Se connecter » de [[RG_18]] s'appuient 
 
 ---
 
+## EX_07 — Lisibilité et accessibilité de l'interface
+
+Quel que soit l'appareil, l'orientation et le thème d'affichage retenu par le système (clair ou sombre), toute information affichée par l'application doit rester lisible et actionnable : contraste suffisant entre le texte et son fond, taille de texte exploitable sur un téléphone tenu à bout de bras au-dessus d'une table de jeu, cibles tactiles atteignables au doigt, et information jamais portée par la seule couleur. Cette exigence est transverse : elle s'applique à tous les écrans du parcours, y compris ceux déjà spécifiés par [[EX_01]] à [[EX_06]], et ne modifie aucun de leurs comportements fonctionnels.
+
+Elle ne porte aucune direction artistique : l'application conserve l'apparence par défaut du cadre d'interface retenu ([[RT_29]]), sans identité visuelle propre, sans police de titrage ni thématisation graphique liée à l'univers du jeu. Le seul objectif est la lisibilité.
+
+Satisfait par : [[RG_24]], [[RT_29]], [[RT_30]], [[RT_31]], [[RT_32]].
+
+### RG_24 — Double canal d'information des codes couleur
+
+Les trois codes couleur de statut définis par l'application — indicateur agrégé par disposition adverse ([[RG_12]]), statut individuel par plateau ([[RG_14]]) et état de placement par unité ([[RG_16]]) — conservent chacun leurs couleurs, mais aucun d'eux ne porte seul l'information : chaque élément qui affiche un de ces codes affiche **également** la même information sous forme textuelle ou chiffrée, à côté de la couleur et non à sa place.
+
+Ce second canal n'est pas une redondance décorative : il est la source d'information de référence dès lors que la couleur n'est pas perceptible — daltonisme (les couples blanc/jaune de [[RG_12]] et rouge/vert de [[RG_14]] sont indistinguables en deutéranopie), écran lu en plein soleil au bord d'une table, thème d'affichage inhabituel. La couleur reste le canal de lecture rapide, le texte ou le compte le canal de vérification.
+
+Le second canal retenu pour chaque code est précisé par la règle qui le définit : un compte « terminés sur total » pour [[RG_12]], le libellé de statut déjà prévu pour [[RG_14]], le compte « modèles placés sur modèles de l'unité » pour [[RG_16]]. Un élément trop petit pour porter ce texte (une pastille de navigation, par exemple) n'est jamais le seul porteur du statut : il en expose alors le libellé par son nom accessible, et le statut est affiché en toutes lettres ailleurs sur le même écran.
+
+Corollaire sur les légendes : une légende qui explique la signification des couleurs n'est plus nécessaire en permanence dès lors que chaque élément porte son second canal. Elle reste disponible, repliée par défaut, pour que l'espace de l'écran serve d'abord au choix que le joueur est venu faire.
+
+### RT_29 — Système de thème et tokens de couleur
+
+**Principe.** L'application déclare l'intégralité de ses couleurs sous forme de **tokens nommés** définis en un point unique, [variables.scss](../src/theme/variables.scss), et n'utilise aucune valeur de couleur littérale (notation hexadécimale, `rgb()`, `hsl()`) dans les feuilles de style des écrans ni dans les styles portés par les composants. Une couleur codée en dur dans un écran est un défaut au sens de cette règle, y compris quand elle « rend bien » dans le thème courant : elle est par construction insensible au changement de thème.
+
+**Deux thèmes, tous deux tokenisés.** L'application suit le thème d'affichage du système (clair ou sombre) via la palette système du cadre d'interface. Les deux thèmes sont traités à égalité : chaque token porte une valeur claire et une valeur sombre, aucune n'étant déduite de l'autre par transformation automatique (inversion, filtre). Le thème clair n'est pas « le défaut auquel le sombre déroge ».
+
+**Articulation avec les variables natives du cadre d'interface.** Seules les variables natives réellement définies dans les deux thèmes sont consommées : la couleur de fond de page et la couleur de texte. Les échelons intermédiaires (`--ion-color-step-*`) **ne sont pas utilisés** : vérifié au 2026-09-11 sur la version embarquée, ils ne sont définis par le cadre dans aucun des deux thèmes — ce ne sont que des points d'override, et toute lecture repose en réalité sur la valeur de repli codée à côté, donc sur une valeur claire, y compris en thème sombre. Les variables de surface propres au thème sombre n'existent par ailleurs que sous les classes de mode de la racine du document, jamais sur la racine nue. L'application définit donc ses propres échelons de surface plutôt que d'emprunter ceux du cadre. De même, les couleurs nommées du cadre (`--ion-color-dark`, `--ion-color-medium`, `--ion-color-warning-tint`...) **ne sont jamais employées comme couleur de texte ou de fond générique** : ce sont des couleurs d'accentuation dont la valeur s'inverse d'un thème à l'autre (`--ion-color-dark` vaut une teinte claire en thème sombre) et dont le contraste n'est garanti que face à leur propre couleur de contraste.
+
+**Familles de tokens.** Surfaces (page, surélevée, encastrée, superposition, scène sombre du plateau) ; bordures (discrète, structurante, interactive) ; textes (principal, secondaire, atténué, sur scène sombre) ; surfaces d'alerte et d'erreur avec leur couleur de texte associée ; et une famille de statut **par code couleur** de [[RG_24]], chacune déclarant, par état, un fond, une bordure et la couleur de texte lisible sur ce fond. Les trois familles de statut restent distinctes même lorsque deux d'entre elles partagent une teinte, pour qu'un ajustement sur l'une n'en déplace jamais une autre — cette séparation reprend celle que [[RG_12]], [[RG_14]] et [[RG_16]] posent déjà entre leurs périmètres respectifs.
+
+Une surface d'alerte, d'erreur ou de statut n'est jamais posée sans la couleur de texte qui lui est associée : c'est l'omission de cette seconde déclaration, le texte héritant alors de la couleur de page, qui produit l'essentiel des défauts de contraste constatés en thème sombre.
+
+**Objectif de contraste.** Tout couple (texte, fond) effectivement produit par ces tokens atteint au minimum **4,5:1** dans les deux thèmes, y compris les textes secondaires et les libellés posés sur une surface de statut. Tout élément non textuel porteur d'information ou de délimitation d'un contrôle (bordure d'un bouton, pastille de statut) atteint au minimum **3:1** face à la surface qui l'entoure. Aucune paire n'est réputée conforme par principe : elle est vérifiée ([[RT_32]] pour les couleurs calculées, et la procédure ci-dessous pour les tokens).
+
+**Vérification.** Les couples de tokens et leur ratio visé sont déclarés en commentaire au point de définition, et contrôlés par un script hors-ligne dédié plutôt que par relecture visuelle ; un token dont la valeur est modifiée sans que le couple correspondant reste au-dessus du seuil fait échouer ce contrôle.
+
+### RT_30 — Échelle typographique
+
+**Principe.** Les tailles de texte de l'application proviennent d'une **échelle fermée de cinq crans**, déclarée avec les tokens de [[RT_29]] : aucune feuille de style d'écran ne fixe de taille de police littérale. Les crans sont exprimés en unité relative à la taille de police du document, pour que le réglage système de taille de texte du joueur continue de s'appliquer.
+
+**Plancher de lisibilité.** Le cran le plus petit de l'échelle constitue un plancher : aucun texte de l'application ne descend en dessous, quel que soit son rôle (mention, légende, compteur, unité de mesure). Un contenu qui ne tient pas à cette taille dans l'espace qui lui est alloué est traité en redimensionnant son conteneur, en le tronquant avec un nom accessible complet, ou en le repliant — jamais en réduisant sa taille de police.
+
+**Hiérarchie.** Sur un même bloc, l'élément que le joueur cherche en premier — le nom d'une liste, le nom d'une unité, le nom d'un plateau — porte un cran supérieur et une couleur de texte principale ; ses métadonnées (compte de modèles, disposition, date, nombre de déploiements) portent un cran inférieur et une couleur de texte secondaire. L'inverse est un défaut au sens de cette règle. De même, un titre de section porte toujours un cran supérieur ou égal aux libellés des lignes qu'il coiffe.
+
+**Aucune identité typographique.** L'échelle ne s'accompagne d'aucune police de caractères propre à l'application : la pile de polices par défaut du cadre d'interface est conservée, conformément à [[EX_07]]. Seules les tailles, graisses et hauteurs de ligne sont normalisées.
+
+**Langue du document.** Le document déclare la langue effective de son contenu, pour que la synthèse vocale, la coupure des mots et les dictionnaires du navigateur s'appliquent correctement.
+
+### RT_31 — Cibles tactiles et contrôles natifs
+
+**Taille minimale.** Tout élément actionnable au doigt — bouton, pastille de pagination, entrée de liste cliquable, poignée — offre une surface tactile d'au moins **44 × 44 pixels CSS**, y compris lorsque sa représentation visuelle est plus petite : la surface est alors étendue par du remplissage ou une zone d'atteinte transparente, sans agrandir le dessin. Un espacement d'au moins 8 pixels sépare deux cibles adjacentes, pour qu'une frappe imprécise ne déclenche pas la voisine.
+
+**Contrôles natifs non stylés.** Un contrôle rendu par le navigateur avec son apparence et son libellé par défaut (le sélecteur de fichier natif, notamment) n'est jamais l'action principale d'un écran : sa taille, son libellé et sa langue échappent à l'application, et sa cible tactile est en pratique inférieure au minimum ci-dessus. L'action principale est portée par un bouton de l'application, qui délègue au contrôle natif maintenu hors du flux visible — mais toujours atteignable au clavier et par les technologies d'assistance, jamais retiré de l'arbre d'accessibilité. Cela ne change rien au comportement fonctionnel de l'action concernée ([[RG_01]], [[RT_01]] pour l'import).
+
+**Recouvrement.** Aucun élément superposé de nature décorative ou indicative (invite, pastille, filigrane) n'est positionné par-dessus un contenu porteur d'information — une légende imprimée dans une image de plateau ([[RT_12]]), par exemple. Ces éléments sont placés hors du contenu qu'ils commentent.
+
+**Grossissement du document.** La restriction des gestes de zoom natifs exigée par [[RT_19]] porte sur le seul conteneur du plateau de l'écran de placement, où l'application implémente elle-même le geste. Elle n'est jamais appliquée au document entier : le joueur conserve partout ailleurs le grossissement offert par son navigateur et par son système.
+
+---
+
 ## Suivi des décisions non tranchées
 
 Les règles techniques suivantes contiennent un choix encore ouvert et doivent être mises à jour dès que la décision est prise :
@@ -425,4 +509,5 @@ Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_16]] (
 - **[[RG_01]] — un seul format d'import.** Seul le roster JSON de [[RT_13]] est branché derrière [[RT_01]], ce qui satisfait le « à minima un export texte/JSON d'un list-builder tiers » de la règle. L'ajout d'un second format ne demande qu'une entrée supplémentaire dans la table des formats, sans toucher aux écrans.
 - **[[RG_03]] étape 3 — aucune zone de déploiement matérialisée.** Choix de périmètre déjà assumé par la règle ; l'implémentation borne simplement les tokens au rectangle du plateau mesuré ([[RT_05]]), sans validation des règles de zone du jeu.
 - **[[RT_26]] — 130 des 208 gabarits sont des estimations, pas des mesures.** La couverture des lignes `Use model` est complète (208/208) mais inégale : 78 entrées remontent à une mesure trouvée et citée — directement ou par un châssis partagé (Rhino, Predator, Land Raider, Leman Russ, Chimera, Baneblade, Drop Pod, Stompa, Thunderhawk, Manta, Trukk) — et les 130 autres sont des estimations, préfixées `estimation — ` dans leur `sourceNote`. Écart assumé et non bloquant — un gabarit approché reste exploitable pour planifier un déploiement — mais à résorber entrée par entrée : toute mesure réelle obtenue ultérieurement remplace l'estimation correspondante.
-- **[[RT_12]] — chargement réseau à l'exécution pas encore implémenté.** Le référentiel de plateaux vient de passer, dans cette spécification, d'une génération hors-ligne bundlée (`scripts/ingest-boards.mjs`, images copiées dans `src/assets/referentials`, voir [CLAUDE.md](../CLAUDE.md)) à un chargement réseau à l'exécution mis en cache ([[RT_27]]). Le code existant utilise encore l'ancienne approche bundlée à ce jour ; [CLAUDE.md](../CLAUDE.md) (sections Commandes et État courant) documente également encore l'ancien mécanisme et doit être mis à jour en même temps que le code, une fois les décisions ouvertes ci-dessus tranchées.
+- **[[RT_12]] — chargement réseau à l'exécution pas encore implémenté.** Le référentiel de plateaux vient de passer, dans cette spécification, d'une génération hors-ligne bundlée (`scripts/ingest-boards.mjs`, images copiées dans `src/assets/referentials`, voir [CLAUDE.md](../CLAUDE.md)) à un chargement réseau à l'exécution mis en cache ([[RT_27]]). Le code existant utilise encore l'ancienne approche bundlée à ce jour ; [CLAUDE.md](../CLAUDE.md) (sections Commandes et État courant) documente également encore l'ancien mécanisme et doit être mis à jour en même temps que le code, une fois les décisions ouvertes ci-dessus tranchées.- **[[EX_07]] — socle de règles d'interface écrit, implémentation en cours.** [[RG_24]], [[RT_29]] à [[RT_32]] viennent d'être posées à partir d'un audit de l'application tournant en 375×812 dans les deux thèmes. L'implémentation les suit écran par écran ; tant qu'elle n'est pas achevée, les constats de cet audit restent vrais : 14 usages de `--ion-color-step-*` (non défini par le cadre d'interface dans aucun des deux thèmes, donc toujours rabattu sur un repli clair), `--ion-color-dark` employé comme couleur de texte sur des fonds blancs littéraux, surfaces d'alerte posées sans couleur de texte associée, 17 tailles de police ad hoc dont 12 sous le plancher de [[RT_30]], et une couleur de texte secondaire à 2,6:1 dans les deux thèmes. Contraste mesuré le plus bas : 1:1 sur les noms d'unité du menu de [[RG_16]], qui sont donc invisibles en thème sombre.
+- **[[RT_31]] — grossissement du document désactivé globalement.** Le document désactive aujourd'hui le zoom du navigateur sur l'ensemble de l'application, alors que [[RT_19]] ne l'exige que sur le conteneur du plateau de l'écran de placement, où les gestes sont déjà neutralisés par la feuille de style. La restriction dépasse donc son périmètre et prive le joueur du grossissement système partout ailleurs. À résorber en même temps que la reformulation de [[RT_19]].
