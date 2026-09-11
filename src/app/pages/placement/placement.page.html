@@ -221,6 +221,10 @@
           <!-- RG_16/RT_18: socles regroupés par forme/taille, avec un compte
                par groupe — le pictogramme plutôt que la valeur en mm. -->
           <div class="groups">
+            <!-- RG_24: le compte d'un groupe suit la même forme que celui de
+                 l'unité — « placés/total ». La forme précédente (« × 1 » suivi
+                 de « 0 posé ») accolait deux nombres séparés d'un espace, qui
+                 se lisaient comme un seul : « × 1 0 posé ». -->
             @for (group of view.groups; track group.group.id) {
               <span class="group">
                 <app-base-token
@@ -228,8 +232,7 @@
                   [color]="view.unit.color"
                   [pixelsPerMm]="0.42"
                 ></app-base-token>
-                <em>× {{ group.total }}</em>
-                <small>{{ group.placed }} posé{{ group.placed > 1 ? 's' : '' }}</small>
+                <em>{{ group.placed }}/{{ group.total }}</em>
               </span>
             }
           </div>

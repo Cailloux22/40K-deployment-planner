@@ -250,6 +250,37 @@ export class BoardChoicePage implements OnInit {
     ]);
   }
 
+  /** RG_24: libellé complet exposé par le nom accessible d'une pastille du pager. */
+  slideStatusLabel(slide: BoardSlide): string {
+    return STATUS_LABELS[slide.status];
+  }
+
+  /**
+   * RG_14: le bandeau de titre imprimé dans l'image par la source (RT_12) est
+   * masqué du cadrage de l'aperçu — il identifiait le plateau une seconde
+   * fois, et dans l'ordre inverse du bandeau des deux dispositions, rendant
+   * impossible de savoir laquelle des deux est la sienne.
+   *
+   * Seul le HAUT est rogné, jusqu'à `playArea.top` : le pied de légende de
+   * l'image (symboles d'objectifs, zones de déploiement) est un contenu
+   * porteur d'information au sens de RT_31 et reste affiché. C'est le
+   * rognage complet au rectangle de jeu de RT_19 qui est propre à l'écran de
+   * placement, où l'espace vertical est disputé.
+   */
+  previewCrop(board: Board): Record<string, string> {
+    return { 'aspect-ratio': `${board.width} / ${board.height - board.playArea.top}` };
+  }
+
+  previewImage(board: Board): Record<string, string> {
+    const visibleHeight = board.height - board.playArea.top;
+    return {
+      width: '100%',
+      height: `${(board.height / visibleHeight) * 100}%`,
+      left: '0',
+      top: `${(-board.playArea.top / visibleHeight) * 100}%`,
+    };
+  }
+
   boardLabel(board: Board): string {
     const player = this.playerDisposition()?.label ?? '';
     const opponent = this.opponentDisposition()?.label ?? '';

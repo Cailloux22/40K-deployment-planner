@@ -20,10 +20,14 @@
          disposition du joueur, déjà connue — RG_02/RG_03) entourée des 5
          dispositions adverses sélectionnables. -->
     <div class="dial">
+      <!-- RG_03: ce n'est pas un choix, mais le rappel de la disposition du
+           joueur, déjà fixée à l'import. Sa forme (carré arrondi, sans
+           bordure) le distingue sans ambiguïté des 5 options sélectionnables,
+           et il ne porte jamais de code couleur de RG_12. -->
       <div class="center" [attr.aria-label]="'Votre disposition : ' + (playerDisposition()?.label ?? '')">
-        <app-disposition-icon [disposition]="playerDisposition()" [size]="40"></app-disposition-icon>
-        <span>{{ playerDisposition()?.label ?? 'Disposition inconnue' }}</span>
-        <small>vous</small>
+        <small aria-hidden="true">Vous</small>
+        <app-disposition-icon [disposition]="playerDisposition()" [size]="34"></app-disposition-icon>
+        <span aria-hidden="true">{{ playerDisposition()?.label ?? 'Disposition inconnue' }}</span>
       </div>
 
       @for (option of options(); track option.disposition.id) {
@@ -36,33 +40,29 @@
           [attr.aria-label]="option.disposition.label + ' — ' + option.hint"
           (click)="choose(option)"
         >
-          <app-disposition-icon [disposition]="option.disposition" [size]="30"></app-disposition-icon>
+          <app-disposition-icon [disposition]="option.disposition" [size]="24"></app-disposition-icon>
           <span>{{ option.disposition.label }}</span>
+          <!-- RG_24: le compte accompagne la couleur du bouton, de sorte que
+               les 4 états restent distinguables sans percevoir la teinte. -->
+          <em class="counter" aria-hidden="true">{{ option.counter }}</em>
         </button>
       }
     </div>
 
     <!-- RG_12: l'indicateur est purement informatif — il n'interdit jamais de
-         démarrer un nouveau déploiement sur une combinaison déjà utilisée. -->
-    <ion-list lines="none" class="legend">
-      <ion-list-header>Déploiements enregistrés</ion-list-header>
-      <ion-item>
-        <span class="dot indicator-white" slot="start"></span>
-        <ion-label>Aucun déploiement commencé sur les 3 plateaux</ion-label>
-      </ion-item>
-      <ion-item>
-        <span class="dot indicator-yellow" slot="start"></span>
-        <ion-label>1 ou 2 déploiements terminés</ion-label>
-      </ion-item>
-      <ion-item>
-        <span class="dot indicator-orange" slot="start"></span>
-        <ion-label>Un déploiement commencé mais non terminé</ion-label>
-      </ion-item>
-      <ion-item>
-        <span class="dot indicator-green" slot="start"></span>
-        <ion-label>Les 3 déploiements sont terminés</ion-label>
-      </ion-item>
-    </ion-list>
+         démarrer un nouveau déploiement sur une combinaison déjà utilisée.
+         RG_24: la légende est redondante avec les compteurs portés par chaque
+         bouton ; elle est donc repliée par défaut et l'espace qu'elle occupait
+         (42 % de l'écran) revient au sélecteur lui-même. -->
+    <details class="legend">
+      <summary>Que signifient les couleurs&nbsp;?</summary>
+      <ul>
+        <li><span class="dot indicator-white"></span>Aucun déploiement commencé sur les 3 plateaux</li>
+        <li><span class="dot indicator-yellow"></span>1 ou 2 déploiements terminés</li>
+        <li><span class="dot indicator-orange"></span>Un déploiement commencé mais non terminé</li>
+        <li><span class="dot indicator-green"></span>Les 3 déploiements sont terminés</li>
+      </ul>
+    </details>
   } @else {
     <div class="loading"><ion-spinner></ion-spinner></div>
   }

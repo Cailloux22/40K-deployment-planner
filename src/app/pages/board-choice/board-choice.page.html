@@ -59,6 +59,11 @@
     <!-- Onglets numérotés du pager (maquette « Choix layout »). -->
     <div class="tabs" role="tablist">
       @for (slide of slides(); track slide.board.id; let i = $index) {
+        <!-- RG_24: la pastille est trop petite pour porter le libellé de
+             statut — elle n'en est donc pas la porteuse : elle en reprend la
+             couleur en rappel, l'expose par son nom accessible, et le numéro
+             qu'elle affiche désigne le plateau, pas son état. Le statut est
+             affiché en toutes lettres dans le bloc « Statut » ci-dessus. -->
         <button
           type="button"
           role="tab"
@@ -66,6 +71,7 @@
           [class.active]="i === activeIndex()"
           [class]="'tab status-dot-' + slide.status"
           [attr.aria-selected]="i === activeIndex()"
+          [attr.aria-label]="'Plateau ' + slide.board.index + ' — ' + slideStatusLabel(slide)"
           (click)="goTo(i)"
         >
           {{ slide.board.index }}
@@ -82,16 +88,28 @@
           <button
             type="button"
             class="preview"
+            [style]="previewCrop(slide.board)"
             [attr.aria-label]="'Afficher ' + boardLabel(slide.board) + ' en plein écran avec les mesures'"
             (click)="openBoardOnly(slide)"
           >
-            <img [src]="slide.board.assets['no-measurements']" [alt]="boardLabel(slide.board)" />
+            <img
+              [src]="slide.board.assets['no-measurements']"
+              [style]="previewImage(slide.board)"
+              [alt]="boardLabel(slide.board)"
+            />
+          </button>
+
+          <!-- RG_14: identification UNIQUE du plateau, dans le même sens de
+               lecture que le bandeau VOUS/VS/ADVERSAIRE.
+               RT_31: l'invite d'agrandissement est placée hors de l'image —
+               elle recouvrait la légende imprimée en pied de celle-ci. -->
+          <p class="caption">
+            {{ boardLabel(slide.board) }}
             <span class="zoom-hint">
               <ion-icon name="expand-outline"></ion-icon>
               Plein écran avec mesures
             </span>
-          </button>
-          <p class="caption">{{ boardLabel(slide.board) }}</p>
+          </p>
         </div>
       }
     </div>

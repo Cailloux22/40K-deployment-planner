@@ -1,3 +1,6 @@
+// RT_29: surfaces, textes et alertes proviennent des tokens de l'application.
+// RT_30: toutes les tailles de texte proviennent de l'échelle à 5 crans.
+
 .account {
   padding: 0 12px 16px;
 }
@@ -5,7 +8,8 @@
 .local-only {
   display: block;
   margin-bottom: 12px;
-  font-size: 0.82rem;
+  font-size: var(--app-font-sm);
+  color: var(--app-text-secondary);
 }
 
 .offline {
@@ -14,36 +18,76 @@
   gap: 8px;
   margin: 12px 0;
   padding: 10px;
-  border-radius: 10px;
-  background: var(--ion-color-warning-tint);
-  font-size: 0.8rem;
+  border-radius: var(--app-radius-md);
+  // RT_29: surface d'alerte + sa couleur de texte, jamais l'une sans l'autre.
+  background: var(--app-warn-surface);
+  color: var(--app-warn-on);
+  font-size: var(--app-font-sm);
 }
 
 .hint {
   display: block;
   padding: 4px 4px 0;
-  font-size: 0.75rem;
+  font-size: var(--app-font-xs);
+  color: var(--app-text-secondary);
 }
 
 .error {
   display: block;
   padding: 8px 4px 0;
-  font-size: 0.82rem;
+  font-size: var(--app-font-sm);
+  color: var(--app-danger-on);
 }
 
 ion-button[expand='block'] {
   margin-top: 16px;
 }
 
+// RT_30 (hiérarchie): un titre de section porte toujours un cran supérieur ou
+// égal aux libellés des lignes qu'il coiffe. C'était l'inverse : les libellés
+// d'items ressortaient plus gros que « Compte » ou « Informations utilisateur ».
+ion-list-header {
+  font-size: var(--app-font-lg);
+  color: var(--app-text);
+}
+
 .attributions .attribution {
   h2 {
-    font-size: 0.9rem;
+    font-size: var(--app-font-sm);
     font-weight: 600;
+    color: var(--app-text);
   }
 
   p {
-    font-size: 0.75rem;
-    color: var(--ion-color-medium);
-    word-break: break-all;
+    font-size: var(--app-font-xs);
+    color: var(--app-text-secondary);
   }
+
+  // RG_18: l'adresse de la source est rendue directement ouvrable — c'est par
+  // elle que le joueur vérifie l'attribution.
+  // RT_31: zone tactile d'au moins 44 px, la représentation visuelle du lien
+  // étant plus courte que ça.
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--app-touch-min);
+    font-size: var(--app-font-xs);
+    color: var(--ion-color-primary);
+    text-decoration: underline;
+    // `break-all` coupait au milieu d'un mot ; `break-word` ne coupe qu'en
+    // dernier recours, sur une URL trop longue pour la largeur disponible.
+    word-break: break-word;
+  }
+}
+
+// RT_30: `ion-note` placé dans un slot d'`ion-item` est rendu à 11 px par le
+// cadre, sous le plancher de lisibilité. Ces notes portent l'état du compte et
+// de la synchronisation (RG_19) : elles sont remontées au plancher.
+ion-note {
+  font-size: var(--app-font-xs);
+}
+
+// RT_31: un bouton pleine largeur reste à 36 px de haut par défaut.
+ion-button[expand='block'] {
+  min-height: var(--app-touch-min);
 }

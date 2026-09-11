@@ -100,7 +100,7 @@ interface PlacementView {
                       [attr.height]="view.ry * 2"
                       [attr.fill]="view.color"
                       fill-opacity="0.85"
-                      stroke="rgba(0, 0, 0, 0.6)"
+                      stroke="var(--app-token-stroke)"
                       stroke-width="2"
                       [attr.transform]="
                         'rotate(' +
@@ -120,7 +120,7 @@ interface PlacementView {
                       [attr.ry]="view.ry"
                       [attr.fill]="view.color"
                       fill-opacity="0.85"
-                      stroke="rgba(0, 0, 0, 0.6)"
+                      stroke="var(--app-token-stroke)"
                       stroke-width="2"
                       [attr.transform]="
                         'rotate(' +
@@ -149,7 +149,7 @@ interface PlacementView {
         position: fixed;
         inset: 0;
         z-index: 100;
-        background: #11131a;
+        background: var(--app-surface-stage);
         display: flex;
         overflow: hidden;
       }
@@ -193,8 +193,8 @@ interface PlacementView {
         left: 50%;
         transform: translateX(-50%);
         z-index: 1;
-        color: #f4f4f5;
-        font-size: 0.85rem;
+        color: var(--app-text-on-stage);
+        font-size: var(--app-font-sm);
         font-weight: 600;
         text-align: center;
         pointer-events: none;
@@ -205,8 +205,9 @@ interface PlacementView {
         left: 0;
         right: 0;
         text-align: center;
-        color: rgba(244, 244, 245, 0.6);
-        font-size: 0.75rem;
+        color: var(--app-text-on-stage);
+        opacity: 0.75;
+        font-size: var(--app-font-xs);
         pointer-events: none;
       }
     `,

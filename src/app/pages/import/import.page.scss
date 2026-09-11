@@ -1,3 +1,6 @@
+// RT_29: surfaces, textes et alertes proviennent des tokens de l'application.
+// RT_30: toutes les tailles de texte proviennent de l'échelle à 5 crans.
+
 .picker {
   display: flex;
   flex-direction: column;
@@ -7,29 +10,56 @@
   text-align: center;
 
   ion-icon {
-    font-size: 3rem;
-    color: var(--ion-color-medium);
+    // RT_30: icône décorative, hors échelle typographique.
+    font-size: var(--app-icon-hero);
+    color: var(--app-text-secondary);
   }
 
   h2 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: var(--app-font-lg);
+    color: var(--app-text);
   }
 
   p {
     margin: 0;
-    color: var(--ion-color-medium);
-    font-size: 0.85rem;
+    color: var(--app-text-secondary);
+    font-size: var(--app-font-sm);
   }
 
   .ext {
     font-family: monospace;
   }
+
+  .chosen-file {
+    font-size: var(--app-font-xs);
+    color: var(--app-text-secondary);
+    word-break: break-word;
+  }
 }
 
+/**
+ * RT_31: le sélecteur de fichier natif n'est plus l'action principale de
+ * l'écran — son apparence, son libellé et sa langue échappent à l'application,
+ * et sa cible tactile tournait autour de 30 px. Il reste dans l'arbre
+ * d'accessibilité (donc atteignable au clavier et par un lecteur d'écran) :
+ * on l'escamote visuellement, on ne le retire pas avec `display: none`.
+ */
 .file-input {
-  margin-top: 8px;
-  font-size: 0.9rem;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.pick-file {
+  width: 100%;
+  max-width: 22rem;
 }
 
 .summary {
@@ -52,21 +82,32 @@
     flex-direction: column;
     align-items: center;
     padding: 10px 4px;
-    border-radius: 10px;
-    background: var(--ion-color-step-50, #f4f5f8);
+    border-radius: var(--app-radius-md);
+    background: var(--app-surface-raised);
+    color: var(--app-text);
 
     strong {
-      font-size: 1.3rem;
+      // RT_30 (hiérarchie): le chiffre est l'information, pas son libellé.
+      font-size: var(--app-font-xl);
+      color: var(--app-text);
     }
 
     span {
-      font-size: 0.72rem;
-      color: var(--ion-color-medium);
+      font-size: var(--app-font-xs);
+      color: var(--app-text-secondary);
       text-align: center;
     }
 
+    // RT_29: la surface d'alerte porte sa propre couleur de texte. Sans elle,
+    // ces trois compteurs étaient blancs sur fond clair (1,05:1) en sombre.
     &.warn {
-      background: var(--ion-color-warning-tint);
+      background: var(--app-warn-surface);
+      color: var(--app-warn-on);
+
+      strong,
+      span {
+        color: var(--app-warn-on);
+      }
     }
   }
 }
@@ -77,18 +118,32 @@
   gap: 8px;
   margin: 0 12px 12px;
   padding: 10px;
-  border-radius: 10px;
-  background: var(--ion-color-warning-tint);
-  font-size: 0.8rem;
+  border-radius: var(--app-radius-md);
+  background: var(--app-warn-surface);
+  color: var(--app-warn-on);
+  font-size: var(--app-font-sm);
 }
 
 .unit.needs-attention ion-item-divider {
-  --background: var(--ion-color-warning-tint);
+  --background: var(--app-warn-surface);
+  --color: var(--app-warn-on);
+}
+
+// RT_30 (hiérarchie): le nom de l'unité prime sur son compte de modèles.
+.unit ion-item-divider {
+  h2 {
+    font-size: var(--app-font-md);
+    font-weight: 600;
+  }
+
+  p {
+    font-size: var(--app-font-sm);
+  }
 }
 
 .reason {
-  color: var(--ion-color-warning-shade);
-  font-size: 0.75rem;
+  color: var(--app-warn-on);
+  font-size: var(--app-font-xs);
 }
 
 .swatch {
@@ -96,7 +151,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--app-border-interactive);
   margin-inline-start: 4px;
 }
 
@@ -126,13 +181,13 @@ app-base-token {
     --padding-start: 6px;
     --padding-end: 6px;
     max-width: 72px;
-    border: 1px solid var(--ion-color-step-150, #d7d8da);
-    border-radius: 6px;
-    font-size: 0.8rem;
+    border: 1px solid var(--app-border-interactive);
+    border-radius: var(--app-radius-sm);
+    font-size: var(--app-font-xs);
   }
 
   ion-button {
     margin: 0;
-    font-size: 0.7rem;
+    font-size: var(--app-font-xs);
   }
 }

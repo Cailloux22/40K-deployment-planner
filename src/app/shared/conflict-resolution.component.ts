@@ -76,7 +76,7 @@ import { SyncService } from '../net/sync.service';
       }
       .explain {
         margin-top: 0;
-        font-size: 0.85rem;
+        font-size: var(--app-font-sm);
       }
       .version {
         display: flex;
@@ -85,7 +85,7 @@ import { SyncService } from '../net/sync.service';
         white-space: normal;
       }
       .version small {
-        color: var(--ion-color-medium);
+        color: var(--app-text-secondary);
       }
       ion-button {
         margin-top: 12px;
@@ -93,7 +93,7 @@ import { SyncService } from '../net/sync.service';
       .remaining {
         display: block;
         margin-top: 8px;
-        font-size: 0.8rem;
+        font-size: var(--app-font-sm);
       }
     `,
   ],

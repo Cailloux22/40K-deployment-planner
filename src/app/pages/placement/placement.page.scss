@@ -14,7 +14,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #11131a;
+  background: var(--app-surface-stage);
   overflow: hidden;
   /* RT_19: aucun geste de zoom/pan natif du navigateur ou de l'OS sur cette
      zone — seul le drag-and-drop des tokens y reste interactif (RG_17). */
@@ -52,26 +52,26 @@
 }
 
 .token {
-  stroke: rgba(0, 0, 0, 0.6);
+  stroke: var(--app-token-stroke);
   stroke-width: 2;
   cursor: grab;
 
   &.selected {
-    stroke: #ffffff;
+    stroke: var(--app-token-selected-stroke);
     stroke-width: 5;
   }
 }
 
 .rotate-arm {
-  stroke: #ffffff;
+  stroke: var(--app-token-selected-stroke);
   stroke-width: 3;
   stroke-dasharray: 6 5;
   pointer-events: none;
 }
 
 .rotate-handle {
-  fill: #ffffff;
-  stroke: #11131a;
+  fill: var(--app-token-selected-stroke);
+  stroke: var(--app-surface-stage);
   stroke-width: 3;
   cursor: grab;
 }
@@ -82,14 +82,14 @@
   justify-content: flex-end;
   gap: 2px;
   padding: 2px 8px;
-  background: var(--ion-color-step-100, #e9eaee);
+  background: var(--app-surface-raised);
 
   span {
     margin-inline-end: auto;
     padding-inline-start: 4px;
-    font-size: 0.78rem;
+    font-size: var(--app-font-sm);
     font-variant-numeric: tabular-nums;
-    color: var(--ion-color-medium);
+    color: var(--app-text-secondary);
   }
 
   ion-button {
@@ -102,12 +102,14 @@
   display: flex;
   align-items: stretch;
   gap: 0;
-  border-top: 1px solid var(--ion-color-step-200, #d7d8de);
-  background: var(--ion-background-color, #ffffff);
+  border-top: 1px solid var(--app-border);
+  background: var(--app-surface-page);
   padding-bottom: env(safe-area-inset-bottom);
 
+  // RT_31: 44 px minimum — les flèches mesuraient 40 px de large.
   .arrow {
     margin: 0;
+    min-width: var(--app-touch-min);
     --padding-start: 6px;
     --padding-end: 6px;
   }
@@ -126,8 +128,11 @@
   gap: 8px;
   padding: 0 8px 4px;
 
+  // RT_30 (hiérarchie): le nom de l'unité courante est l'information
+  // primaire du bandeau, pas son compte de modèles restants.
   strong {
-    font-size: 0.9rem;
+    font-size: var(--app-font-md);
+    color: var(--app-text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -135,8 +140,8 @@
 
   small {
     flex: 0 0 auto;
-    font-size: 0.72rem;
-    color: var(--ion-color-medium);
+    font-size: var(--app-font-sm);
+    color: var(--app-text-secondary);
   }
 }
 
@@ -174,7 +179,7 @@
   /* RG_15/RG_05: un modèle déjà placé reste listé mais est distingué. */
   &.placed {
     opacity: 0.65;
-    background: var(--ion-color-step-100, #e9eaee);
+    background: var(--app-surface-raised);
   }
 
   &:disabled {
@@ -189,7 +194,7 @@
   position: absolute;
   inset: 0;
   z-index: 8;
-  background: rgba(17, 19, 26, 0.35);
+  background: var(--app-surface-overlay);
 }
 
 .units-panel {
@@ -200,9 +205,11 @@
   z-index: 9;
   display: flex;
   flex-direction: column;
-  width: 56%;
-  min-width: 240px;
-  background: var(--ion-background-color, #ffffff);
+  // RT_24: largeur bornée pour qu'au moins 160 px de plateau restent visibles
+  // à sa gauche — 240 px sur 375 n'en laissaient que 135, soit un liseré.
+  inline-size: min(78vw, 320px);
+  max-inline-size: calc(100% - 160px);
+  background: var(--app-surface-page);
   box-shadow: -8px 0 24px rgba(0, 0, 0, 0.25);
   transform: translateX(100%);
   transition: transform 0.22s ease-out;
@@ -217,15 +224,19 @@
     justify-content: space-between;
     gap: 8px;
     padding: 10px 6px 10px 14px;
-    border-bottom: 1px solid var(--ion-color-step-200, #d7d8de);
+    border-bottom: 1px solid var(--app-border);
 
     h2 {
       margin: 0;
-      font-size: 0.95rem;
+      font-size: var(--app-font-lg);
+      color: var(--app-text);
     }
 
+    // RT_31: le bouton de fermeture (size="small") mesurait 28 px.
     ion-button {
       margin: 0;
+      min-width: var(--app-touch-min);
+      min-height: var(--app-touch-min);
     }
   }
 }
@@ -242,8 +253,8 @@
   width: 100%;
   margin-bottom: 8px;
   padding: 8px 10px;
-  border: 1px solid var(--ion-color-step-200, #d7d8de);
-  border-radius: 10px;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -253,13 +264,19 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 6px;
-    font-size: 0.82rem;
+    font-size: var(--app-font-sm);
     font-weight: 600;
 
+    // RG_24: le compte placés/total est le second canal du code couleur de
+    // RG_16 — il porte l'état, ce n'est pas une métadonnée. Il garde donc le
+    // cran et la couleur du nom plutôt qu'un gris qui l'effacerait ; l'ancien
+    // rgba(0,0,0,.55) était par ailleurs illisible en thème sombre.
     small {
       flex: 0 0 auto;
+      // RT_30: l'élément <small> rétrécit de lui-même sous le plancher de
+      // lisibilité (10,5 px mesurés) — la taille est donc posée explicitement.
+      font-size: var(--app-font-sm);
       font-weight: 500;
-      color: rgba(0, 0, 0, 0.55);
       font-variant-numeric: tabular-nums;
     }
   }
@@ -278,28 +295,32 @@
 
     em {
       font-style: normal;
-      font-size: 0.75rem;
+      font-size: var(--app-font-xs);
       font-weight: 600;
-    }
-
-    small {
-      font-size: 0.65rem;
-      color: rgba(0, 0, 0, 0.5);
+      font-variant-numeric: tabular-nums;
     }
   }
 }
 
 /* RG_16: blanc = rien de placé, orange = partiellement, vert = complet. */
+/* RG_16: blanc = rien de placé, orange = partiellement, vert = complet.
+   RT_29: chaque état pose fond, bordure ET couleur de texte. L'ancien code ne
+   posait qu'un fond : le nom de l'unité héritait alors du blanc de la page,
+   d'où 14 rectangles blancs sur blanc (1:1) en thème sombre. */
 .unit-white {
-  background: #ffffff;
+  background: var(--app-unit-none-bg);
+  border-color: var(--app-unit-none-border);
+  color: var(--app-unit-none-on);
 }
 
 .unit-orange {
-  background: #ffd9b3;
-  border-color: #e08a3c;
+  background: var(--app-unit-partial-bg);
+  border-color: var(--app-unit-partial-border);
+  color: var(--app-unit-partial-on);
 }
 
 .unit-green {
-  background: #c6e9c9;
-  border-color: #4c9e58;
+  background: var(--app-unit-done-bg);
+  border-color: var(--app-unit-done-border);
+  color: var(--app-unit-done-on);
 }

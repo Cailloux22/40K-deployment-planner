@@ -139,7 +139,11 @@
       <ion-item>
         <ion-label class="attribution">
           <h2>{{ source.attribution }}</h2>
-          <p>{{ source.url }}</p>
+          <!-- RG_18: l'adresse est rendue directement ouvrable plutôt
+               qu'affichée comme un texte inerte. -->
+          <p>
+            <a [href]="source.url" target="_blank" rel="noopener noreferrer">{{ source.url }}</a>
+          </p>
           @if (source.via) {
             <p>via {{ source.via }}</p>
           }

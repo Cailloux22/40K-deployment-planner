@@ -1,13 +1,19 @@
+// RT_29: surfaces, textes et alertes proviennent des tokens de l'application.
+// RT_30: toutes les tailles de texte proviennent de l'échelle à 5 crans.
+
 .offline-banner {
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 12px;
   padding: 10px 12px;
-  border-radius: 10px;
-  background: var(--ion-color-warning-tint);
-  color: var(--ion-color-warning-contrast);
-  font-size: 0.8rem;
+  border-radius: var(--app-radius-md);
+  // RT_29: une surface d'alerte n'est jamais posée sans sa couleur de texte.
+  // L'ancien couple (warning-tint + warning-contrast) tombait à 1,6:1 en
+  // thème sombre, le texte héritant alors du blanc de la page.
+  background: var(--app-warn-surface);
+  color: var(--app-warn-on);
+  font-size: var(--app-font-sm);
 }
 
 .placeholder {
@@ -21,19 +27,21 @@
   text-align: center;
 
   ion-icon {
-    font-size: 3rem;
-    color: var(--ion-color-medium);
+    // RT_30: icône décorative, hors échelle typographique.
+    font-size: var(--app-icon-hero);
+    color: var(--app-text-secondary);
   }
 
   h2 {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: var(--app-font-lg);
+    color: var(--app-text);
   }
 
   p {
     margin: 0;
-    color: var(--ion-color-medium);
-    font-size: 0.9rem;
+    color: var(--app-text-secondary);
+    font-size: var(--app-font-sm);
     max-width: 30ch;
   }
 }
@@ -45,8 +53,8 @@
 
 .list-card {
   margin-bottom: 10px;
-  border-radius: 12px;
-  --background: var(--ion-color-step-50, #f4f5f8);
+  border-radius: var(--app-radius-lg);
+  --background: var(--app-surface-raised);
   --padding-start: 12px;
   --inner-padding-end: 4px;
 
@@ -55,15 +63,27 @@
     color: var(--ion-color-primary);
   }
 
+  // RT_30 (hiérarchie): le nom de la liste est ce que le joueur cherche en
+  // premier — cran supérieur et texte principal. Ses métadonnées passent au
+  // cran inférieur et au texte secondaire. C'était l'inverse.
   h2 {
+    font-size: var(--app-font-md);
     font-weight: 600;
+    color: var(--app-text);
   }
 
   p {
-    font-size: 0.8rem;
+    font-size: var(--app-font-sm);
+    color: var(--app-text-secondary);
   }
 
   .deployments {
-    color: var(--ion-color-medium);
+    color: var(--app-text-secondary);
   }
+}
+
+// RT_31: le bouton de menu contextuel d'une carte (RG_21) mesurait 29x25.
+.list-card ion-button {
+  min-width: var(--app-touch-min);
+  min-height: var(--app-touch-min);
 }

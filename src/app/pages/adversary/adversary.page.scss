@@ -1,26 +1,44 @@
+// RT_29: surfaces, textes et statuts proviennent des tokens de l'application.
+// RT_30: toutes les tailles de texte proviennent de l'échelle à 5 crans.
+
 .intro {
   padding: 16px 20px 0;
   text-align: center;
 
   h2 {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: var(--app-font-lg);
+    color: var(--app-text);
   }
 
   p {
     margin: 4px 0 0;
-    color: var(--ion-color-medium);
-    font-size: 0.85rem;
+    color: var(--app-text-secondary);
+    font-size: var(--app-font-sm);
   }
 }
 
+/**
+ * RT_30: le libellé d'une disposition est le contenu principal de cet écran ;
+ * il était rendu à 9,9 px. Le passer au plancher de lisibilité impose
+ * d'agrandir le cadran et les pastilles — l'espace vient du repli de la
+ * légende (RG_24).
+ */
 .dial {
   position: relative;
-  width: min(92vw, 420px);
+  width: min(96vw, 460px);
   aspect-ratio: 1;
   margin: 16px auto 8px;
 }
 
+/**
+ * RG_03: rappel de la disposition du joueur, PAS un contrôle.
+ *
+ * Il portait auparavant la même forme, la même taille et la même bordure
+ * qu'une option, et se lisait donc comme un 6e choix déjà sélectionné. Le
+ * carré arrondi rompt la similitude de gabarit, et l'absence de bordure le
+ * retire de la famille visuelle des boutons.
+ */
 .center {
   position: absolute;
   left: 50%;
@@ -29,30 +47,37 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  width: 34%;
-  aspect-ratio: 1;
   justify-content: center;
-  border-radius: 50%;
-  background: var(--ion-color-step-100, #e9eaee);
-  color: var(--ion-color-dark);
+  gap: 2px;
+  width: 30%;
+  aspect-ratio: 1;
+  border-radius: var(--app-radius-lg);
+  background: var(--app-surface-raised);
+  color: var(--app-text);
   text-align: center;
   padding: 6px;
 
-  span {
-    font-size: 0.68rem;
-    font-weight: 600;
-    line-height: 1.1;
-  }
-
+  // « Vous » se lit avant le nom de la disposition : c'est ce qui qualifie le
+  // bloc. L'ordre inverse faisait lire le nom d'abord, comme une option.
   small {
-    font-size: 0.6rem;
+    font-size: var(--app-font-xs);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--ion-color-medium);
+    color: var(--app-text-secondary);
+    line-height: var(--app-line-tight);
+  }
+
+  span {
+    font-size: var(--app-font-xs);
+    font-weight: 600;
+    line-height: var(--app-line-tight);
   }
 }
 
+/**
+ * RT_31: 44 px minimum. À 460 px de cadran, 30 % vaut 138 px — largement
+ * au-dessus, la contrainte vient ici de la lisibilité du libellé.
+ */
 .option {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -61,65 +86,107 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  width: 27%;
+  width: 30%;
   aspect-ratio: 1;
+  min-width: var(--app-touch-min);
+  min-height: var(--app-touch-min);
   padding: 4px;
-  border: 2px solid var(--ion-color-step-250, #c8cad0);
+  border: 2px solid var(--app-border-interactive);
   border-radius: 50%;
-  background: #ffffff;
-  color: var(--ion-color-dark);
   font: inherit;
   text-align: center;
   cursor: pointer;
 
   span {
-    font-size: 0.62rem;
+    font-size: var(--app-font-sm);
     font-weight: 600;
-    line-height: 1.05;
+    line-height: var(--app-line-tight);
+    // Un libellé long (« Reconnaissance ») tient sur deux lignes plutôt que
+    // de faire rétrécir la police sous le plancher de RT_30.
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
-  &:active {
-    transform: translate(-50%, -50%) scale(0.96);
+  // RG_24: second canal du code couleur.
+  .counter {
+    font-size: var(--app-font-xs);
+    font-style: normal;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
   }
 }
 
-/* RG_12: code couleur agrégé des déploiements enregistrés pour le couple
-   (liste, disposition adverse), sur les 3 plateaux associés. */
+/**
+ * RG_12: code couleur agrégé des déploiements enregistrés pour le couple
+ * (liste, disposition adverse), sur les 3 plateaux associés.
+ *
+ * RT_29: chaque état pose fond, bordure ET couleur de texte. L'ancien code
+ * posait un fond `#ffffff` littéral avec `color: var(--ion-color-dark)`, qui
+ * vaut une teinte CLAIRE en thème sombre — d'où les 5 libellés invisibles
+ * (1,05:1) relevés par l'audit.
+ */
 .indicator-white {
-  background: #ffffff;
+  background: var(--app-dispo-none-bg);
+  border-color: var(--app-dispo-none-border);
+  color: var(--app-dispo-none-on);
 }
 
 .indicator-yellow {
-  background: #ffe08a;
-  border-color: #e0a800;
+  background: var(--app-dispo-partial-bg);
+  border-color: var(--app-dispo-partial-border);
+  color: var(--app-dispo-partial-on);
 }
 
 .indicator-orange {
-  background: #ffb066;
-  border-color: #e06c00;
+  background: var(--app-dispo-resume-bg);
+  border-color: var(--app-dispo-resume-border);
+  color: var(--app-dispo-resume-on);
 }
 
 .indicator-green {
-  background: #9fdda6;
-  border-color: #2c8a3a;
+  background: var(--app-dispo-done-bg);
+  border-color: var(--app-dispo-done-border);
+  color: var(--app-dispo-done-on);
 }
 
+/**
+ * RG_24: légende repliée par défaut — les compteurs portés par chaque bouton
+ * la rendent facultative.
+ */
 .legend {
-  padding: 0 8px 24px;
+  margin: 8px 16px 24px;
 
-  ion-item {
-    --min-height: 34px;
+  summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--app-touch-min);
+    font-size: var(--app-font-sm);
+    color: var(--app-text-secondary);
+    cursor: pointer;
   }
 
-  ion-label {
-    font-size: 0.78rem;
+  ul {
+    margin: 0;
+    padding: 0 0 8px;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    min-height: 34px;
+    font-size: var(--app-font-sm);
+    color: var(--app-text);
   }
 
   .dot {
+    flex: 0 0 auto;
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    border: 1px solid var(--ion-color-step-300, #b8bac1);
+    border: 1px solid var(--app-border-interactive);
     margin-inline-end: 12px;
   }
 }

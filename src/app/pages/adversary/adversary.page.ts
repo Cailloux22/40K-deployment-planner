@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { LibraryService } from '../../data/library.service';
-import { dispositionIndicator } from '../../deployment/deployment-status';
+import { dispositionCounts, dispositionIndicator } from '../../deployment/deployment-status';
 import { ArmyList, DispositionIndicator } from '../../models/domain.models';
 import { ForceDisposition } from '../../models/referential.models';
 import { ReferentialService } from '../../referentials/referential.service';
@@ -12,6 +12,12 @@ interface OpponentOption {
   /** RG_12: indicateur agrégé sur les 3 plateaux du couple. */
   readonly indicator: DispositionIndicator;
   readonly hint: string;
+  /**
+   * RG_24: second canal du code couleur — le compte des déploiements terminés
+   * sur le nombre de plateaux du couple, et la mention « à reprendre » quand
+   * au moins un déploiement est commencé sans être terminé.
+   */
+  readonly counter: string;
   /** Position sur le cercle, en degrés depuis le haut. */
   readonly angle: number;
 }
@@ -73,10 +79,17 @@ export class AdversaryPage implements OnInit {
         .deploymentsOfList(list.id)
         .filter((deployment) => deployment.opponentDispositionId === disposition.id);
       const indicator = dispositionIndicator(list, deployments, perPair);
+      // RG_24: le compte accompagne la couleur, il ne la remplace pas.
+      const counts = dispositionCounts(list, deployments, perPair);
+      const counter =
+        counts.unfinished > 0
+          ? `${counts.finished}/${counts.total} · à reprendre`
+          : `${counts.finished}/${counts.total}`;
       return {
         disposition,
         indicator,
         hint: INDICATOR_HINTS[indicator],
+        counter,
         angle: (360 / all.length) * index,
       };
     });
@@ -117,10 +130,16 @@ export class AdversaryPage implements OnInit {
     return this.router.navigate(['/home']);
   }
 
-  /** Position d'un bouton sur le cercle, en pourcentage du conteneur. */
+  /**
+   * Position d'un bouton sur le cercle, en pourcentage du conteneur.
+   *
+   * RT_30: le rayon est passé de 38 à 36 % pour absorber l'agrandissement des
+   * pastilles, imposé par le passage du libellé de disposition au plancher de
+   * lisibilité (il était rendu à 9,9 px).
+   */
   offset(angle: number, axis: 'x' | 'y'): number {
     const radians = ((angle - 90) * Math.PI) / 180;
-    const radius = 38;
+    const radius = 36;
     return 50 + radius * (axis === 'x' ? Math.cos(radians) : Math.sin(radians));
   }
 }

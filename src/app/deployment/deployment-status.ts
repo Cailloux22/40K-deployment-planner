@@ -87,11 +87,26 @@ export function boardStatus(
  * ses 3 plateaux. Ordre de priorité imposé par RG_12 :
  * Orange > Vert > Jaune > Blanc.
  */
-export function dispositionIndicator(
+/**
+ * RG_24 — second canal de l'indicateur agrégé de RG_12.
+ *
+ * Le compte « terminés sur total » est ce que le bouton de disposition affiche
+ * à côté de sa couleur ; `unfinished` alimente la mention « à reprendre », qui
+ * n'est pas déductible du seul compte (un déploiement commencé mais non
+ * terminé ne compte pas comme terminé et ne se distinguerait sinon pas de
+ * l'état blanc ou jaune).
+ */
+export interface DispositionCounts {
+  readonly finished: number;
+  readonly unfinished: number;
+  readonly total: number;
+}
+
+export function dispositionCounts(
   list: ArmyList,
   deploymentsOnPair: readonly Deployment[],
   boardCount = 3,
-): DispositionIndicator {
+): DispositionCounts {
   let finished = 0;
   let unfinished = 0;
   for (const deployment of deploymentsOnPair) {
@@ -99,6 +114,15 @@ export function dispositionIndicator(
     if (isDeploymentComplete(list, deployment)) finished += 1;
     else unfinished += 1;
   }
+  return { finished, unfinished, total: boardCount };
+}
+
+export function dispositionIndicator(
+  list: ArmyList,
+  deploymentsOnPair: readonly Deployment[],
+  boardCount = 3,
+): DispositionIndicator {
+  const { finished, unfinished } = dispositionCounts(list, deploymentsOnPair, boardCount);
 
   // Orange d'abord : un travail interrompu est le signal le plus utile au
   // joueur, même si d'autres plateaux du couple sont terminés.

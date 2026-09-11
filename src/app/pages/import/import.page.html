@@ -36,7 +36,11 @@
         — export de list-builder BattleScribe / NewRecruit.
       </p>
 
-      <!-- RT_01: le format est déterminé par la couche de parsing, pas ici. -->
+      <!-- RT_01: le format est déterminé par la couche de parsing, pas ici.
+           RT_31: le contrôle natif n'est plus l'action principale de l'écran —
+           il est escamoté visuellement (mais reste atteignable au clavier et
+           par un lecteur d'écran) et déclenché par le bouton ci-dessous. Le
+           comportement fonctionnel de l'import est inchangé. -->
       <input
         #fileInput
         class="file-input"
@@ -45,6 +49,21 @@
         [disabled]="!online() || parsing()"
         (change)="onFileSelected($event)"
       />
+
+      <ion-button
+        class="pick-file"
+        expand="block"
+        size="large"
+        [disabled]="!online() || parsing()"
+        (click)="fileInput.click()"
+      >
+        <ion-icon name="folder-open-outline" slot="start"></ion-icon>
+        Choisir un fichier de liste
+      </ion-button>
+
+      @if (fileInput.files?.length) {
+        <span class="chosen-file">{{ fileInput.files![0].name }}</span>
+      }
 
       @if (parsing()) {
         <ion-note><ion-spinner name="dots"></ion-spinner> Lecture du fichier…</ion-note>
