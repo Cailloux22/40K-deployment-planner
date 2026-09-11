@@ -1,4 +1,1461 @@
 {
-  "generatedAt": "2026-09-10",
-  "footprints": []
+  "generatedAt": "2026-09-11",
+  "footprints": [
+    {
+      "key": "acastus knight asterius::acastus knight asterius",
+      "shape": "oval",
+      "widthMm": 130,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "acastus knight porphyrion::acastus knight porphyrion",
+      "shape": "oval",
+      "widthMm": 130,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "aegis defence line::aegis defence line",
+      "shape": "rectangle",
+      "widthMm": 35,
+      "lengthMm": 290,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer ; segment de muraille déployé en ligne"
+    },
+    {
+      "key": "anathema psykana rhino::anathema psykana rhino",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "annihilation barge::annihilation barge",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 130,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "arkurian stormhammer::arkurian stormhammer",
+      "shape": "rectangle",
+      "widthMm": 185,
+      "lengthMm": 255,
+      "sourceNote": "mesure — châssis Baneblade (kit identique), d’après la mesure retenue pour le Baneblade, coque allongée"
+    },
+    {
+      "key": "armageddon pattern medusa::armageddon pattern medusa",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 130,
+      "sourceNote": "mesure — châssis Chimera (kit identique), d’après la mesure retenue pour le Chimera"
+    },
+    {
+      "key": "atlas recovery vehicle::atlas recovery vehicle",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 125,
+      "sourceNote": "mesure — châssis Chimera (kit identique), d’après la mesure retenue pour le Chimera"
+    },
+    {
+      "key": "attack bike squad::attack bike squad",
+      "shape": "rectangle",
+      "widthMm": 60,
+      "lengthMm": 90,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "baal predator::baal predator",
+      "shape": "rectangle",
+      "widthMm": 102,
+      "lengthMm": 127,
+      "sourceNote": "mesure — Predator sponsons compris : 5 po × 4 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "baneblade::baneblade",
+      "shape": "rectangle",
+      "widthMm": 180,
+      "lengthMm": 220,
+      "sourceNote": "mesure — coque Baneblade : 22 cm de long, 18 cm de large sponsons compris (Heresy Online)"
+    },
+    {
+      "key": "banehammer::banehammer",
+      "shape": "rectangle",
+      "widthMm": 180,
+      "lengthMm": 220,
+      "sourceNote": "mesure — coque Baneblade : 22 cm de long, 18 cm de large sponsons compris (Heresy Online)"
+    },
+    {
+      "key": "banesword::banesword",
+      "shape": "rectangle",
+      "widthMm": 180,
+      "lengthMm": 220,
+      "sourceNote": "mesure — coque Baneblade : 22 cm de long, 18 cm de large sponsons compris (Heresy Online)"
+    },
+    {
+      "key": "basilisk::basilisk",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 150,
+      "sourceNote": "mesure — châssis Chimera (kit identique), d’après la mesure retenue pour le Chimera, canon débordant à l’arrière"
+    },
+    {
+      "key": "battle sanctum::battle sanctum",
+      "shape": "rectangle",
+      "widthMm": 160,
+      "lengthMm": 160,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "battlewagon::battlewagon",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "big mek dakkarig::big mek dakkarig",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 130,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "big trakk::big trakk",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 160,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "bigboss::bigboss",
+      "shape": "rectangle",
+      "widthMm": 90,
+      "lengthMm": 110,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "biged bossbunka::big ed bossbunka",
+      "shape": "rectangle",
+      "widthMm": 160,
+      "lengthMm": 160,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "bike squad::attack bike",
+      "shape": "rectangle",
+      "widthMm": 60,
+      "lengthMm": 90,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "blood slaughterer::blood slaughterer",
+      "shape": "round",
+      "widthMm": 150,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "carnodon::carnodon",
+      "shape": "rectangle",
+      "widthMm": 90,
+      "lengthMm": 120,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "castigator::castigator",
+      "shape": "rectangle",
+      "widthMm": 85,
+      "lengthMm": 125,
+      "sourceNote": "mesure — châssis Rhino (kit identique), d’après la mesure retenue pour le Rhino"
+    },
+    {
+      "key": "centaur light carrier::centaur light carrier",
+      "shape": "rectangle",
+      "widthMm": 62,
+      "lengthMm": 80,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "centaur rsv::centaur rsv",
+      "shape": "rectangle",
+      "widthMm": 62,
+      "lengthMm": 80,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "cerberus::cerberus",
+      "shape": "rectangle",
+      "widthMm": 120,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "chaos acastus knight asterius::chaos acastus knight asterius",
+      "shape": "oval",
+      "widthMm": 130,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "chaos acastus knight porphyrion::chaos acastus knight porphyrion",
+      "shape": "oval",
+      "widthMm": 130,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "chaos deimos predator::chaos deimos predator",
+      "shape": "rectangle",
+      "widthMm": 95,
+      "lengthMm": 127,
+      "sourceNote": "mesure — châssis Predator (kit identique), d’après la mesure retenue pour le Predator (variante Deimos)"
+    },
+    {
+      "key": "chaos land raider::chaos land raider",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 175,
+      "sourceNote": "mesure — coque Land Raider : 6,5–7 po × 4 po (40K Online), 18 × 9,5 cm (Warseer) ; médiane"
+    },
+    {
+      "key": "chaos predator annihilator::chaos predator annihilator",
+      "shape": "rectangle",
+      "widthMm": 102,
+      "lengthMm": 127,
+      "sourceNote": "mesure — Predator sponsons compris : 5 po × 4 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "chaos predator destructor::chaos predator destructor",
+      "shape": "rectangle",
+      "widthMm": 102,
+      "lengthMm": 127,
+      "sourceNote": "mesure — Predator sponsons compris : 5 po × 4 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "chaos rhino::chaos rhino",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "chaos vindicator::chaos vindicator",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 130,
+      "sourceNote": "mesure — châssis Rhino (kit identique), d’après la mesure retenue pour le Rhino, lame de siège comprise"
+    },
+    {
+      "key": "chimera::chimera",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 114,
+      "sourceNote": "mesure — coque Chimera : 4,5 po × ~3,8 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "cobra::cobra",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 330,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "colossus::colossus",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 130,
+      "sourceNote": "mesure — châssis Chimera (kit identique), d’après la mesure retenue pour le Chimera"
+    },
+    {
+      "key": "commissar graves::commissar graves",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer ; véhicule de commandement, gabarit aligné sur le Hippogriff AFV"
+    },
+    {
+      "key": "convergence of dominion::convergence of dominion",
+      "shape": "round",
+      "widthMm": 75,
+      "lengthMm": 75,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer ; emprise d’un seul pylône"
+    },
+    {
+      "key": "coronus grav carrier::coronus grav carrier",
+      "shape": "rectangle",
+      "widthMm": 105,
+      "lengthMm": 190,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "crassus::crassus",
+      "shape": "rectangle",
+      "widthMm": 115,
+      "lengthMm": 195,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "cyclops demolition vehicle::cyclops demolition vehicle",
+      "shape": "rectangle",
+      "widthMm": 45,
+      "lengthMm": 60,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "deathstorm drop pod::deathstorm drop pod",
+      "shape": "round",
+      "widthMm": 190,
+      "lengthMm": 190,
+      "sourceNote": "mesure — emprise ronde ~19 cm de diamètre, portes déployées (Tale of Painters, kit 2025)"
+    },
+    {
+      "key": "deathstrike::deathstrike",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 165,
+      "sourceNote": "mesure — châssis Chimera (kit identique), d’après la mesure retenue pour le Chimera, missile débordant"
+    },
+    {
+      "key": "deimos predator::deimos predator",
+      "shape": "rectangle",
+      "widthMm": 95,
+      "lengthMm": 127,
+      "sourceNote": "mesure — châssis Predator (kit identique), d’après la mesure retenue pour le Predator (variante Deimos)"
+    },
+    {
+      "key": "dominus armoured siege bombard::dominus armoured siege bombard",
+      "shape": "rectangle",
+      "widthMm": 125,
+      "lengthMm": 210,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "doomhammer::doomhammer",
+      "shape": "rectangle",
+      "widthMm": 180,
+      "lengthMm": 220,
+      "sourceNote": "mesure — coque Baneblade : 22 cm de long, 18 cm de large sponsons compris (Heresy Online)"
+    },
+    {
+      "key": "dreadnought drop pod::dreadnought drop pod",
+      "shape": "round",
+      "widthMm": 230,
+      "lengthMm": 230,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "drone sentry turret::drone sentry turret",
+      "shape": "round",
+      "widthMm": 70,
+      "lengthMm": 70,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "drop pod::drop pod",
+      "shape": "round",
+      "widthMm": 190,
+      "lengthMm": 190,
+      "sourceNote": "mesure — emprise ronde ~19 cm de diamètre, portes déployées (Tale of Painters, kit 2025)"
+    },
+    {
+      "key": "earthshaker carriage battery::earthshaker carriage battery",
+      "shape": "rectangle",
+      "widthMm": 90,
+      "lengthMm": 135,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "earthshaker platform::earthshaker platform",
+      "shape": "rectangle",
+      "widthMm": 105,
+      "lengthMm": 120,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "exorcist::exorcist",
+      "shape": "rectangle",
+      "widthMm": 85,
+      "lengthMm": 125,
+      "sourceNote": "mesure — châssis Rhino (kit identique), d’après la mesure retenue pour le Rhino"
+    },
+    {
+      "key": "falchion::falchion",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 215,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "feculent gnarlmaw::feculent gnarlmaw",
+      "shape": "round",
+      "widthMm": 120,
+      "lengthMm": 120,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "fellblade::fellblade",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 215,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "gargantuan squiggoth::gargantuan squiggoth",
+      "shape": "rectangle",
+      "widthMm": 160,
+      "lengthMm": 300,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "gauss pylon::gauss pylon",
+      "shape": "rectangle",
+      "widthMm": 150,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "goliath rockgrinder::goliath rockgrinder",
+      "shape": "rectangle",
+      "widthMm": 95,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "goliath truck::goliath truck",
+      "shape": "rectangle",
+      "widthMm": 95,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "gorgon heavy transport::gorgon heavy transport",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 210,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "greater brass scorpion::greater brass scorpion",
+      "shape": "rectangle",
+      "widthMm": 190,
+      "lengthMm": 300,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "grey knights relic razorback::grey knights relic razorback",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "grey knights thunderhawk gunship::grey knights thunderhawk gunship",
+      "shape": "rectangle",
+      "widthMm": 440,
+      "lengthMm": 480,
+      "sourceNote": "mesure — modèle Forge World : 480 mm de long pour 440 mm d’envergure (mesures communautaires concordantes)"
+    },
+    {
+      "key": "griffon mortar carrier::griffon mortar carrier",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 120,
+      "sourceNote": "mesure — châssis Chimera (kit identique), d’après la mesure retenue pour le Chimera"
+    },
+    {
+      "key": "grot mega tank::grot mega tank",
+      "shape": "rectangle",
+      "widthMm": 90,
+      "lengthMm": 110,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "grot tanks::grot tanks",
+      "shape": "rectangle",
+      "widthMm": 55,
+      "lengthMm": 70,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "gunwagon::gunwagon",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "hades breaching drill::hades breaching drill",
+      "shape": "rectangle",
+      "widthMm": 95,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "hammerfall bunker::hammerfall bunker",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 130,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "heavy mortar team::heavy mortar team",
+      "shape": "round",
+      "widthMm": 60,
+      "lengthMm": 60,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "heavy quad launcher team::heavy quad launcher team",
+      "shape": "rectangle",
+      "widthMm": 75,
+      "lengthMm": 95,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "hekaton land fortress::hekaton land fortress",
+      "shape": "rectangle",
+      "widthMm": 120,
+      "lengthMm": 175,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "hellhammer::hellhammer",
+      "shape": "rectangle",
+      "widthMm": 180,
+      "lengthMm": 220,
+      "sourceNote": "mesure — coque Baneblade : 22 cm de long, 18 cm de large sponsons compris (Heresy Online)"
+    },
+    {
+      "key": "hellhound::hellhound",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 114,
+      "sourceNote": "mesure — châssis Chimera (kit identique), d’après la mesure retenue pour le Chimera"
+    },
+    {
+      "key": "hierophant::hierophant",
+      "shape": "rectangle",
+      "widthMm": 260,
+      "lengthMm": 380,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "hippogriff afv::hippogriff afv",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "hunter::hunter",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "hydra platform::hydra platform",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 115,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "hydra::hydra",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 120,
+      "sourceNote": "mesure — châssis Chimera (kit identique), d’après la mesure retenue pour le Chimera"
+    },
+    {
+      "key": "immolator::immolator",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "imperial rhino::imperial rhino",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "inquisitorial chimera::chimera",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 114,
+      "sourceNote": "mesure — coque Chimera : 4,5 po × ~3,8 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "invader atv::invader atv",
+      "shape": "rectangle",
+      "widthMm": 60,
+      "lengthMm": 80,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "khorne lord of skulls::khorne lord of skulls",
+      "shape": "rectangle",
+      "widthMm": 200,
+      "lengthMm": 250,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "kill tank::kill tank",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 250,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "kratos::kratos",
+      "shape": "rectangle",
+      "widthMm": 115,
+      "lengthMm": 165,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "land raider achilles::land raider achilles",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 175,
+      "sourceNote": "mesure — châssis Land Raider (kit identique), d’après la mesure retenue pour le Land Raider"
+    },
+    {
+      "key": "land raider crusader::land raider crusader",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 175,
+      "sourceNote": "mesure — coque Land Raider : 6,5–7 po × 4 po (40K Online), 18 × 9,5 cm (Warseer) ; médiane"
+    },
+    {
+      "key": "land raider excelsior::land raider excelsior",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 175,
+      "sourceNote": "mesure — coque Land Raider : 6,5–7 po × 4 po (40K Online), 18 × 9,5 cm (Warseer) ; médiane"
+    },
+    {
+      "key": "land raider helios::land raider helios",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 175,
+      "sourceNote": "mesure — coque Land Raider : 6,5–7 po × 4 po (40K Online), 18 × 9,5 cm (Warseer) ; médiane"
+    },
+    {
+      "key": "land raider prometheus::land raider prometheus",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 175,
+      "sourceNote": "mesure — coque Land Raider : 6,5–7 po × 4 po (40K Online), 18 × 9,5 cm (Warseer) ; médiane"
+    },
+    {
+      "key": "land raider proteus::land raider proteus",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 170,
+      "sourceNote": "mesure — châssis Land Raider (kit identique), d’après la mesure retenue pour le Land Raider (variante Deimos, un peu plus courte)"
+    },
+    {
+      "key": "land raider redeemer::land raider redeemer",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 175,
+      "sourceNote": "mesure — coque Land Raider : 6,5–7 po × 4 po (40K Online), 18 × 9,5 cm (Warseer) ; médiane"
+    },
+    {
+      "key": "land raider::land raider",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 175,
+      "sourceNote": "mesure — coque Land Raider : 6,5–7 po × 4 po (40K Online), 18 × 9,5 cm (Warseer) ; médiane"
+    },
+    {
+      "key": "leman russ battle tank::leman russ battle tank",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Leman Russ 12 × 8 cm, sponsons +~3 cm de large (DakkaDakka, recoupé Warseer)"
+    },
+    {
+      "key": "leman russ commander::leman russ commander",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Leman Russ 12 × 8 cm, sponsons +~3 cm de large (DakkaDakka, recoupé Warseer)"
+    },
+    {
+      "key": "leman russ demolisher::leman russ demolisher",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Leman Russ 12 × 8 cm, sponsons +~3 cm de large (DakkaDakka, recoupé Warseer)"
+    },
+    {
+      "key": "leman russ eradicator::leman russ eradicator",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Leman Russ 12 × 8 cm, sponsons +~3 cm de large (DakkaDakka, recoupé Warseer)"
+    },
+    {
+      "key": "leman russ executioner::leman russ executioner",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Leman Russ 12 × 8 cm, sponsons +~3 cm de large (DakkaDakka, recoupé Warseer)"
+    },
+    {
+      "key": "leman russ exterminator::leman russ exterminator",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Leman Russ 12 × 8 cm, sponsons +~3 cm de large (DakkaDakka, recoupé Warseer)"
+    },
+    {
+      "key": "leman russ punisher::leman russ punisher",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Leman Russ 12 × 8 cm, sponsons +~3 cm de large (DakkaDakka, recoupé Warseer)"
+    },
+    {
+      "key": "leman russ vanquisher::leman russ vanquisher",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Leman Russ 12 × 8 cm, sponsons +~3 cm de large (DakkaDakka, recoupé Warseer)"
+    },
+    {
+      "key": "lifta wagon::lifta wagon",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "lynx::lynx",
+      "shape": "rectangle",
+      "widthMm": 150,
+      "lengthMm": 290,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "macharius omega::macharius omega",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "macharius vanquisher::macharius vanquisher",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "macharius vulcan::macharius vulcan",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "macharius::macharius",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "malcador annihilator::malcador annihilator",
+      "shape": "rectangle",
+      "widthMm": 105,
+      "lengthMm": 185,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "malcador defender::malcador defender",
+      "shape": "rectangle",
+      "widthMm": 105,
+      "lengthMm": 185,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "malcador infernus::malcador infernus",
+      "shape": "rectangle",
+      "widthMm": 105,
+      "lengthMm": 185,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "malcador::malcador",
+      "shape": "rectangle",
+      "widthMm": 105,
+      "lengthMm": 185,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "manta::manta",
+      "shape": "rectangle",
+      "widthMm": 830,
+      "lengthMm": 630,
+      "sourceNote": "mesure — modèle Forge World : 63 cm de long pour 83 cm d’envergure (fiche produit relayée par la communauté)"
+    },
+    {
+      "key": "manticore platform::manticore platform",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 115,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "manticore::manticore",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 120,
+      "sourceNote": "mesure — châssis Chimera (kit identique), d’après la mesure retenue pour le Chimera"
+    },
+    {
+      "key": "marauder bomber::marauder bomber",
+      "shape": "rectangle",
+      "widthMm": 430,
+      "lengthMm": 340,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "marauder destroyer::marauder destroyer",
+      "shape": "rectangle",
+      "widthMm": 430,
+      "lengthMm": 340,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "mastodon::mastodon",
+      "shape": "rectangle",
+      "widthMm": 160,
+      "lengthMm": 240,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "medusa carriage battery::medusa carriage battery",
+      "shape": "rectangle",
+      "widthMm": 75,
+      "lengthMm": 105,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "mek gunz::mek gunz",
+      "shape": "round",
+      "widthMm": 90,
+      "lengthMm": 90,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "mekboy workshop::",
+      "shape": "rectangle",
+      "widthMm": 180,
+      "lengthMm": 250,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "miasmic malignifier::miasmic malignifier",
+      "shape": "round",
+      "widthMm": 130,
+      "lengthMm": 130,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "minotaur::minotaur",
+      "shape": "rectangle",
+      "widthMm": 115,
+      "lengthMm": 195,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "noctilith crown::noctilith crown",
+      "shape": "round",
+      "widthMm": 170,
+      "lengthMm": 170,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "orca dropship::orca dropship",
+      "shape": "rectangle",
+      "widthMm": 420,
+      "lengthMm": 400,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "outrider squad::invader atv",
+      "shape": "rectangle",
+      "widthMm": 60,
+      "lengthMm": 80,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "phantom titan::phantom titan",
+      "shape": "round",
+      "widthMm": 350,
+      "lengthMm": 350,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "plagueburst crawler::plagueburst crawler",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 160,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "praetor::praetor",
+      "shape": "rectangle",
+      "widthMm": 115,
+      "lengthMm": 195,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "predator annihilator::predator annihilator",
+      "shape": "rectangle",
+      "widthMm": 102,
+      "lengthMm": 127,
+      "sourceNote": "mesure — Predator sponsons compris : 5 po × 4 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "predator destructor::predator destructor",
+      "shape": "rectangle",
+      "widthMm": 102,
+      "lengthMm": 127,
+      "sourceNote": "mesure — Predator sponsons compris : 5 po × 4 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "rapier carrier::rapier carrier",
+      "shape": "rectangle",
+      "widthMm": 55,
+      "lengthMm": 75,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "rapier laser destroyer battery::rapier laser destroyer battery",
+      "shape": "rectangle",
+      "widthMm": 55,
+      "lengthMm": 75,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "razorback::razorback",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "reaper::reaper",
+      "shape": "rectangle",
+      "widthMm": 90,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "reaver titan::reaver titan",
+      "shape": "round",
+      "widthMm": 300,
+      "lengthMm": 300,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "relic razorback::relic razorback",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "remote sensor tower::remote sensor tower",
+      "shape": "round",
+      "widthMm": 90,
+      "lengthMm": 90,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "repressor::repressor",
+      "shape": "rectangle",
+      "widthMm": 82,
+      "lengthMm": 125,
+      "sourceNote": "mesure — châssis Rhino (kit identique), d’après la mesure retenue pour le Rhino, blindage additionnel"
+    },
+    {
+      "key": "revenant titan::revenant titan",
+      "shape": "round",
+      "widthMm": 260,
+      "lengthMm": 260,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "rhino primaris::rhino primaris",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "rhino::rhino",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "rogal dorn battle tank::rogal dorn battle tank",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "rogal dorn commander::rogal dorn tank commander",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "sabre weapons battery::sabre weapons battery",
+      "shape": "rectangle",
+      "widthMm": 62,
+      "lengthMm": 80,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "sagitaur::sagitaur",
+      "shape": "rectangle",
+      "widthMm": 80,
+      "lengthMm": 110,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "salamander command vehicle::salamander command vehicle",
+      "shape": "rectangle",
+      "widthMm": 85,
+      "lengthMm": 100,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "salamander scout vehicle::salamander scout vehicle",
+      "shape": "rectangle",
+      "widthMm": 85,
+      "lengthMm": 100,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "scabeiathrax the bloated::scabeiathrax the bloated",
+      "shape": "round",
+      "widthMm": 130,
+      "lengthMm": 130,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "scorpion::scorpion",
+      "shape": "rectangle",
+      "widthMm": 130,
+      "lengthMm": 330,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "sentinel powerlifter::sentinel powerlifter",
+      "shape": "round",
+      "widthMm": 80,
+      "lengthMm": 80,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "sentry pylon::sentry pylon",
+      "shape": "rectangle",
+      "widthMm": 90,
+      "lengthMm": 110,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "seraptek heavy construct::seraptek heavy construct",
+      "shape": "round",
+      "widthMm": 250,
+      "lengthMm": 250,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "shadowsword::shadowsword",
+      "shape": "rectangle",
+      "widthMm": 180,
+      "lengthMm": 220,
+      "sourceNote": "mesure — coque Baneblade : 22 cm de long, 18 cm de large sponsons compris (Heresy Online)"
+    },
+    {
+      "key": "sicaran arcus::sicaran arcus",
+      "shape": "rectangle",
+      "widthMm": 105,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "sicaran battle tank::sicaran battle tank",
+      "shape": "rectangle",
+      "widthMm": 105,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "sicaran omega::sicaran omega",
+      "shape": "rectangle",
+      "widthMm": 105,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "sicaran punisher::sicaran punisher",
+      "shape": "rectangle",
+      "widthMm": 105,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "sicaran venator::sicaran venator",
+      "shape": "rectangle",
+      "widthMm": 105,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "sisters of battle immolator::immolator",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "skorpius disintegrator::skorpius disintegrator",
+      "shape": "rectangle",
+      "widthMm": 95,
+      "lengthMm": 170,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "skorpius dunerider::skorpius dunerider",
+      "shape": "rectangle",
+      "widthMm": 95,
+      "lengthMm": 170,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "skull altar::skull altar",
+      "shape": "round",
+      "widthMm": 150,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "sokar pattern stormbird::sokar pattern stormbird",
+      "shape": "rectangle",
+      "widthMm": 560,
+      "lengthMm": 600,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "sororitas rhino::sororitas rhino",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "spartan::spartan",
+      "shape": "rectangle",
+      "widthMm": 125,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "stalker::stalker",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "stompa::stompa",
+      "shape": "rectangle",
+      "widthMm": 190,
+      "lengthMm": 203,
+      "sourceNote": "mesure — mesure communautaire : emprise de 8 po sur 7,5 po (40K Online)"
+    },
+    {
+      "key": "storm chimera::storm chimera",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 114,
+      "sourceNote": "mesure — coque Chimera : 4,5 po × ~3,8 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "stormblade::stormblade",
+      "shape": "rectangle",
+      "widthMm": 180,
+      "lengthMm": 220,
+      "sourceNote": "mesure — coque Baneblade : 22 cm de long, 18 cm de large sponsons compris (Heresy Online)"
+    },
+    {
+      "key": "stormlord::stormlord",
+      "shape": "rectangle",
+      "widthMm": 180,
+      "lengthMm": 220,
+      "sourceNote": "mesure — coque Baneblade : 22 cm de long, 18 cm de large sponsons compris (Heresy Online)"
+    },
+    {
+      "key": "stormsword::stormsword",
+      "shape": "rectangle",
+      "widthMm": 180,
+      "lengthMm": 220,
+      "sourceNote": "mesure — coque Baneblade : 22 cm de long, 18 cm de large sponsons compris (Heresy Online)"
+    },
+    {
+      "key": "stygies destroyer tank hunter::stygies destroyer tank hunter",
+      "shape": "rectangle",
+      "widthMm": 110,
+      "lengthMm": 130,
+      "sourceNote": "mesure — châssis Leman Russ (kit identique), d’après la mesure retenue pour le Leman Russ"
+    },
+    {
+      "key": "tantalus::tantalus",
+      "shape": "rectangle",
+      "widthMm": 115,
+      "lengthMm": 280,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "tarantula air defence battery::tarantula air defence battery",
+      "shape": "round",
+      "widthMm": 60,
+      "lengthMm": 60,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "tarantula battery::tarantula battery",
+      "shape": "round",
+      "widthMm": 60,
+      "lengthMm": 60,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "tarantula sentry battery::tarantula sentry battery",
+      "shape": "round",
+      "widthMm": 60,
+      "lengthMm": 60,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "tauros assault vehicle::tauros assault vehicle",
+      "shape": "rectangle",
+      "widthMm": 70,
+      "lengthMm": 90,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "tauros venator::tauros venator",
+      "shape": "rectangle",
+      "widthMm": 70,
+      "lengthMm": 90,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "taurox prime::taurox prime",
+      "shape": "rectangle",
+      "widthMm": 85,
+      "lengthMm": 110,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "taurox::taurox",
+      "shape": "rectangle",
+      "widthMm": 85,
+      "lengthMm": 110,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "tectonic fragdrill::tectonic fragdrill",
+      "shape": "round",
+      "widthMm": 150,
+      "lengthMm": 150,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "terminus ultra::terminus ultra",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 175,
+      "sourceNote": "mesure — châssis Land Raider (kit identique), d’après la mesure retenue pour le Land Raider"
+    },
+    {
+      "key": "terrax pattern termite::terrax pattern termite",
+      "shape": "rectangle",
+      "widthMm": 95,
+      "lengthMm": 130,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "thunderfire cannon::thunderfire cannon",
+      "shape": "round",
+      "widthMm": 70,
+      "lengthMm": 70,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "tidewall droneport::tidewall droneport",
+      "shape": "rectangle",
+      "widthMm": 150,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "tidewall gunrig::tidewall gunrig",
+      "shape": "rectangle",
+      "widthMm": 150,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "tidewall shieldline::tidewall shieldline",
+      "shape": "rectangle",
+      "widthMm": 60,
+      "lengthMm": 300,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "tomb citadel walls::tomb citadel walls",
+      "shape": "rectangle",
+      "widthMm": 120,
+      "lengthMm": 300,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "triarch stalker::triarch stalker",
+      "shape": "round",
+      "widthMm": 160,
+      "lengthMm": 160,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "trojan support vehicle::trojan support vehicle",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 114,
+      "sourceNote": "mesure — châssis Chimera (kit identique), d’après la mesure retenue pour le Chimera"
+    },
+    {
+      "key": "trukk::trukk",
+      "shape": "rectangle",
+      "widthMm": 85,
+      "lengthMm": 135,
+      "sourceNote": "mesure — mesure communautaire : 13,5 cm de long (synthèse Warseer 2009) ; largeur estimée"
+    },
+    {
+      "key": "typhon::typhon",
+      "shape": "rectangle",
+      "widthMm": 125,
+      "lengthMm": 200,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "valdor::valdor",
+      "shape": "rectangle",
+      "widthMm": 105,
+      "lengthMm": 185,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "venerable land raider::venerable land raider",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 175,
+      "sourceNote": "mesure — coque Land Raider : 6,5–7 po × 4 po (40K Online), 18 × 9,5 cm (Warseer) ; médiane"
+    },
+    {
+      "key": "vindicator laser destroyer::vindicator laser destroyer",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 130,
+      "sourceNote": "mesure — châssis Rhino (kit identique), d’après la mesure retenue pour le Rhino, lame de siège comprise"
+    },
+    {
+      "key": "vindicator::vindicator",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 130,
+      "sourceNote": "mesure — châssis Rhino (kit identique), d’après la mesure retenue pour le Rhino, lame de siège comprise"
+    },
+    {
+      "key": "warbringer nemesis titan::warbringer nemesis titan",
+      "shape": "round",
+      "widthMm": 350,
+      "lengthMm": 350,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "warhound titan::warhound titan",
+      "shape": "round",
+      "widthMm": 230,
+      "lengthMm": 230,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "warlord titan::warlord titan",
+      "shape": "round",
+      "widthMm": 380,
+      "lengthMm": 380,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "warp hunter::warp hunter",
+      "shape": "rectangle",
+      "widthMm": 100,
+      "lengthMm": 165,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "wartrakks::wartrakk",
+      "shape": "rectangle",
+      "widthMm": 70,
+      "lengthMm": 90,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "webway gate::",
+      "shape": "round",
+      "widthMm": 190,
+      "lengthMm": 190,
+      "sourceNote": "estimation — proportions du kit, aucune mesure publiée, à confirmer"
+    },
+    {
+      "key": "whirlwind scorpius::whirlwind scorpius",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — châssis Rhino (kit identique), d’après la mesure retenue pour le Rhino"
+    },
+    {
+      "key": "whirlwind::whirlwind",
+      "shape": "rectangle",
+      "widthMm": 76,
+      "lengthMm": 120,
+      "sourceNote": "mesure — coque Rhino : 4,6–5 po × 3 po (synthèse communautaire Warseer 2009)"
+    },
+    {
+      "key": "wyvern::wyvern",
+      "shape": "rectangle",
+      "widthMm": 97,
+      "lengthMm": 114,
+      "sourceNote": "mesure — châssis Chimera (kit identique), d’après la mesure retenue pour le Chimera"
+    }
+  ]
 }

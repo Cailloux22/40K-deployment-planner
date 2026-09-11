@@ -131,11 +131,26 @@ describe('RT_26 — référentiel complémentaire des gabarits « Use model »',
   const referential = load<UseModelFootprintReferential>('use-model-footprints.json');
   const bases = load<BaseReferential>('bases.json');
 
-  it('n’a, à ce stade, aucune entrée non vérifiée — il grossit au fil des recherches', () => {
-    // RT_26: ne jamais introduire une dimension qui ne soit pas une mesure
-    // vérifiée et sourcée (`sourceNote`) — une entrée non fiable serait pire
-    // que l'assignation manuelle qu'elle est censée éviter.
-    expect(Array.isArray(referential.footprints)).toBe(true);
+  it('couvre toutes les lignes « Use model » de RT_02', () => {
+    // RT_26: couverture exhaustive du périmètre — plus aucune ligne « Use
+    // model » ne part en assignation manuelle. Une ligne que RT_02
+    // introduirait par la suite doit être renseignée ici en même temps.
+    const useModelKeys = bases.datasheets.flatMap((sheet) =>
+      sheet.models
+        .filter((m) => !m.baseShapeId && m.rawBaseSize?.trim().toLowerCase() === 'use model')
+        .map((m) => `${sheet.key}::${m.key}`),
+    );
+    const covered = new Set(referential.footprints.map((f) => f.key));
+    expect([...new Set(useModelKeys)].filter((key) => !covered.has(key))).toEqual([]);
+  });
+
+  it('énonce la provenance de chaque gabarit : mesure citée ou estimation assumée', () => {
+    // RT_26: une valeur estimée reste acceptable — elle vaut mieux qu'une
+    // assignation manuelle redemandée à chaque import — mais elle doit se
+    // signaler comme telle, pour pouvoir être remplacée par une vraie mesure.
+    for (const footprint of referential.footprints) {
+      expect(footprint.sourceNote).toMatch(/^(mesure|estimation) — /);
+    }
   });
 
   it('ne porte que des gabarits bien formés, chacun avec sa source', () => {

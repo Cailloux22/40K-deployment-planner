@@ -79,16 +79,15 @@ describe('ReferentialService.resolveBaseShapeId — RG_02', () => {
     await expect(service.resolveBaseShapeId('Unité inventée', 'Profil')).resolves.toMatchObject({
       baseShapeId: null,
     });
-    const useModel = await service.resolveBaseShapeId(
-      'Skorpius Disintegrator',
-      'Skorpius Disintegrator',
-    );
-    expect(useModel.baseShapeId).toBeNull();
+    // `No official base size` : hors périmètre de RT_26, donc non résolu par
+    // construction, quelle que soit la couverture du référentiel de gabarits.
+    const noBase = await service.resolveBaseShapeId('Spined Chaos Beast', 'Spined Chaos Beast');
+    expect(noBase.baseShapeId).toBeNull();
   });
 
   it('ne mémorise rien d’un appel à l’autre : un profil non résolu le reste', async () => {
-    const first = await service.resolveBaseShapeId('Skorpius Disintegrator', 'Skorpius Disintegrator');
-    const second = await service.resolveBaseShapeId('Skorpius Disintegrator', 'Skorpius Disintegrator');
+    const first = await service.resolveBaseShapeId('Spined Chaos Beast', 'Spined Chaos Beast');
+    const second = await service.resolveBaseShapeId('Spined Chaos Beast', 'Spined Chaos Beast');
     expect(first).toEqual(second);
     expect(second.baseShapeId).toBeNull();
   });

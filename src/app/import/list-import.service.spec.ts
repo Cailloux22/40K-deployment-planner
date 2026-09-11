@@ -63,15 +63,20 @@ describe('ListImportService.buildDraft — RG_02/RG_16', () => {
   });
 
   it('signale les seuls socles non publiés (RG_22)', () => {
-    // « Use model » sur le Skorpius Disintegrator : au joueur de trancher.
-    expect(service.unresolvedGroups(draft).map((entry) => entry.unit.name)).toEqual([
-      'Skorpius Disintegrator',
-    ]);
-    expect(service.isDraftComplete(draft)).toBe(false);
+    // Le seul socle non publié de cette liste — « Use model » sur le Skorpius
+    // Disintegrator — est désormais couvert par le référentiel de gabarits
+    // (RT_26) : plus rien ne part en assignation manuelle.
+    expect(service.unresolvedGroups(draft).map((entry) => entry.unit.name)).toEqual([]);
+    expect(service.isDraftComplete(draft)).toBe(true);
   });
 
   it('RG_02/RT_28 : un rectangle sur mesure résout le groupe au même titre qu’un socle', () => {
     const unit = draft.units.find((u) => u.name === 'Skorpius Disintegrator')!;
+    // Profil ramené en assignation manuelle, comme l'est tout profil que ni
+    // RT_02 ni RT_26 ne documentent.
+    unit.modelGroups[0].baseShapeId = null;
+    expect(service.unresolvedGroups(draft)).toHaveLength(1);
+
     unit.modelGroups[0].customRectangleMm = { widthMm: 60, lengthMm: 120 };
 
     expect(service.unresolvedGroups(draft)).toEqual([]);
