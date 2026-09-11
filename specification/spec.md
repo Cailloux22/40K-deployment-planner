@@ -499,6 +499,10 @@ Une surface d'alerte, d'erreur ou de statut n'est jamais posée sans la couleur 
 
 **Conséquence sur les cartes de liste de l'accueil.** Le nom d'une liste est saisi par le joueur ([[RG_01]], [[RG_21]]) : sa longueur n'est pas bornée. Laissé libre de se replier, il donne à chaque carte une hauteur différente, et la bibliothèque se réorganise à chaque import, renommage ou duplication. Le nom de la liste et ses métadonnées sont donc tronqués à une ligne chacun, conformément au traitement prévu par [[RT_30]] — le texte complet restant présent dans l'arbre d'accessibilité —, et la carte occupe la même hauteur quelle que soit la liste qu'elle décrit.
 
+**Conséquence sur la barre d'actions de token de [[RG_20]].** Les actions portant sur le token sélectionné — rotation au pas fixe, retrait — n'existent que tant qu'un token est sélectionné. Insérées dans le flux, elles apparaissent et disparaissent au fil des sélections et re-cadrent le plateau à chaque fois, exactement comme le ferait un bandeau de hauteur variable. Elles sont donc **superposées à la zone du plateau** plutôt qu'insérées entre celle-ci et le bandeau : leur apparition ne consomme aucune hauteur et ne modifie donc jamais l'échelle d'affichage de [[RG_17]]/[[RT_19]].
+
+Cette superposition ne relève pas de l'interdiction de recouvrement de [[RT_31]], qui vise les éléments décoratifs ou indicatifs posés sur un contenu porteur d'information : il s'agit ici de contrôles, et le rognage au rectangle de jeu de [[RT_19]] écarte déjà de l'affichage la légende imprimée que cette interdiction protège. La barre est ancrée dans un angle de la zone, hors du centre où se fait la manipulation, et reste soumise aux cibles tactiles de [[RT_31]] comme tout autre contrôle. Le délimiteur du contrôle porte le contraste exigé face à la scène sombre sur laquelle il flotte, et non seulement face à sa propre surface.
+
 ---
 
 ## Suivi des décisions non tranchées
