@@ -129,16 +129,29 @@
   --color: var(--app-warn-on);
 }
 
+// RT_29: `ion-item-divider` applique ses propres couleurs par défaut, qui
+// laissaient le nom de l'unité à 2,85:1 sur son fond. Surface et couleur de
+// texte sont donc posées ensemble, comme partout ailleurs.
 // RT_30 (hiérarchie): le nom de l'unité prime sur son compte de modèles.
 .unit ion-item-divider {
+  --background: var(--app-surface-raised);
+  --color: var(--app-text);
+
   h2 {
     font-size: var(--app-font-md);
     font-weight: 600;
+    color: var(--app-text);
   }
 
   p {
     font-size: var(--app-font-sm);
+    color: var(--app-text-secondary);
   }
+}
+
+// RT_31: les deux actions du pied de page mesuraient 32 px de haut.
+ion-footer ion-button {
+  min-height: var(--app-touch-min);
 }
 
 .reason {
