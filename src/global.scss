@@ -35,3 +35,18 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import "@ionic/angular/css/palettes/dark.system.css";
+
+/**
+ * RT_29 — couleur de texte par défaut du document.
+ *
+ * On ne cherche PAS à réécrire `--ion-background-color` / `--ion-text-color`
+ * depuis les tokens de l'application : la palette sombre du cadre les déclare
+ * sous `:root.md` / `:root.ios`, qui l'emportent sur un `:root` nu — une telle
+ * redéfinition serait silencieusement ignorée en thème sombre. Leurs valeurs
+ * coïncident de toute façon avec `--app-surface-page` / `--app-text`, tenues
+ * alignées dans src/theme/variables.scss.
+ */
+body {
+  color: var(--app-text);
+  background: var(--app-surface-page);
+}

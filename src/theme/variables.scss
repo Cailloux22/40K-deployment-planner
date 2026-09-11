@@ -1,2 +1,294 @@
-// For information on how to create your own theme, please refer to:
-// https://ionicframework.com/docs/theming/
+// RT_29 — système de thème et tokens de couleur.
+// RT_30 — échelle typographique. RT_31 — cibles tactiles.
+//
+// Point de définition UNIQUE des couleurs de l'application : aucune feuille de
+// style d'écran, aucun style de composant ne déclare de valeur littérale.
+//
+// On ne consomme aucune variable `--ion-color-step-*` : vérifié au 2026-09-11
+// sur @ionic/angular 9, elles ne sont définies par le cadre dans AUCUN des deux
+// thèmes (ce ne sont que des points d'override), de sorte que toute lecture
+// retombait en réalité sur la valeur de repli claire écrite à côté — y compris
+// en thème sombre. Les échelons de surface sont donc propres à l'application.
+// Les couleurs nommées du cadre (--ion-color-dark, --ion-color-medium,
+// --ion-color-warning-tint) ne servent jamais de couleur de texte ou de fond :
+// leur valeur s'inverse d'un thème à l'autre.
+//
+// Les couples de contraste contrôlés sont déclarés en fin de fichier et
+// vérifiés par `npm run check:contrast` (RT_29).
+
+// ---------------------------------------------------------------------------
+// Rampes partagées entre familles de statut.
+//
+// RG_14 (plateau) et RG_16 (unité) partagent aujourd'hui les mêmes oranges et
+// verts. Les passer par une variable SCSS évite la duplication SANS fusionner
+// les deux familles CSS : RT_29 exige qu'elles restent distinctes, pour qu'un
+// ajustement sur l'une n'en déplace jamais une autre.
+// ---------------------------------------------------------------------------
+
+$ramp-orange-bg-light: #ffd9b3;
+$ramp-orange-on-light: #7a4300;
+$ramp-orange-bg-dark: #3f2a14;
+$ramp-orange-on-dark: #ffb877;
+
+$ramp-green-bg-light: #c6e9c9;
+$ramp-green-on-light: #1d5c26;
+$ramp-green-bg-dark: #14351d;
+$ramp-green-on-dark: #8fe3a0;
+
+// ---------------------------------------------------------------------------
+// RT_29 — thème clair.
+// ---------------------------------------------------------------------------
+
+@mixin app-light-tokens {
+  // Surfaces.
+  --app-surface-page: #ffffff;
+  --app-surface-raised: #f4f5f8;
+  --app-surface-sunken: #eceef3;
+  --app-surface-overlay: rgba(17, 19, 26, 0.55);
+  // La scène est le fond neutre d'une image de plateau, pas une surface
+  // d'interface : elle reste sombre dans les deux thèmes.
+  --app-surface-stage: #11131a;
+
+  // Bordures.
+  --app-border-subtle: #e2e4ea;
+  --app-border: #c9ccd4;
+  --app-border-interactive: #878b96;
+
+  // Textes. --app-text-secondary remplace --ion-color-medium (#989aa2), qui
+  // plafonnait à 2,8:1 sur blanc — un échec AA dans les deux thèmes.
+  --app-text: #1b1c1f;
+  --app-text-secondary: #55585f;
+  --app-text-muted: #6b6f7a;
+  --app-text-on-stage: #f2f2f3;
+
+  // Alerte et erreur. La surface n'est JAMAIS posée sans son `-on` : c'est
+  // l'omission du `color` qui produisait le 1,6:1 des bandeaux en sombre.
+  --app-warn-surface: #fff3cd;
+  --app-warn-on: #5c3d00;
+  --app-warn-border: #e0b52b;
+  --app-danger-surface: #fdecec;
+  --app-danger-on: #7a1d1d;
+  --app-danger-border: #d99a9a;
+
+  // RG_12 — indicateur agrégé par disposition adverse (4 états).
+  // Les teintes claires sont exactement celles d'avant la refonte : RG_24
+  // ajoute un second canal, il ne change pas les couleurs.
+  --app-dispo-none-bg: #ffffff;
+  --app-dispo-none-border: #878b96;
+  --app-dispo-none-on: #1b1c1f;
+  --app-dispo-partial-bg: #ffe08a;
+  --app-dispo-partial-border: #b8860b;
+  --app-dispo-partial-on: #4a3a00;
+  --app-dispo-resume-bg: #ffb066;
+  --app-dispo-resume-border: #c25e00;
+  --app-dispo-resume-on: #5c2c00;
+  --app-dispo-done-bg: #9fdda6;
+  --app-dispo-done-border: #2c8a3a;
+  --app-dispo-done-on: #14421c;
+
+  // RG_14 — statut individuel par plateau (3 états).
+  --app-board-missing-bg: #f6cfcf;
+  --app-board-missing-on: #7a1d1d;
+  --app-board-unfinished-bg: #{$ramp-orange-bg-light};
+  --app-board-unfinished-on: #{$ramp-orange-on-light};
+  --app-board-done-bg: #{$ramp-green-bg-light};
+  --app-board-done-on: #{$ramp-green-on-light};
+
+  // RG_16 — état de placement par unité (3 états). C'est ici que se corrige le
+  // défaut le plus grave de l'audit : les trois classes posaient un fond sans
+  // couleur de texte, d'où des noms d'unité blancs sur blanc (1:1) en sombre.
+  --app-unit-none-bg: #ffffff;
+  // Le fond d'une unité « rien de placé » est celui de la page : la bordure est
+  // alors le SEUL délimiteur du contrôle, elle doit donc tenir le 3:1 de
+  // WCAG 1.4.11 face à la page — d'où --app-border-interactive et non
+  // --app-border, qui plafonnait à 1,6:1.
+  --app-unit-none-border: #878b96;
+  --app-unit-none-on: #1b1c1f;
+  --app-unit-partial-bg: #{$ramp-orange-bg-light};
+  // #e08a3c, la teinte d'avant la refonte, plafonnait à 2,67:1 face à la page.
+  --app-unit-partial-border: #bd6a12;
+  --app-unit-partial-on: #{$ramp-orange-on-light};
+  --app-unit-done-bg: #{$ramp-green-bg-light};
+  --app-unit-done-border: #4c9e58;
+  --app-unit-done-on: #{$ramp-green-on-light};
+
+  // Tokens de socle (RT_05/RG_06). Le token est posé sur une image de plateau,
+  // pas sur une surface d'interface : son contour ne suit pas le thème.
+  --app-token-stroke: rgba(0, 0, 0, 0.6);
+  --app-token-selected-stroke: #ffffff;
+  // RT_32 — repli de couleur d'unité. Remplace #888888 (2,5:1).
+  --app-unit-color-fallback: #7a7a80;
+}
+
+// ---------------------------------------------------------------------------
+// RT_29 — thème sombre. Valeurs propres, jamais déduites du clair par
+// inversion ou filtre : les deux thèmes sont traités à égalité.
+// ---------------------------------------------------------------------------
+
+@mixin app-dark-tokens {
+  --app-surface-page: #121212;
+  --app-surface-raised: #1e1e1e;
+  --app-surface-sunken: #0a0a0a;
+  --app-surface-overlay: rgba(0, 0, 0, 0.62);
+  --app-surface-stage: #11131a;
+
+  --app-border-subtle: #2c2c2c;
+  --app-border: #3d3d3d;
+  --app-border-interactive: #7a7a7a;
+
+  --app-text: #f2f2f3;
+  --app-text-secondary: #b6b8be;
+  --app-text-muted: #9ea1a9;
+  --app-text-on-stage: #f2f2f3;
+
+  --app-warn-surface: #3a2f0b;
+  --app-warn-on: #ffd970;
+  --app-warn-border: #8a7327;
+  --app-danger-surface: #3d1a1a;
+  --app-danger-on: #ff9a9a;
+  --app-danger-border: #7a3b3b;
+
+  // RG_12 — la teinte est conservée mais inversée en fond profond + texte
+  // teinté clair : cinq pastilles pastel dans une interface sombre seraient
+  // criardes, et le texte foncé du thème clair y serait illisible.
+  --app-dispo-none-bg: #2a2a2a;
+  --app-dispo-none-border: #7a7a7a;
+  --app-dispo-none-on: #f2f2f3;
+  --app-dispo-partial-bg: #3d3213;
+  --app-dispo-partial-border: #8a7327;
+  --app-dispo-partial-on: #ffd970;
+  --app-dispo-resume-bg: #3f2a14;
+  --app-dispo-resume-border: #a5661f;
+  --app-dispo-resume-on: #ffb877;
+  --app-dispo-done-bg: #14351d;
+  --app-dispo-done-border: #3f7a4c;
+  --app-dispo-done-on: #8fe3a0;
+
+  // RG_14.
+  --app-board-missing-bg: #3d1a1a;
+  --app-board-missing-on: #ff9a9a;
+  --app-board-unfinished-bg: #{$ramp-orange-bg-dark};
+  --app-board-unfinished-on: #{$ramp-orange-on-dark};
+  --app-board-done-bg: #{$ramp-green-bg-dark};
+  --app-board-done-on: #{$ramp-green-on-dark};
+
+  // RG_16.
+  --app-unit-none-bg: #2a2a2a;
+  --app-unit-none-border: #7a7a7a;
+  --app-unit-none-on: #f2f2f3;
+  --app-unit-partial-bg: #{$ramp-orange-bg-dark};
+  --app-unit-partial-border: #a5661f;
+  --app-unit-partial-on: #{$ramp-orange-on-dark};
+  --app-unit-done-bg: #{$ramp-green-bg-dark};
+  --app-unit-done-border: #3f7a4c;
+  --app-unit-done-on: #{$ramp-green-on-dark};
+
+  --app-token-stroke: rgba(0, 0, 0, 0.6);
+  --app-token-selected-stroke: #ffffff;
+  --app-unit-color-fallback: #9a9ca4;
+}
+
+// ---------------------------------------------------------------------------
+// Application des deux thèmes.
+//
+// Le mixin sombre est isolé pour qu'une bascule manuelle depuis les Réglages
+// (palette `.ion-palette-dark` au lieu de la palette système) ne coûte qu'une
+// ligne supplémentaire, sans dupliquer les valeurs.
+// ---------------------------------------------------------------------------
+
+:root {
+  @include app-light-tokens;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    @include app-dark-tokens;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// RT_30 — échelle typographique fermée à 5 crans, et RT_31 — cibles tactiles.
+// Indépendantes du thème : déclarées une seule fois.
+//
+// Les crans sont en `rem` pour que le réglage système de taille de texte du
+// joueur continue de s'appliquer. `--app-font-xs` (13 px) est le PLANCHER :
+// aucun texte de l'application ne descend en dessous, quel que soit son rôle.
+// ---------------------------------------------------------------------------
+
+:root {
+  --app-font-xs: 0.8125rem; // 13 px — plancher RT_30
+  --app-font-sm: 0.875rem; //  14 px
+  --app-font-md: 1rem; //      16 px
+  --app-font-lg: 1.125rem; //  18 px
+  --app-font-xl: 1.5rem; //    24 px
+
+  --app-line-tight: 1.25;
+  --app-line-normal: 1.5;
+
+  // Icône décorative d'état vide : ce n'est pas du texte, donc hors échelle.
+  --app-icon-hero: 3rem;
+
+  --app-touch-min: 44px;
+  --app-touch-gap: 8px;
+
+  --app-radius-sm: 6px;
+  --app-radius-md: 10px;
+  --app-radius-lg: 12px;
+  --app-radius-pill: 999px;
+}
+
+// ---------------------------------------------------------------------------
+// RT_29 — couples de contraste contrôlés.
+//
+// Vérifiés dans LES DEUX thèmes par `npm run check:contrast`. Seuils : 4,5:1
+// pour un texte, 3:1 pour une bordure porteuse d'information ou délimitant un
+// contrôle (WCAG 1.4.3 et 1.4.11).
+//
+// Toute modification d'une valeur ci-dessus sans que le couple correspondant
+// reste au-dessus de son seuil fait échouer ce contrôle.
+// ---------------------------------------------------------------------------
+
+// Textes sur les surfaces d'interface.
+// @contrast --app-text on --app-surface-page >= 4.5
+// @contrast --app-text on --app-surface-raised >= 4.5
+// @contrast --app-text on --app-surface-sunken >= 4.5
+// @contrast --app-text-secondary on --app-surface-page >= 4.5
+// @contrast --app-text-secondary on --app-surface-raised >= 4.5
+// @contrast --app-text-secondary on --app-surface-sunken >= 4.5
+// @contrast --app-text-muted on --app-surface-page >= 4.5
+// @contrast --app-text-muted on --app-surface-raised >= 4.5
+// @contrast --app-text-on-stage on --app-surface-stage >= 4.5
+
+// Bordures : délimitation d'un contrôle.
+// @contrast --app-border-interactive on --app-surface-page >= 3
+// @contrast --app-border-interactive on --app-surface-raised >= 3
+
+// Alerte et erreur.
+// @contrast --app-warn-on on --app-warn-surface >= 4.5
+// @contrast --app-danger-on on --app-danger-surface >= 4.5
+
+// RG_12 — indicateur agrégé par disposition adverse.
+// @contrast --app-dispo-none-on on --app-dispo-none-bg >= 4.5
+// @contrast --app-dispo-partial-on on --app-dispo-partial-bg >= 4.5
+// @contrast --app-dispo-resume-on on --app-dispo-resume-bg >= 4.5
+// @contrast --app-dispo-done-on on --app-dispo-done-bg >= 4.5
+// Une bordure de statut délimite le contrôle par rapport à la PAGE sur laquelle
+// il est posé — c'est la couleur adjacente au sens de WCAG 1.4.11 — et non par
+// rapport à son propre remplissage.
+// @contrast --app-dispo-none-border on --app-surface-page >= 3
+// @contrast --app-dispo-partial-border on --app-surface-page >= 3
+// @contrast --app-dispo-resume-border on --app-surface-page >= 3
+// @contrast --app-dispo-done-border on --app-surface-page >= 3
+
+// RG_14 — statut individuel par plateau.
+// @contrast --app-board-missing-on on --app-board-missing-bg >= 4.5
+// @contrast --app-board-unfinished-on on --app-board-unfinished-bg >= 4.5
+// @contrast --app-board-done-on on --app-board-done-bg >= 4.5
+
+// RG_16 — état de placement par unité.
+// @contrast --app-unit-none-on on --app-unit-none-bg >= 4.5
+// @contrast --app-unit-partial-on on --app-unit-partial-bg >= 4.5
+// @contrast --app-unit-done-on on --app-unit-done-bg >= 4.5
+// @contrast --app-unit-none-border on --app-surface-page >= 3
+// @contrast --app-unit-partial-border on --app-surface-page >= 3
+// @contrast --app-unit-done-border on --app-surface-page >= 3
