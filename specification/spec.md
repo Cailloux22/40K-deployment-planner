@@ -441,7 +441,7 @@ Quel que soit l'appareil, l'orientation et le thème d'affichage retenu par le s
 
 Elle ne porte aucune direction artistique : l'application conserve l'apparence par défaut du cadre d'interface retenu ([[RT_29]]), sans identité visuelle propre, sans police de titrage ni thématisation graphique liée à l'univers du jeu. Le seul objectif est la lisibilité.
 
-Satisfait par : [[RG_24]], [[RT_29]], [[RT_30]], [[RT_31]], [[RT_32]].
+Satisfait par : [[RG_24]], [[RT_29]], [[RT_30]], [[RT_31]], [[RT_32]], [[RT_33]].
 
 ### RG_24 — Double canal d'information des codes couleur
 
@@ -490,6 +490,14 @@ Une surface d'alerte, d'erreur ou de statut n'est jamais posée sans la couleur 
 **Recouvrement.** Aucun élément superposé de nature décorative ou indicative (invite, pastille, filigrane) n'est positionné par-dessus un contenu porteur d'information — une légende imprimée dans une image de plateau ([[RT_12]]), par exemple. Ces éléments sont placés hors du contenu qu'ils commentent.
 
 **Grossissement du document.** La restriction des gestes de zoom natifs exigée par [[RT_19]] porte sur le seul conteneur du plateau de l'écran de placement, où l'application implémente elle-même le geste. Elle n'est jamais appliquée au document entier : le joueur conserve partout ailleurs le grossissement offert par son navigateur et par son système.
+
+### RT_33 — Stabilité de la mise en page
+
+**Principe.** Un bloc dont le contenu change sans que le joueur ait changé d'écran occupe une hauteur **réservée et constante** : c'est le contenu qui varie à l'intérieur du bloc, jamais la place que le bloc prend dans le flux. Un bloc qui grandit ou rétrécit sous le doigt déplace tout ce qui l'entoure, et la cible que le joueur visait au moment où il a touché l'écran n'est plus là où il l'a visée ([[RT_31]]). La hauteur réservée est dimensionnée sur le contenu le plus grand que le bloc puisse recevoir ; un contenu plus petit y est centré plutôt que de la réduire.
+
+**Conséquence sur le bandeau de [[RG_15]].** Les socles du référentiel de [[RT_02]] vont de 25 mm à 170 mm. À échelle fixe, la hauteur du bandeau suivrait la taille des socles de l'unité courante et changerait donc à chaque flèche « unité précédente / suivante » — et avec elle l'espace restant pour le plateau, dont le zoom « contenir » se recalcule sur cet espace ([[RG_17]]/[[RT_19]]) : le plateau entier serait re-cadré à chaque changement d'unité. La hauteur du bandeau est donc posée une fois pour toutes et c'est **l'échelle des socles qui s'y adapte** : une échelle nominale commune à toutes les unités, réduite pour la seule unité dont le plus grand socle ne tiendrait pas dans la hauteur réservée. Les proportions relatives des socles d'une même unité sont dans tous les cas conservées, conformément à [[RT_05]].
+
+**Conséquence sur les cartes de liste de l'accueil.** Le nom d'une liste est saisi par le joueur ([[RG_01]], [[RG_21]]) : sa longueur n'est pas bornée. Laissé libre de se replier, il donne à chaque carte une hauteur différente, et la bibliothèque se réorganise à chaque import, renommage ou duplication. Le nom de la liste et ses métadonnées sont donc tronqués à une ligne chacun, conformément au traitement prévu par [[RT_30]] — le texte complet restant présent dans l'arbre d'accessibilité —, et la carte occupe la même hauteur quelle que soit la liste qu'elle décrit.
 
 ---
 
