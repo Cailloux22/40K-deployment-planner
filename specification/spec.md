@@ -118,7 +118,7 @@ Le second niveau est un compromis assumé : un gabarit approché à quelques mil
 
 Le joueur doit pouvoir positionner ses unités sur une représentation du plateau de jeu, en tenant compte de la disposition de force qu'il a choisie pour la partie.
 
-Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_23]], [[RT_24]], [[RT_27]], [[RT_34]].
+Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_23]], [[RT_24]], [[RT_27]], [[RT_34]], [[RG_25]], [[RT_35]].
 
 ### RG_03 — Parcours de sélection : liste → disposition adverse → plateau → placement
 
@@ -141,7 +141,7 @@ Le parcours décrit en [[RG_03]] affiche, à deux étapes, un indicateur de l'av
 - **Orange** : au moins un des 3 plateaux a un déploiement commencé mais non terminé — cet état est prioritaire sur les deux précédents, car il signale un travail interrompu que le joueur voudra probablement reprendre.
 - **Vert** : les 3 déploiements sont terminés (3 déploiements sur 3).
 
-Un déploiement sauvegardé est considéré **terminé** lorsque toutes les unités de la liste ont tous leurs modèles placés (aucune unité restant "en attente de déploiement" au sens de [[RG_05]]) ; dans le cas contraire, il est considéré **commencé mais non terminé**. L'ordre de priorité pour déterminer la couleur est : Orange > Vert > Jaune > Blanc.
+Un déploiement sauvegardé est considéré **terminé** lorsque toutes les unités de la liste ont tous leurs modèles placés ou sont déclarées en réserve ([[RG_25]]) — c'est-à-dire lorsqu'aucune unité ne reste "en attente de déploiement" au sens de [[RG_05]] ; dans le cas contraire, il est considéré **commencé mais non terminé**. L'ordre de priorité pour déterminer la couleur est : Orange > Vert > Jaune > Blanc.
 
 **Second canal ([[RG_24]]).** La couleur du bouton ne porte jamais seule l'information : chaque bouton affiche, sous le libellé de la disposition, le compte des déploiements terminés sur le nombre de plateaux du couple — `0/3`, `1/3`, `2/3`, `3/3` — suffixé de la mention « à reprendre » lorsque l'état orange s'applique, celui-ci n'étant pas déductible du seul compte (un déploiement commencé mais non terminé ne compte pas comme terminé et ne se distinguerait sinon pas de l'état blanc ou jaune). Une disposition sans aucun déploiement affiche donc `0/3`, une disposition avec deux plateaux terminés et un troisième interrompu affiche `2/3 · à reprendre`.
 
@@ -153,9 +153,9 @@ La légende des quatre couleurs, désormais redondante avec ce second canal, n'o
 
 À l'étape 2 de [[RG_03]] (choix du plateau, une fois la disposition adverse retenue), chacun des 3 plateaux proposés affiche, en plus de son image, un **statut individuel** et jusqu'à trois actions contextuelles. Contrairement à l'indicateur agrégé de l'étape 1 ([[RG_12]]), ce statut porte sur le déploiement du triplet précis (liste, disposition adverse, ce plateau) :
 
-- **Rouge** : déploiement manquant — aucun placement enregistré pour ce triplet.
-- **Orange** : déploiement non fini — au moins un placement enregistré, mais toutes les unités de la liste n'ont pas tous leurs modèles placés (au sens de [[RG_05]]).
-- **Vert** : déploiement fait — toutes les unités de la liste ont tous leurs modèles placés.
+- **Rouge** : déploiement manquant — aucun placement enregistré pour ce triplet, et aucune unité déclarée en réserve ([[RG_25]]) : rien n'y a encore été décidé.
+- **Orange** : déploiement non fini — au moins un placement enregistré ou une unité en réserve, mais toutes les unités de la liste n'ont pas tous leurs modèles placés et ne sont pas non plus en réserve (au sens de [[RG_05]]).
+- **Vert** : déploiement fait — toutes les unités de la liste ont tous leurs modèles placés ou sont en réserve.
 
 **Présentation à l'écran.** Les 3 plateaux sont présentés un par un, dans un pager glissable horizontalement (un seul plateau visible à la fois) plutôt que juxtaposés côte à côte. Dans cette présentation, un unique bloc « Statut » et un unique jeu d'actions contextuelles sont affichés — en haut à droite du layout, immédiatement à droite du libellé « Statut » — et ne reflètent jamais que le plateau actuellement affiché par le pager ; ce statut individuel par plateau reste distinct de l'indicateur agrégé sur les 3 plateaux calculé à l'étape 1 ([[RG_12]]).
 
@@ -167,7 +167,7 @@ Le plateau affiché est par ailleurs **identifié une seule fois** par cet écra
 
 **Actions contextuelles, selon le statut :**
 
-- **« Nouveau »** : toujours disponible, y compris quand un déploiement existe déjà (orange ou vert). Écrase le déploiement existant du triplet (remise à zéro des placements) et ouvre l'écran de placement ([[RG_03]] étape 3) vide. Une action destructrice de ce type est confirmée explicitement par le joueur avant d'écraser quoi que ce soit, sur le même principe que [[RG_08]]. L'identifiant du déploiement du triplet ([[RT_07]]) est conservé (mise à jour en place, cf. [[RG_07]]) ; une sauvegarde distincte n'est créée que si le joueur choisit ensuite explicitement d'enregistrer sous un nouveau nom.
+- **« Nouveau »** : toujours disponible, y compris quand un déploiement existe déjà (orange ou vert). Écrase le déploiement existant du triplet (remise à zéro des placements et des unités en réserve de [[RG_25]]) et ouvre l'écran de placement ([[RG_03]] étape 3) vide. Une action destructrice de ce type est confirmée explicitement par le joueur avant d'écraser quoi que ce soit, sur le même principe que [[RG_08]]. L'identifiant du déploiement du triplet ([[RT_07]]) est conservé (mise à jour en place, cf. [[RG_07]]) ; une sauvegarde distincte n'est créée que si le joueur choisit ensuite explicitement d'enregistrer sous un nouveau nom.
 - **« Éditer »** : disponible uniquement quand un déploiement existe déjà pour ce triplet (statut orange ou vert) ; masqué/désactivé au statut rouge. Ouvre l'écran de placement préchargé avec les placements existants. Ce bouton est affiché en **orange** lorsque le déploiement existant est non fini, pour renforcer le signal donné par le statut du plateau.
 - **« Consulter »** : disponible uniquement quand le déploiement de ce triplet est **terminé** (statut vert) ; masqué/désactivé aux statuts rouge et orange — un déploiement encore en cours de remplissage se reprend via « Éditer », pas via cette vue en lecture seule. Affiche en plein écran, zoomable, le plateau avec les placements du joueur superposés, en lecture seule (aucune édition possible), en utilisant cette fois la variante du plateau **sans** repères de mesure (« no-measurements » de [[RT_12]]).
 
@@ -181,7 +181,18 @@ Le joueur doit pouvoir faire pivoter un token déjà placé sur le plateau, nota
 
 ### RG_05 — Unité non totalement déployée
 
-Une unité dont tous les modèles n'ont pas encore été placés reste identifiable comme "en attente de déploiement" (par exemple dans une liste latérale), pour que le joueur n'oublie pas de modèles en réserve ou en attente.
+Une unité dont tous les modèles n'ont pas encore été placés reste identifiable comme "en attente de déploiement" (par exemple dans une liste latérale), pour que le joueur n'oublie pas de modèles en réserve ou en attente. Une unité que le joueur a explicitement déclarée **en réserve** ([[RG_25]]) fait exception : elle n'a pas vocation à être posée sur le plateau et n'est donc plus en attente de déploiement.
+
+### RG_25 — Mise en réserve d'une unité
+
+Toutes les unités d'une liste ne commencent pas la partie sur la table : certaines sont annoncées **en réserve** et arrivent en cours de partie. L'écran de placement ([[RG_03]] étape 3) permet donc de déclarer en réserve l'unité couramment sélectionnée, par une **case à cocher** portée par le bandeau de [[RG_15]], et de l'en retirer par cette même case.
+
+- **Une unité en réserve compte comme déployée.** Elle n'est plus « en attente de déploiement » au sens de [[RG_05]] : elle ne retient plus le statut « terminé » du déploiement ([[RG_12]], [[RG_14]]), compte comme complète dans le menu de [[RG_16]] et n'est plus proposée par les flèches du bandeau de [[RG_15]] — au même titre qu'une unité dont tous les modèles sont posés. Mettre une unité en réserve est une décision de déploiement que le joueur enregistre, pas un oubli qu'il faudrait lui rappeler.
+- **La réserve appartient au déploiement, pas à la liste d'armée.** La même unité peut être en réserve sur un plateau et posée sur un autre : l'état est enregistré dans le déploiement du triplet (liste, disposition adverse, plateau), et suit ses règles de sauvegarde ([[RG_07]]) comme de remise à zéro ([[RG_14]], action « Nouveau »). Voir [[RT_35]].
+- **Une unité en réserve n'a aucun token sur le plateau.** Mettre en réserve une unité dont des modèles sont déjà posés retire ces placements ([[RT_04]]) : l'opération étant destructrice, elle est confirmée explicitement par le joueur avant d'être appliquée, sur le même principe que [[RG_08]]. Le bandeau de [[RG_15]] ne propose alors plus aucun modèle pour cette unité.
+- **Le retrait de la réserve est toujours possible.** Décocher la case remet l'unité en attente de déploiement, tous ses modèles à poser. Comme les flèches du bandeau ne s'arrêtent plus sur une unité en réserve, celle-ci reste atteignable par le menu de [[RG_16]], qui liste **toutes** les unités : l'y choisir positionne le bandeau dessus, case cochée, prête à être décochée.
+
+**Second canal ([[RG_24]]).** L'état de réserve est énoncé en toutes lettres partout où il change une lecture : le bandeau de [[RG_15]] remplace son compte de modèles restants par la mention « en réserve », et l'entrée du menu de [[RG_16]] porte cette même mention à côté de son compte `placés/total` — sans quoi le `0/10` d'une unité entièrement en réserve contredirait le fond vert de son entrée.
 
 ### RG_15 — Sélecteur d'unité à placer (bandeau bas d'écran)
 
@@ -189,9 +200,10 @@ L'écran de placement ouvert par l'étape 3 de [[RG_03]] (y compris via les acti
 
 - le **nom de l'unité** couramment sélectionnée ;
 - une **flèche de part et d'autre** du bandeau permettant de passer à l'unité précédente/suivante de la liste, sans avoir à repasser par le menu détaillé de [[RG_16]] ;
+- une **case à cocher « en réserve »** portant sur l'unité couramment sélectionnée ([[RG_25]]) : c'est le seul endroit d'où la réserve se déclare et d'où elle se retire ;
 - la **liste des modèles individuels** de l'unité sélectionnée, disponibles au drag & drop un par un vers le plateau, conformément à [[RG_04]] (un token = un modèle) : une unité de 10 modèles présente ainsi 10 éléments distincts dans cette liste, jamais un seul élément représentant l'unité entière. Cette liste est **défilable horizontalement** pour rester ergonomique quel que soit le nombre de modèles de l'unité (voir [[RT_17]]).
 
-Le bandeau ne liste que ce qu'il **reste à poser** : un modèle déposé sur le plateau en **sort immédiatement**, et une unité dont tous les modèles sont placés n'est plus atteignable par les flèches du bandeau. Le bandeau répond ainsi à la seule question qu'il pose — « que me reste-t-il à déployer ? » (cf. [[RG_05]]) — sans que le joueur ait à distinguer, parmi des socles tous affichés, ceux qui sont déjà sur la table ; une liste qui se vide au fil des dépôts énonce du même coup l'avancement de l'unité.
+Le bandeau ne liste que ce qu'il **reste à poser** : un modèle déposé sur le plateau en **sort immédiatement**, et une unité dont tous les modèles sont placés — ou qui est en réserve ([[RG_25]]) — n'est plus atteignable par les flèches du bandeau. Le bandeau répond ainsi à la seule question qu'il pose — « que me reste-t-il à déployer ? » (cf. [[RG_05]]) — sans que le joueur ait à distinguer, parmi des socles tous affichés, ceux qui sont déjà sur la table ; une liste qui se vide au fil des dépôts énonce du même coup l'avancement de l'unité.
 
 Le passage à l'unité suivante est **automatique** dès que le dernier modèle de l'unité courante est posé : le bandeau bascule sur l'unité encore en attente qui suit, pour que le joueur enchaîne ses placements sans manipuler les flèches. Lorsque plus aucune unité n'est en attente, le bandeau reste sur l'unité courante et signale qu'elle est complète. À la réouverture d'un déploiement déjà commencé, le bandeau s'ouvre de la même façon sur la première unité encore en attente, et non sur la première unité de la liste.
 
@@ -206,7 +218,7 @@ En haut à droite de l'écran de placement, une icône de menu (burger) ouvre un
 - Le fond de chaque entrée reflète l'**état de placement de l'unité** (au sens de [[RG_05]] : une unité dont tous les modèles ne sont pas placés reste identifiable comme en attente) **et ce même état est énoncé par un compte**, `modèles placés / modèles de l'unité`, affiché dans l'entrée à un cran typographique et une couleur de texte qui ne l'effacent pas devant le nom de l'unité ([[RT_30]]) :
   - **Blanc** : aucun modèle de l'unité n'est encore placé.
   - **Orange** : au moins un modèle est placé, mais au moins un des groupes de socle de l'unité n'est pas complètement placé.
-  - **Vert** : tous les modèles de l'unité (tous groupes de socle confondus) sont placés.
+  - **Vert** : tous les modèles de l'unité (tous groupes de socle confondus) sont placés, **ou** l'unité est déclarée en réserve ([[RG_25]]) — auquel cas l'entrée porte en toutes lettres la mention « en réserve », son compte `placés/total` restant celui des modèles réellement posés.
 
   Ce code couleur est propre à l'échelle de l'unité, dans ce menu ; il est distinct de ceux définis pour le statut d'un plateau ([[RG_14]]) et pour l'indicateur agrégé par disposition adverse ([[RG_12]]), qui portent sur un périmètre différent (tout le déploiement, pas une unité isolée).
 
@@ -224,7 +236,7 @@ Le plateau et les tokens sont rendus via SVG, pour un rendu net à n'importe que
 
 ### RT_04 — Modèle de données de placement
 
-Un placement est stocké comme un enregistrement `{ idUnite, idModele, x, y, rotation }` indépendant des autres modèles de la même unité, afin que RG_04 et RG_05 puissent être vérifiées par simple comptage/filtrage sans recalcul géométrique. Le champ `rotation` est celui manipulé par [[RG_20]]/[[RT_22]].
+Un placement est stocké comme un enregistrement `{ idUnite, idModele, x, y, rotation }` indépendant des autres modèles de la même unité, afin que RG_04 et RG_05 puissent être vérifiées par simple comptage/filtrage sans recalcul géométrique. Le champ `rotation` est celui manipulé par [[RG_20]]/[[RT_22]]. La mise en réserve d'une unité ([[RG_25]]) ne fabrique **aucun** enregistrement de placement : elle est stockée à part, sur le déploiement, par [[RT_35]] — la liste des placements reste ainsi le reflet exact de ce qui est posé sur le plateau.
 
 ### RT_22 — Interaction de rotation d'un token
 
@@ -242,12 +254,20 @@ La rotation d'un token sélectionné ([[RG_20]]) se pilote par un geste dédié 
 
 **Déplacement d'un token déjà posé ([[RG_04]]).** Le token lui-même suit déjà le doigt, ses coordonnées [[RT_04]] étant mises à jour en continu ; le geste conserve l'écart entre le point de contact et le centre du socle relevé à la saisie, pour que le token ne saute pas sous le doigt au premier déplacement. S'y ajoute le seul retour manquant : le token saisi est rendu dans un état **saisi** distinct de l'état sélectionné, et porte le même cercle de visée, pour la même raison de lisibilité sous le doigt.
 
+### RT_35 — Enregistrement de la mise en réserve et propagation aux statuts
+
+**Stockage.** Les unités en réserve ([[RG_25]]) sont enregistrées dans le déploiement ([[RT_06]]) sous forme d'une liste d'identifiants d'unité, `reservedUnitIds`, à côté des placements de [[RT_04]] — et non dans la liste d'armée ([[RT_07]]), dont les déploiements sont multiples et indépendants les uns des autres. Un identifiant qui ne correspond à aucune unité de la liste (unité disparue d'un ré-import) est ignoré à la lecture : il ne produit ni erreur ni unité fantôme. Les enregistrements écrits avant cette règle n'ont pas le champ ; il est normalisé à la liste vide au chargement, aucune migration de schéma n'étant nécessaire ([[RT_08]]). Le champ fait partie du contrat de synchronisation ([openapi.yml](openapi.yml), [[RT_09]]) au même titre que les placements.
+
+**Propagation.** Les calculs de [[RT_11]] et [[RT_18]] reçoivent l'ensemble des unités réservées en entrée, à côté des placements : une unité réservée est comptée comme complète sans qu'aucun placement ne soit fabriqué pour elle. Le rendu des tokens ([[RT_03]]) n'a donc pas à connaître la réserve, et la liste des placements reste le reflet exact de ce qui est posé sur le plateau.
+
+**Statut « manquant ».** Un déploiement sans aucun placement mais portant au moins une unité en réserve n'est pas « déploiement manquant » au sens de [[RG_14]] : le joueur y a enregistré une décision. Le test du statut rouge porte donc sur l'absence **conjointe** de placement et d'unité réservée, et le compte de déploiements de l'écran d'accueil suit le même critère.
+
 ### RT_11 — Calcul des indicateurs de déploiement existant
 
 Les indicateurs prévus par [[RG_12]] sont calculés en interrogeant les déploiements sauvegardés en local ([[RT_06]]), avant l'affichage de l'écran correspondant, sans appel réseau (conformément à [[EX_05]]), et recalculés à chaque affichage de l'étape pour refléter les sauvegardes les plus récentes :
 
-- **Étape 2 (choix du plateau)** : filtrage sur le triplet (identifiant de liste, identifiant de disposition adverse choisie à l'étape 1, identifiant de plateau). Si aucun déploiement n'existe pour ce triplet, le statut est **Rouge** ([[RG_14]]). Sinon, le nombre de placements enregistrés ([[RT_04]]) est comparé, pour chaque unité de la liste, au nombre de modèles de l'unité (issu de [[RG_02]]) : toutes les unités complètes donnent le statut **Vert**, sinon **Orange**.
-- **Étape 1 (choix de la disposition adverse)** : pour chacune des 5 dispositions adverses candidates, filtrage sur le couple (identifiant de liste, identifiant de disposition adverse candidate) sur les 3 plateaux qui lui sont associés. Pour chaque déploiement sauvegardé trouvé, le statut terminé/non terminé est déterminé en comparant, pour chaque unité de la liste, le nombre de placements enregistrés ([[RT_04]]) au nombre de modèles de l'unité (issu de [[RG_02]]). Le code couleur du bouton de disposition en résulte selon l'ordre de priorité défini en [[RG_12]] (Orange > Vert > Jaune > Blanc).
+- **Étape 2 (choix du plateau)** : filtrage sur le triplet (identifiant de liste, identifiant de disposition adverse choisie à l'étape 1, identifiant de plateau). Si aucun déploiement n'existe pour ce triplet, ou s'il ne porte ni placement ni unité en réserve ([[RG_25]]/[[RT_35]]), le statut est **Rouge** ([[RG_14]]). Sinon, le nombre de placements enregistrés ([[RT_04]]) est comparé, pour chaque unité de la liste, au nombre de modèles de l'unité (issu de [[RG_02]]), une unité en réserve étant tenue pour complète sans comparaison : toutes les unités complètes donnent le statut **Vert**, sinon **Orange**.
+- **Étape 1 (choix de la disposition adverse)** : pour chacune des 5 dispositions adverses candidates, filtrage sur le couple (identifiant de liste, identifiant de disposition adverse candidate) sur les 3 plateaux qui lui sont associés. Pour chaque déploiement sauvegardé trouvé, le statut terminé/non terminé est déterminé en comparant, pour chaque unité de la liste, le nombre de placements enregistrés ([[RT_04]]) au nombre de modèles de l'unité (issu de [[RG_02]]), les unités en réserve ([[RG_25]]/[[RT_35]]) étant tenues pour complètes. Le code couleur du bouton de disposition en résulte selon l'ordre de priorité défini en [[RG_12]] (Orange > Vert > Jaune > Blanc).
 
 ### RT_23 — Référentiel des dispositions de force
 
@@ -385,11 +405,13 @@ Les deux vues plein écran prévues par [[RG_14]] (plateau seul avec mesures, et
 
 Le bandeau prévu par [[RG_15]] est un composant d'interface distinct de l'éditeur de plateau ([[RT_03]]), superposé en bas de l'écran de placement. Sa liste de modèles utilise un défilement horizontal natif (avec ancrage/scroll-snap par élément) pour rester ergonomique au doigt quel que soit le nombre de modèles de l'unité (ex. 10 éléments pour une unité de 10 modèles), sans dépendre d'une librairie tierce de carrousel. Chaque élément de la liste est rendu comme un token draggable identique en forme et en couleur au token qui sera posé sur le plateau ([[RG_06]], [[RT_05]]), pour que le joueur identifie visuellement ce qu'il s'apprête à placer avant même de le déposer ; le drag & drop d'un élément du bandeau vers le plateau crée un enregistrement de placement au sens de [[RT_04]], le geste lui-même étant matérialisé sous le doigt conformément à [[RT_34]].
 
-Le contenu du bandeau est **dérivé** des placements de [[RT_04]] et non d'un état propre : la liste des modèles de l'unité courante est celle de ses identifiants de modèle (`idModele`) qui n'apparaissent dans aucun placement, et les flèches ne parcourent que les unités ayant encore au moins un tel identifiant. Le retrait d'un modèle placé du bandeau ([[RG_15]]) comme sa réapparition après suppression du token ([[RG_20]]) découlent donc du seul recalcul de cette différence, sans code de synchronisation dédié ni divergence possible entre le bandeau et le plateau. L'avance automatique à l'unité suivante est évaluée après chaque dépôt, sur ce même critère.
+La case à cocher « en réserve » de [[RG_25]] est portée par l'en-tête du bandeau, sur la même ligne que le nom de l'unité : elle est présente pour toute unité, quelle que soit la longueur de sa rangée de modèles, et occupe une hauteur constante d'une unité à l'autre ([[RT_33]]).
+
+Le contenu du bandeau est **dérivé** des placements de [[RT_04]] et de l'ensemble des unités réservées de [[RT_35]], et non d'un état propre : la liste des modèles de l'unité courante est celle de ses identifiants de modèle (`idModele`) qui n'apparaissent dans aucun placement, et les flèches ne parcourent que les unités ayant encore au moins un tel identifiant. Le retrait d'un modèle placé du bandeau ([[RG_15]]) comme sa réapparition après suppression du token ([[RG_20]]) découlent donc du seul recalcul de cette différence, sans code de synchronisation dédié ni divergence possible entre le bandeau et le plateau. L'avance automatique à l'unité suivante est évaluée après chaque dépôt, sur ce même critère.
 
 ### RT_18 — Calcul du regroupement par socle et du statut du menu unités
 
-Pour chaque unité, le menu de [[RG_16]] regroupe ses modèles par forme/diamètre de socle (issus du référentiel [[RT_02]] via [[RG_02]]) et calcule, pour chaque groupe, le nombre de modèles déjà placés parmi ceux du groupe, en filtrant les placements de [[RT_04]] par identifiant d'unité et en croisant chaque modèle placé avec le socle qui lui est associé. Le statut global de l'unité (blanc/orange/vert de [[RG_16]]) est dérivé de ces comptes : **blanc** si le nombre total de modèles placés de l'unité est nul, **vert** si ce total égale le nombre total de modèles de l'unité, **orange** dans tous les autres cas. Ce calcul est effectué à l'ouverture du menu burger ainsi qu'après chaque placement réalisé depuis le bandeau ([[RG_15]]), afin que le menu reste synchronisé sans rechargement de l'écran.
+Pour chaque unité, le menu de [[RG_16]] regroupe ses modèles par forme/diamètre de socle (issus du référentiel [[RT_02]] via [[RG_02]]) et calcule, pour chaque groupe, le nombre de modèles déjà placés parmi ceux du groupe, en filtrant les placements de [[RT_04]] par identifiant d'unité et en croisant chaque modèle placé avec le socle qui lui est associé. Le statut global de l'unité (blanc/orange/vert de [[RG_16]]) est dérivé de ces comptes : **blanc** si le nombre total de modèles placés de l'unité est nul, **vert** si ce total égale le nombre total de modèles de l'unité **ou** si l'unité est en réserve ([[RG_25]]/[[RT_35]]), **orange** dans tous les autres cas. Les comptes par groupe de socle restent, eux, ceux des modèles réellement posés : une unité en réserve affiche donc des groupes à `0/n` sous un statut vert, que la mention « en réserve » de [[RG_16]] explique. Ce calcul est effectué à l'ouverture du menu burger ainsi qu'après chaque placement réalisé depuis le bandeau ([[RG_15]]), afin que le menu reste synchronisé sans rechargement de l'écran.
 
 ### RT_24 — Conteneur du menu unités (panneau latéral)
 
