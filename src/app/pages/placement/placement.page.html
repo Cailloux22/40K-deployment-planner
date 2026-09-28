@@ -63,6 +63,12 @@
             "
             (pointerdown)="selectedPlacementId.set(null)"
           >
+            <!-- RG_29/RT_39: zone visible depuis le token sélectionné, sous les
+                 tokens. Un seul chemin, sous-chemins de même sens : la réunion
+                 des polygones de RT_38 se remplit d'une teinte uniforme. -->
+            @if (visibleZonePath(); as path) {
+              <path class="visible-zone" [attr.d]="path" />
+            }
             @for (token of tokens(); track token.placement.idModele) {
               <g
                 [attr.transform]="
@@ -134,6 +140,11 @@
            re-cadre donc pas le plateau (RG_17/RT_19). -->
       @if (selectedToken(); as token) {
         <div class="token-actions" role="toolbar" aria-label="Actions sur le token sélectionné">
+          <!-- RG_29: sans terrain décrit, colorer le plateau entier ferait croire
+               qu'aucun obstacle ne s'y trouve — on le dit plutôt. -->
+          @if (visibleZoneUnavailable()) {
+            <span class="visibility-unavailable">Zone visible indisponible pour ce plateau</span>
+          }
           <span>{{ token.placement.rotation }}°</span>
           <ion-button size="small" fill="clear" (click)="rotateSelected(-15)" aria-label="Pivoter de -15 degrés">
             <ion-icon name="return-up-back" slot="icon-only"></ion-icon>

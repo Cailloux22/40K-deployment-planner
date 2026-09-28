@@ -206,3 +206,27 @@ describe('ReferentialService.resolveBaseShapeId — RT_26', () => {
     expect(resolved.baseShapeId).toBeNull();
   });
 });
+
+describe('ReferentialService.terrain — RT_37', () => {
+  let service: ReferentialService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: HttpClient, useValue: http }],
+    });
+    service = TestBed.inject(ReferentialService);
+  });
+
+  it('décrit le terrain de chaque plateau du référentiel', async () => {
+    const { boards } = await service.boardReferential();
+    for (const board of boards) {
+      const terrain = await service.terrain(board.id);
+      expect(terrain?.zones.length, board.id).toBeGreaterThan(0);
+      expect(terrain?.walls.length, board.id).toBeGreaterThan(0);
+    }
+  });
+
+  it('renvoie null pour un plateau dont le terrain n’est pas décrit (RG_29)', async () => {
+    await expect(service.terrain('plateau-inconnu')).resolves.toBeNull();
+  });
+});

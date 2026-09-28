@@ -126,6 +126,12 @@ $ramp-green-on-dark: #8fe3a0;
   // Dépôt refusé (hors du rectangle de jeu de RT_19), lisible sur ce même halo
   // sombre dans les deux thèmes.
   --app-token-drag-refused: #ff8a8a;
+  // RT_39 — voile de la zone visible (RG_29), posé sur l'image du plateau comme
+  // les tokens : il ne suit pas le thème. Un jaune franc, absent de l'image
+  // (zones rouge et bleue, murs verts, obstacles orange) comme de la palette
+  // d'unités de RG_06, dont l'or est bien plus sombre. L'opacité est posée par
+  // la feuille de style de l'écran.
+  --app-visibility-fill: #ffd60a;
 }
 
 // ---------------------------------------------------------------------------
@@ -203,6 +209,8 @@ $ramp-green-on-dark: #8fe3a0;
   // Dépôt refusé (hors du rectangle de jeu de RT_19), lisible sur ce même halo
   // sombre dans les deux thèmes.
   --app-token-drag-refused: #ff8a8a;
+  // RT_39 — voile de la zone visible, indépendant du thème (voir thème clair).
+  --app-visibility-fill: #ffd60a;
 }
 
 // ---------------------------------------------------------------------------
@@ -283,6 +291,9 @@ $ramp-green-on-dark: #8fe3a0;
 // bordure y est le seul délimiteur, la surface surélevée ne se détachant pas de
 // la scène en thème sombre.
 // @contrast --app-border-interactive on --app-surface-stage >= 3
+// RG_29/RT_39 — la zone visible se détache de la scène du plateau (couleur
+// contrôlée opaque : le script ne tient pas compte de l'opacité du voile).
+// @contrast --app-visibility-fill on --app-surface-stage >= 3
 
 // Alerte et erreur.
 // @contrast --app-warn-on on --app-warn-surface >= 4.5

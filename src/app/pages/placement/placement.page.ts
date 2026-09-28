@@ -28,9 +28,11 @@ import {
   resolveGroupShape,
   tokenSize,
 } from '../../deployment/token-geometry';
+import { BaseFootprint } from '../../deployment/geometry';
 import { CoherencyBase, coherencyBase, detachedAfterRemoval, isCoherent } from '../../deployment/unit-coherency';
+import { prepareTerrain, visibilityBase, visibleZone, visibleZonePath } from '../../deployment/visibility';
 import { ArmyList, ArmyUnit, Deployment, Placement, UnitModelGroup } from '../../models/domain.models';
-import { BaseShape, BaseShapeKind, Board, BoardReferential } from '../../models/referential.models';
+import { BaseShape, BaseShapeKind, Board, BoardReferential, BoardTerrain } from '../../models/referential.models';
 import { UNIT_COLOR_FALLBACK } from '../../import/unit-colors';
 import { ReferentialService } from '../../referentials/referential.service';
 
@@ -202,6 +204,16 @@ export class PlacementPage implements OnInit {
   readonly grabbedModelId = signal<string | null>(null);
   /** RT_36: token posé dont le geste en cours romprait la cohésion de l'unité. */
   readonly refusedModelId = signal<string | null>(null);
+  /**
+   * RG_29: un geste (dépôt, déplacement, rotation) est en cours. Tout geste
+   * porte sur le token sélectionné, que la prise sélectionne.
+   */
+  private readonly gestureActive = signal(false);
+  /**
+   * RT_37: terrain du plateau affiché ; `null` s'il n'est pas décrit,
+   * `undefined` tant qu'il n'est pas chargé.
+   */
+  private readonly terrain = signal<BoardTerrain | null | undefined>(undefined);
 
   readonly list = computed<ArmyList | undefined>(() => this.library.list(this.listId()));
 
@@ -337,6 +349,54 @@ export class PlacementPage implements OnInit {
     this.tokens().find((token) => token.selected),
   );
 
+  /** RT_38: terrain du plateau prêt pour le calcul, préparé une fois par plateau. */
+  private readonly preparedTerrain = computed(() => {
+    const terrain = this.terrain();
+    const board = this.board();
+    return terrain && board ? prepareTerrain(terrain, board.playArea, this.pixelsPerMm()) : null;
+  });
+
+  /**
+   * RG_29: socle du token sélectionné, comparé par valeur — le déplacement
+   * d'un autre token ne relance pas le calcul, les modèles n'étant pas des
+   * obstacles (RG_27).
+   */
+  private readonly selectedBase = computed<BaseFootprint | null>(
+    () => {
+      const id = this.selectedPlacementId();
+      const placement = id ? this.placements().find((p) => p.idModele === id) : undefined;
+      const shape = placement ? this.groupShapes().get(placement.idModele.split('#')[0]) : undefined;
+      return placement && shape ? visibilityBase(placement, shape, this.pixelsPerMm()) : null;
+    },
+    {
+      equal: (a, b) =>
+        a === b ||
+        (!!a &&
+          !!b &&
+          a.x === b.x &&
+          a.y === b.y &&
+          a.rotation === b.rotation &&
+          a.shape === b.shape &&
+          a.width === b.width &&
+          a.length === b.length),
+    },
+  );
+
+  /**
+   * RG_29/RT_39: zone visible depuis le token sélectionné, en un chemin SVG.
+   * Masquée pendant un geste plutôt que laissée à son ancienne position, et
+   * recalculée au relâchement : le calcul (RT_38) ne suit pas le doigt.
+   */
+  readonly visibleZonePath = computed<string | null>(() => {
+    if (this.gestureActive()) return null;
+    const base = this.selectedBase();
+    const terrain = this.preparedTerrain();
+    return base && terrain ? visibleZonePath(visibleZone(base, terrain)) : null;
+  });
+
+  /** RG_29: le terrain de ce plateau n'est pas décrit — aucune zone ne peut être colorée. */
+  readonly visibleZoneUnavailable = computed(() => this.terrain() === null);
+
   /**
    * RG_05/RG_15: rangs, dans la liste, des unités ayant encore au moins un
    * modèle à poser — les seules que les flèches du bandeau parcourent.
@@ -371,6 +431,7 @@ export class PlacementPage implements OnInit {
     }
     this.board.set(board);
     this.boardReferential.set(await this.referential.boardReferential());
+    this.terrain.set(await this.referential.terrain(board.id));
 
     const shapes = await this.referential.allBaseShapes();
     this.shapes.set(new Map(shapes.map((shape) => [shape.id, shape])));
@@ -735,6 +796,7 @@ export class PlacementPage implements OnInit {
       ),
     };
     this.selectedPlacementId.set(model.idModele);
+    this.gestureActive.set(true);
     // RT_34: dès le premier contact, le geste se voit — sans quoi rien ne
     // distingue un glisser commencé d'un appui sans effet.
     this.grabbedModelId.set(model.idModele);
@@ -772,6 +834,8 @@ export class PlacementPage implements OnInit {
       ),
     };
     this.grabbedModelId.set(token.placement.idModele);
+    // RG_29: la zone visible est masquée tant que le token suit le doigt.
+    this.gestureActive.set(true);
     this.trackGhost(this.drag, event);
   }
 
@@ -801,6 +865,9 @@ export class PlacementPage implements OnInit {
       // n'est affiché, la poignée elle-même suivant le doigt.
       ghost: this.ghostMetrics(token.rx * 2, token.ry * 2, token.shapeKind, token.color, 0, false),
     };
+    // RG_29: la rotation change ce que voit un socle non circulaire ; la zone
+    // est recalculée au relâchement.
+    this.gestureActive.set(true);
   }
 
   private angleTo(center: { x: number; y: number }, point: { x: number; y: number }): number {
@@ -844,6 +911,10 @@ export class PlacementPage implements OnInit {
     this.dragGhost.set(null);
     this.grabbedModelId.set(null);
     this.refusedModelId.set(null);
+    // RG_29: la zone visible sera recalculée sur la position finale — celle
+    // d'avant le geste si la cohésion l'a fait refuser (RT_36), ce qui se
+    // règle plus bas, avant tout rendu.
+    this.gestureActive.set(false);
     if (!drag || drag.pointerId !== event.pointerId) return;
 
     if (drag.kind !== 'new') {

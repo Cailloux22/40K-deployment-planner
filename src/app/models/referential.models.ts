@@ -203,3 +203,30 @@ export interface BoardReferential {
   readonly variants: readonly BoardVariant[];
   readonly boards: readonly Board[];
 }
+
+// ---------------------------------------------------------------------------
+// RT_37 — référentiel des zones de terrain par plateau
+// ---------------------------------------------------------------------------
+
+/** Un polygone de terrain, en pixels d'asset (RT_04/RT_05). */
+export interface TerrainPolygon {
+  readonly id: string;
+  readonly points: readonly (readonly [number, number])[];
+}
+
+/**
+ * RG_28/RT_37: le terrain d'un plateau. Toutes les zones sont des socles de
+ * ruine, donc obscurcissantes ; les murs bloquent la vue sans exception.
+ */
+export interface BoardTerrain {
+  readonly zones: readonly TerrainPolygon[];
+  readonly walls: readonly TerrainPolygon[];
+}
+
+export interface TerrainReferential {
+  readonly source: ReferentialSource;
+  readonly generatedAt: string;
+  readonly stats: { readonly boards: number; readonly zones: number; readonly walls: number };
+  /** Indexé par identifiant de plateau ; un plateau absent a un terrain non décrit. */
+  readonly boards: Readonly<Record<string, BoardTerrain>>;
+}

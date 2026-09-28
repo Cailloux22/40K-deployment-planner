@@ -54,6 +54,18 @@
   touch-action: none;
 }
 
+// RG_29/RT_39: zone visible depuis le token sélectionné. Un seul chemin, de
+// sous-chemins parcourus dans le même sens : la règle `nonzero` en remplit la
+// réunion d'un seul tenant, et l'opacité — celle du chemin, pas de chaque
+// polygone — ne s'additionne pas sur les recouvrements. Transparente aux
+// gestes : un appui sur la zone désélectionne comme sur le plateau nu.
+.visible-zone {
+  fill: var(--app-visibility-fill);
+  fill-rule: nonzero;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
 .token {
   stroke: var(--app-token-stroke);
   stroke-width: 2;

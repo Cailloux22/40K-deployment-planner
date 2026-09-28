@@ -7,10 +7,12 @@ import {
   BaseShape,
   Board,
   BoardReferential,
+  BoardTerrain,
   BoardVariant,
   DispositionReferential,
   ForceDisposition,
   ReferentialSource,
+  TerrainReferential,
   UseModelFootprintReferential,
 } from '../models/referential.models';
 import {
@@ -37,6 +39,7 @@ export class ReferentialService {
   private footprints?: Promise<UseModelFootprintReferential>;
   private boards?: Promise<BoardReferential>;
   private dispositions?: Promise<DispositionReferential>;
+  private terrains?: Promise<TerrainReferential>;
 
   private load<T>(file: string): Promise<T> {
     return firstValueFrom(this.http.get<T>(`assets/referentials/${file}`));
@@ -223,6 +226,22 @@ export class ReferentialService {
   /** RT_19: dimensions communes à tous les plateaux du référentiel. */
   async assetSize(): Promise<{ width: number; height: number }> {
     return (await this.boardReferential()).assetSize;
+  }
+
+  // -------------------------------------------------------------------------
+  // RT_37 — terrain des plateaux
+  // -------------------------------------------------------------------------
+
+  terrainReferential(): Promise<TerrainReferential> {
+    return (this.terrains ??= this.load<TerrainReferential>('terrain.json'));
+  }
+
+  /**
+   * RT_37: terrain d'un plateau, ou `null` s'il n'est pas décrit — ce qui ne
+   * veut pas dire que le plateau n'a pas de terrain (RG_29).
+   */
+  async terrain(boardId: string): Promise<BoardTerrain | null> {
+    return (await this.terrainReferential()).boards[boardId] ?? null;
   }
 
   // -------------------------------------------------------------------------

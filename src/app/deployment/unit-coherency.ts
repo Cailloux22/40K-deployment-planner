@@ -8,7 +8,8 @@
  */
 
 import { Placement } from '../models/domain.models';
-import { BaseShape, BaseShapeKind } from '../models/referential.models';
+import { BaseShape } from '../models/referential.models';
+import { BaseFootprint, Point, baseOutline } from './geometry';
 import { MM_PER_INCH } from './token-geometry';
 
 /** RG_26: contiguïté — chaque modèle à 2" au plus d'au moins un autre. */
@@ -22,20 +23,9 @@ export const COHERENCY_SPAN_INCHES = 9;
 export const COHERENCY_TOLERANCE_INCHES = 0.01;
 
 /** Un socle posé, en pouces réels, prêt pour le calcul de distance. */
-export interface CoherencyBase {
+export interface CoherencyBase extends BaseFootprint {
   readonly id: string;
-  readonly x: number;
-  readonly y: number;
-  /** RG_20: rotation en degrés, même sens que le rendu SVG (RT_22). */
-  readonly rotation: number;
-  readonly shape: BaseShapeKind;
-  /** Étendue sur l'axe x du token avant rotation (RT_05 : `widthMm`). */
-  readonly width: number;
-  /** Étendue sur l'axe y du token avant rotation (RT_05 : `lengthMm`). */
-  readonly length: number;
 }
-
-type Point = readonly [number, number];
 
 /**
  * RT_36/RT_05: un placement (RT_04, en pixels d'asset) et son socle (en mm),
@@ -54,36 +44,9 @@ export function coherencyBase(placement: Placement, shape: BaseShape, pixelsPerM
   };
 }
 
-/**
- * RT_36: nombre de côtés du polygone inscrit dans une ellipse de plus grand
- * demi-axe `radius` pour que l'écart à la courbe reste sous la tolérance.
- * L'ellipse étant l'image affine d'un cercle, cet écart est au plus celui du
- * polygone inscrit dans le cercle de rayon `radius`, soit `r·(1 − cos(π/n))`.
- */
-function ellipseSides(radius: number): number {
-  if (radius <= COHERENCY_TOLERANCE_INCHES) return 8;
-  return Math.max(8, Math.ceil(Math.PI / Math.acos(1 - COHERENCY_TOLERANCE_INCHES / radius)));
-}
-
-/** RT_36: contour convexe du socle, tourné et placé sur le plateau. */
+/** RT_36: contour convexe du socle, l'ovale approché à la tolérance près. */
 function outline(base: CoherencyBase): Point[] {
-  const a = base.width / 2;
-  const b = base.length / 2;
-  let local: Point[];
-  if (base.shape === 'rectangle') {
-    local = [[-a, -b], [a, -b], [a, b], [-a, b]];
-  } else {
-    const sides = ellipseSides(Math.max(a, b));
-    local = Array.from({ length: sides }, (_, i) => {
-      const t = (2 * Math.PI * i) / sides;
-      return [a * Math.cos(t), b * Math.sin(t)] as Point;
-    });
-  }
-  // Même rotation que `rotate(θ)` en SVG, dans un repère à y descendant.
-  const angle = (base.rotation * Math.PI) / 180;
-  const cos = Math.cos(angle);
-  const sin = Math.sin(angle);
-  return local.map(([x, y]) => [base.x + x * cos - y * sin, base.y + x * sin + y * cos]);
+  return baseOutline(base, COHERENCY_TOLERANCE_INCHES);
 }
 
 /** Test de l'axe séparateur : deux polygones convexes se chevauchent-ils ? */

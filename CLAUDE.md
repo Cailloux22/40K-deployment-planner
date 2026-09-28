@@ -31,10 +31,10 @@ Layout of the app-specific code:
 - `src/app/referentials/` — access to the three embedded referentials + the `RG_02` name/base matching.
 - `src/app/data/` — IndexedDB store (`RT_08`) and the library of lists/deployments (`RT_06`).
 - `src/app/import/` — `RT_01` format layer, `RT_13` roster JSON parser, `RG_06` colours.
-- `src/app/deployment/` — pure status/grouping logic (`RT_11`, `RT_18`), token geometry (`RT_05`, `RT_19`) and unit coherency (`RG_26`/`RT_36`).
+- `src/app/deployment/` — pure status/grouping logic (`RT_11`, `RT_18`), token geometry (`RT_05`, `RT_19`), shared plane geometry (`geometry.ts`), unit coherency (`RG_26`/`RT_36`) and the zone visible from a model (`RG_27`/`RG_28`/`RT_38`).
 - `src/app/net/` — connectivity (`RT_14`), auth (`RT_21`), delta sync (`RT_09`/`RT_10`/`RT_15`).
 - `src/app/pages/` + `src/app/home/` — the screens; `src/app/shared/` — cross-screen components.
-- `scripts/` — the two offline referential ingestion scripts (see below).
+- `scripts/` — the three offline referential ingestion scripts (see below).
 
 **The sync backend itself does not exist.** The contract is specified in [specification/openapi.yml](specification/openapi.yml) and the client implements it fully, but no server serves it, so `EX_06` is not satisfied end-to-end. This is tracked in spec.md under "Suivi des écarts entre spécification et implémentation"; per `RG_09`/`RG_10` it is non-blocking — the app is fully usable locally.
 
@@ -68,7 +68,11 @@ Referential regeneration — run offline, never at app runtime (`EX_05`); both r
 node scripts/ingest-bases.mjs                  # RT_02 — src/assets/referentials/bases.json
 node scripts/ingest-boards.mjs                 # RT_12 — boards.json + 90 board PNGs (~34 MB)
 node scripts/ingest-boards.mjs --metadata-only  # boards.json only, no image download
+node scripts/ingest-terrain.mjs                # RT_37 — terrain.json, from the bundled board PNGs
+node scripts/ingest-terrain.mjs --preview <dir> # + one control PNG per board (one colour per baseplate)
 ```
+
+`ingest-terrain.mjs` needs no network: it reads the `no-measurements` board images already in the repo. Re-run it whenever the board images change, and review the control PNGs — the extraction is heuristic (see `RT_37` and its entries under "Suivi des écarts" in spec.md).
 
 ## Architecture
 
@@ -103,7 +107,7 @@ The sync client (`src/app/net/sync.service.ts`) pulls then pushes a delta, never
 
 ### Map/token rendering
 
-The placement editor (`src/app/pages/placement/`) renders the board image with an SVG token layer on top, at a fixed contain-fit zoom with no player-driven zoom/pan (`RG_17`/`RT_19`); drag, drop and rotation run on Pointer events. The full-screen viewers (`src/app/shared/board-viewer.component.ts`) do the opposite: pinch/pan, read-only.
+The placement editor (`src/app/pages/placement/`) renders the board image with an SVG token layer on top, at a fixed contain-fit zoom with no player-driven zoom/pan (`RG_17`/`RT_19`); drag, drop and rotation run on Pointer events. Selecting a placed token draws the zone it can see (`RG_29`) as one SVG path under the tokens: the union of per-sample visibility polygons computed by `src/app/deployment/visibility.ts` against the board's terrain (`terrain.json`, `RT_37`). It is hidden during a gesture and recomputed on release, never on every pointer move. The full-screen viewers (`src/app/shared/board-viewer.component.ts`) do the opposite: pinch/pan, read-only.
 
 Placement coordinates are stored in the **board asset's own pixel space**, not screen space, so a deployment survives any device, zoom or orientation. Converting a real base size in mm to that space needs the board rectangle measured inside the image (the assets also carry a title banner and a legend) — that measurement is done at ingestion time and stored per board (`RT_05`); do not try to derive it from the image dimensions.
 
