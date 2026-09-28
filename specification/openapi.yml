@@ -423,7 +423,8 @@ components:
           description: Jeton de version pour la détection de conflit (RT_15).
 
     # RG_07/RT_04 : un déploiement sauvegardé — nom, liaison à la liste,
-    # plateau/disposition adverse retenus, et l'ensemble des placements.
+    # plateau/disposition adverse retenus, l'ensemble des placements et les
+    # unités mises en réserve (RG_25/RT_35).
     Deployment:
       type: object
       required:
@@ -433,6 +434,7 @@ components:
         - opponentDispositionId
         - boardId
         - placements
+        - reservedUnitIds
         - updatedAt
         - versionToken
       properties:
@@ -451,6 +453,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Placement'
+        reservedUnitIds:
+          type: array
+          description: >-
+            RG_25/RT_35 : identifiants des unités déclarées en réserve sur ce
+            déploiement — comptées comme déployées (RG_05) sans aucun placement
+            associé. Tableau vide si aucune unité n'est en réserve.
+          items:
+            type: string
         createdAt:
           type: string
           format: date-time

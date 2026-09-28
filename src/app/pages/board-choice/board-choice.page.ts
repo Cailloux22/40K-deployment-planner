@@ -202,8 +202,10 @@ export class BoardChoicePage implements OnInit {
       header: 'Écraser ce déploiement ?',
       message:
         `Un déploiement existe déjà pour ce plateau ` +
-        `(${slide.deployment?.placements.length ?? 0} placement(s)). ` +
-        `Le repartir de zéro effacera définitivement ces placements.`,
+        `(${slide.deployment?.placements.length ?? 0} placement(s), ` +
+        // RG_25: la réserve fait partie de ce que « Nouveau » remet à zéro.
+        `${slide.deployment?.reservedUnitIds?.length ?? 0} unité(s) en réserve). ` +
+        `Le repartir de zéro effacera définitivement ces placements et cette réserve.`,
       buttons: [
         { text: 'Annuler', role: 'cancel' },
         {

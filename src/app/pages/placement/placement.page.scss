@@ -3,6 +3,9 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  /* RT_34: repère de positionnement du retour visuel du glisser, qui couvre
+     aussi bien la zone du plateau que le bandeau. */
+  position: relative;
 }
 
 /* RG_17/RT_19: espace restant une fois déduits le bandeau (RG_15) et l'accès
@@ -60,6 +63,69 @@
     stroke: var(--app-token-selected-stroke);
     stroke-width: 5;
   }
+
+  /* RT_34: token saisi — état distinct du token sélectionné (trait continu),
+     et accordé au pointillé du cercle de visée qui l'accompagne. */
+  &.grabbed {
+    stroke: var(--app-token-drag-aim);
+    stroke-width: 5;
+    stroke-dasharray: 6 5;
+    cursor: grabbing;
+  }
+
+  /* RT_36: relâcher ici romprait la cohésion de l'unité (RG_26) — le token
+     reprendra sa position d'avant le geste, et cela se voit avant. */
+  &.refused {
+    stroke: var(--app-token-drag-refused);
+    stroke-dasharray: 3 4;
+    fill-opacity: 0.5;
+  }
+}
+
+/* RT_34: retour visuel du glisser, superposé à toute la mise en page et jamais
+   cible d'un évènement de pointeur — il ne doit intercepter ni le déplacement
+   en cours ni le relâchement qui le conclut. */
+.drag-ghost {
+  position: absolute;
+  /* Au-dessus du plateau et de la barre d'actions (z-index 2), sous le panneau
+     d'unités (RT_24, z-index 8/9). */
+  z-index: 5;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  line-height: 0;
+
+  .ghost-token {
+    stroke: var(--app-token-drag-aim);
+    stroke-width: 2;
+    fill-opacity: 0.95;
+  }
+
+  .aim-halo {
+    fill: none;
+    stroke: var(--app-token-drag-halo);
+    stroke-width: 6;
+  }
+
+  .aim {
+    fill: none;
+    stroke: var(--app-token-drag-aim);
+    stroke-width: 2;
+    stroke-dasharray: 6 5;
+  }
+
+  /* RT_34: point de contact hors du rectangle de jeu (RT_19) — relâcher ici ne
+     posera rien, et cela se voit avant le relâchement. */
+  &.refused {
+    .ghost-token {
+      fill-opacity: 0.3;
+      stroke: var(--app-token-drag-refused);
+    }
+
+    .aim {
+      stroke: var(--app-token-drag-refused);
+      stroke-dasharray: 3 4;
+    }
+  }
 }
 
 .rotate-arm {
@@ -76,24 +142,47 @@
   cursor: grab;
 }
 
+// RG_20/RT_33: barre d'actions du token sélectionné, superposée à la zone du
+// plateau. Ancrée dans l'angle bas-droit, hors du centre où se fait la
+// manipulation, elle ne prend aucune place dans le flux : sa venue et son
+// départ au fil des sélections ne modifient plus l'espace disponible, donc
+// plus l'échelle d'affichage du plateau (RG_17/RT_19).
 .token-actions {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  // Au-dessus du plateau et de ses tokens, sous le panneau d'unités (RT_24).
+  z-index: 2;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 2px;
-  padding: 2px 8px;
+  gap: var(--app-touch-gap);
+  padding: 2px 6px;
+  border-radius: var(--app-radius-pill);
   background: var(--app-surface-raised);
+  // RT_29: flottant sur la scène sombre, la surface surélevée ne suffit pas à
+  // délimiter le contrôle en thème sombre (#1e1e1e sur #11131a) — la bordure
+  // est ici le seul délimiteur et porte le 3:1 de WCAG 1.4.11 face à la
+  // scène, pas seulement face à sa propre surface.
+  border: 1px solid var(--app-border-interactive);
 
   span {
-    margin-inline-end: auto;
-    padding-inline-start: 4px;
+    padding-inline-start: 6px;
     font-size: var(--app-font-sm);
     font-variant-numeric: tabular-nums;
     color: var(--app-text-secondary);
   }
 
+  // RT_31: ces boutons (size="small") mesuraient 28 px de côté.
   ion-button {
     margin: 0;
+    min-width: var(--app-touch-min);
+    min-height: var(--app-touch-min);
+  }
+
+  // RT_31: le retrait est destructif et voisine la rotation — il est écarté
+  // d'un cran supplémentaire pour qu'une frappe imprécise ne l'atteigne pas.
+  .remove {
+    margin-inline-start: var(--app-touch-gap);
   }
 }
 
@@ -123,13 +212,23 @@
 
 .band-header {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  // RG_25: la case à cocher partage la ligne du nom — alignement centré
+  // plutôt que sur la ligne de base, qu'un contrôle natif ne suit pas.
+  align-items: center;
   gap: 8px;
   padding: 0 8px 4px;
 
   // RT_30 (hiérarchie): le nom de l'unité courante est l'information
-  // primaire du bandeau, pas son compte de modèles restants.
+  // primaire du bandeau, pas son compte de modèles restants — il garde donc
+  // toute la largeur laissée par la case de RG_25, l'état passant dessous.
+  .band-unit {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
   strong {
     font-size: var(--app-font-md);
     color: var(--app-text);
@@ -139,15 +238,33 @@
   }
 
   small {
-    flex: 0 0 auto;
     font-size: var(--app-font-sm);
     color: var(--app-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // RG_25/RT_31: la cible tactile de la case couvre son libellé et atteint le
+  // plancher de 44 px, la case elle-même n'en mesurant qu'une vingtaine.
+  // RT_33: sa hauteur ne dépend pas de l'unité affichée — l'en-tête du
+  // bandeau garde donc la même hauteur d'une unité à l'autre.
+  .reserve {
+    flex: 0 0 auto;
+    min-height: var(--app-touch-min);
+    font-size: var(--app-font-sm);
+    color: var(--app-text);
+    --size: 20px;
   }
 }
 
-/* RT_17: défilement horizontal natif avec ancrage par élément. */
+// RT_17: défilement horizontal natif avec ancrage par élément.
+// RT_33: la hauteur est posée par le gabarit (`bandRowHeight`) et ne dépend
+// pas des socles rendus — un socle plus petit que la hauteur réservée y est
+// centré, un socle plus grand voit l'échelle commune de l'unité abaissée.
 .models {
   display: flex;
+  align-items: center;
   gap: 6px;
   padding: 0 8px 2px;
   overflow-x: auto;
@@ -176,16 +293,36 @@
   touch-action: none;
   cursor: grab;
 
-  /* RG_15/RG_05: un modèle déjà placé reste listé mais est distingué. */
-  &.placed {
-    opacity: 0.65;
-    background: var(--app-surface-raised);
-  }
-
   &:disabled {
     opacity: 0.3;
     cursor: not-allowed;
   }
+
+  /* RT_34: l'élément saisi reste en place — le retirer de la rangée pendant le
+     geste la rétrécirait sous le doigt (RT_33) — mais s'efface au profit du
+     token provisoire qui le représente désormais sous le doigt. */
+  &.grabbed {
+    opacity: 0.25;
+    cursor: grabbing;
+  }
+}
+
+/* RG_15: rangée vide — l'unité courante n'a plus de modèle à poser. */
+.models-empty {
+  margin: 0;
+  align-self: center;
+  font-size: 0.8rem;
+  color: var(--app-text-muted);
+}
+
+/* RG_24/RG_25: mention de réserve de l'entrée de menu — second canal du fond
+   vert d'une unité qui n'a pourtant aucun modèle posé. */
+.reserve-tag {
+  flex: 0 0 auto;
+  font-style: normal;
+  font-size: var(--app-font-sm);
+  font-weight: 500;
+  text-transform: lowercase;
 }
 
 /* RG_16/RT_24: panneau latéral ancré au bord droit, superposé au plateau
@@ -262,7 +399,6 @@
   .unit-name {
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
     gap: 6px;
     font-size: var(--app-font-sm);
     font-weight: 600;
@@ -271,6 +407,13 @@
     // RG_16 — il porte l'état, ce n'est pas une métadonnée. Il garde donc le
     // cran et la couleur du nom plutôt qu'un gris qui l'effacerait ; l'ancien
     // rgba(0,0,0,.55) était par ailleurs illisible en thème sombre.
+    // Le nom occupe la place restante ; mention de réserve et compte, tous
+    // deux porteurs d'état (RG_24), restent collés à droite.
+    span {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
     small {
       flex: 0 0 auto;
       // RT_30: l'élément <small> rétrécit de lui-même sous le plancher de

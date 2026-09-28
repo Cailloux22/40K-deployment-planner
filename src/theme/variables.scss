@@ -116,6 +116,16 @@ $ramp-green-on-dark: #8fe3a0;
   // pas sur une surface d'interface : son contour ne suit pas le thème.
   --app-token-stroke: rgba(0, 0, 0, 0.6);
   --app-token-selected-stroke: #ffffff;
+  // RT_34 — retour visuel du glisser. Le token provisoire et son cercle de
+  // visée traversent, au cours d'un même geste, le bandeau (surface de page)
+  // puis la scène du plateau : aucune couleur unique ne se détache des deux.
+  // Le tracé est donc doublé — un halo sombre dessous, le trait clair dessus —
+  // et ces valeurs ne suivent pas le thème, comme le contour de socle.
+  --app-token-drag-halo: rgba(0, 0, 0, 0.7);
+  --app-token-drag-aim: #ffffff;
+  // Dépôt refusé (hors du rectangle de jeu de RT_19), lisible sur ce même halo
+  // sombre dans les deux thèmes.
+  --app-token-drag-refused: #ff8a8a;
 }
 
 // ---------------------------------------------------------------------------
@@ -183,6 +193,16 @@ $ramp-green-on-dark: #8fe3a0;
 
   --app-token-stroke: rgba(0, 0, 0, 0.6);
   --app-token-selected-stroke: #ffffff;
+  // RT_34 — retour visuel du glisser. Le token provisoire et son cercle de
+  // visée traversent, au cours d'un même geste, le bandeau (surface de page)
+  // puis la scène du plateau : aucune couleur unique ne se détache des deux.
+  // Le tracé est donc doublé — un halo sombre dessous, le trait clair dessus —
+  // et ces valeurs ne suivent pas le thème, comme le contour de socle.
+  --app-token-drag-halo: rgba(0, 0, 0, 0.7);
+  --app-token-drag-aim: #ffffff;
+  // Dépôt refusé (hors du rectangle de jeu de RT_19), lisible sur ce même halo
+  // sombre dans les deux thèmes.
+  --app-token-drag-refused: #ff8a8a;
 }
 
 // ---------------------------------------------------------------------------
@@ -259,6 +279,10 @@ $ramp-green-on-dark: #8fe3a0;
 // Bordures : délimitation d'un contrôle.
 // @contrast --app-border-interactive on --app-surface-page >= 3
 // @contrast --app-border-interactive on --app-surface-raised >= 3
+// RG_20/RT_33 — la barre d'actions de token flotte sur la scène du plateau : sa
+// bordure y est le seul délimiteur, la surface surélevée ne se détachant pas de
+// la scène en thème sombre.
+// @contrast --app-border-interactive on --app-surface-stage >= 3
 
 // Alerte et erreur.
 // @contrast --app-warn-on on --app-warn-surface >= 4.5

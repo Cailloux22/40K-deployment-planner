@@ -1,5 +1,5 @@
 /**
- * RT_11 / RT_18 — calcul des indicateurs et statuts de déploiement.
+ * RT_11 / RT_18 / RT_35 — calcul des indicateurs et statuts de déploiement.
  *
  * Fonctions pures : elles ne lisent que les enregistrements déjà chargés
  * depuis le stockage local (RT_06/RT_08) et n'effectuent aucun appel réseau
@@ -58,12 +58,53 @@ export function isUnitFullyPlaced(unit: ArmyUnit, placements: readonly Placement
   return placedModelIds(placements, unit.id).size >= unit.modelCount;
 }
 
+/** Ensemble vide partagé — un déploiement sans réserve n'alloue rien. */
+const NO_RESERVE: ReadonlySet<string> = new Set<string>();
+
+/**
+ * RT_35: les unités en réserve d'un déploiement, sous forme d'ensemble. Un
+ * enregistrement écrit avant RT_35 n'a pas le champ : il est lu comme vide,
+ * sans migration de schéma (RT_08).
+ */
+export function reservedUnitIds(
+  deployment: Pick<Deployment, 'reservedUnitIds'> | undefined,
+): ReadonlySet<string> {
+  const ids = deployment?.reservedUnitIds;
+  return ids?.length ? new Set(ids) : NO_RESERVE;
+}
+
+/**
+ * RG_05/RG_25: une unité n'est plus « en attente de déploiement » dès lors
+ * que tous ses modèles sont posés **ou** qu'elle est déclarée en réserve.
+ *
+ * RT_35: la réserve est une entrée distincte du calcul — aucun placement
+ * n'est fabriqué pour une unité réservée, la liste des placements restant le
+ * reflet exact de ce qui est posé sur le plateau (RT_04).
+ */
+export function isUnitDeployed(
+  unit: ArmyUnit,
+  placements: readonly Placement[],
+  reserved: ReadonlySet<string> = NO_RESERVE,
+): boolean {
+  return reserved.has(unit.id) || isUnitFullyPlaced(unit, placements);
+}
+
 /**
  * RG_12/RG_14: un déploiement est « terminé » lorsque toutes les unités de la
- * liste ont tous leurs modèles placés.
+ * liste ont tous leurs modèles placés ou sont en réserve (RG_25).
  */
 export function isDeploymentComplete(list: ArmyList, deployment: Deployment): boolean {
-  return list.units.every((unit) => isUnitFullyPlaced(unit, deployment.placements));
+  const reserved = reservedUnitIds(deployment);
+  return list.units.every((unit) => isUnitDeployed(unit, deployment.placements, reserved));
+}
+
+/**
+ * RG_14/RT_35: un déploiement « vide » — celui sur lequel le joueur n'a rien
+ * décidé du tout. Une unité mise en réserve est une décision enregistrée,
+ * même sans le moindre token sur le plateau.
+ */
+function isDeploymentEmpty(deployment: Deployment): boolean {
+  return deployment.placements.length === 0 && !deployment.reservedUnitIds?.length;
 }
 
 /**
@@ -78,7 +119,9 @@ export function boardStatus(
 ): BoardDeploymentStatus {
   // « Aucun placement enregistré pour ce triplet » : un déploiement ouvert
   // puis quitté sans rien poser reste donc rouge, comme s'il n'existait pas.
-  if (!deployment || deployment.placements.length === 0) return 'missing';
+  // RT_35: à moins qu'il ne porte une unité en réserve (RG_25) — c'est alors
+  // une décision enregistrée, pas un déploiement manquant.
+  if (!deployment || isDeploymentEmpty(deployment)) return 'missing';
   return isDeploymentComplete(list, deployment) ? 'done' : 'unfinished';
 }
 
@@ -110,7 +153,8 @@ export function dispositionCounts(
   let finished = 0;
   let unfinished = 0;
   for (const deployment of deploymentsOnPair) {
-    if (deployment.placements.length === 0) continue;
+    // RT_35: même critère de « vide » que boardStatus — réserve incluse.
+    if (isDeploymentEmpty(deployment)) continue;
     if (isDeploymentComplete(list, deployment)) finished += 1;
     else unfinished += 1;
   }
@@ -147,6 +191,8 @@ export interface UnitMenuView {
   readonly groups: readonly UnitBaseGroupView[];
   readonly placedCount: number;
   readonly status: UnitPlacementStatus;
+  /** RG_25: unité déclarée en réserve sur ce déploiement. */
+  readonly reserved: boolean;
 }
 
 /**
@@ -157,7 +203,11 @@ export interface UnitMenuView {
  * Le statut global de l'unité (RG_16) en découle : blanc si aucun modèle
  * placé, vert si tous le sont, orange sinon.
  */
-export function unitMenuView(unit: ArmyUnit, placements: readonly Placement[]): UnitMenuView {
+export function unitMenuView(
+  unit: ArmyUnit,
+  placements: readonly Placement[],
+  reserved: ReadonlySet<string> = NO_RESERVE,
+): UnitMenuView {
   const placed = placedModelIds(placements, unit.id);
 
   const placedPerGroup = new Map<string, number>();
@@ -174,16 +224,26 @@ export function unitMenuView(unit: ArmyUnit, placements: readonly Placement[]): 
   }));
 
   const placedCount = groups.reduce((sum, g) => sum + g.placed, 0);
-  const status: UnitPlacementStatus =
-    placedCount === 0 ? 'white' : placedCount >= unit.modelCount ? 'green' : 'orange';
+  // RG_16/RG_25: une unité en réserve est complète au même titre qu'une unité
+  // entièrement posée ; ses comptes par groupe restent, eux, ceux des modèles
+  // réellement posés — c'est la mention « en réserve » qui l'explique (RG_24).
+  const isReserved = reserved.has(unit.id);
+  const status: UnitPlacementStatus = isReserved
+    ? 'green'
+    : placedCount === 0
+      ? 'white'
+      : placedCount >= unit.modelCount
+        ? 'green'
+        : 'orange';
 
-  return { unit, groups, placedCount, status };
+  return { unit, groups, placedCount, status, reserved: isReserved };
 }
 
 /** RG_16: le menu burger liste toutes les unités de la liste déployée. */
 export function unitMenuViews(
   list: ArmyList,
   placements: readonly Placement[],
+  reserved: ReadonlySet<string> = NO_RESERVE,
 ): readonly UnitMenuView[] {
-  return list.units.map((unit) => unitMenuView(unit, placements));
+  return list.units.map((unit) => unitMenuView(unit, placements, reserved));
 }

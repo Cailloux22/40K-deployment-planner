@@ -24,7 +24,7 @@
   (pointerup)="onPointerUp($event)"
   (pointercancel)="onPointerUp($event)"
 >
-  <div class="layout">
+  <div #layout class="layout">
     <!-- RG_17/RT_19: le plateau occupe tout l'espace restant, à un zoom fixe
          calculé par ajustement « contenir ». Aucun geste de zoom/pan n'est
          branché ici, et les gestes natifs sont neutralisés en CSS.
@@ -80,6 +80,8 @@
                   <rect
                     class="token"
                     [class.selected]="token.selected"
+                    [class.grabbed]="token.placement.idModele === grabbedModelId()"
+                    [class.refused]="token.placement.idModele === refusedModelId()"
                     [attr.x]="-token.rx"
                     [attr.y]="-token.ry"
                     [attr.width]="token.rx * 2"
@@ -91,6 +93,8 @@
                   <ellipse
                     class="token"
                     [class.selected]="token.selected"
+                    [class.grabbed]="token.placement.idModele === grabbedModelId()"
+                    [class.refused]="token.placement.idModele === refusedModelId()"
                     [attr.rx]="token.rx"
                     [attr.ry]="token.ry"
                     [attr.fill]="token.color"
@@ -123,23 +127,34 @@
       } @else {
         <ion-spinner></ion-spinner>
       }
+
+      <!-- RG_20: rotation également accessible au pas fixe, et retrait du token.
+           RT_33: superposée à la zone du plateau et non insérée dans le flux —
+           son apparition à la sélection ne consomme aucune hauteur et ne
+           re-cadre donc pas le plateau (RG_17/RT_19). -->
+      @if (selectedToken(); as token) {
+        <div class="token-actions" role="toolbar" aria-label="Actions sur le token sélectionné">
+          <span>{{ token.placement.rotation }}°</span>
+          <ion-button size="small" fill="clear" (click)="rotateSelected(-15)" aria-label="Pivoter de -15 degrés">
+            <ion-icon name="return-up-back" slot="icon-only"></ion-icon>
+          </ion-button>
+          <ion-button size="small" fill="clear" (click)="rotateSelected(15)" aria-label="Pivoter de +15 degrés">
+            <ion-icon name="return-up-forward" slot="icon-only"></ion-icon>
+          </ion-button>
+          <ion-button
+            class="remove"
+            size="small"
+            fill="clear"
+            color="danger"
+            (click)="removeSelected()"
+            aria-label="Retirer ce token"
+          >
+            <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </div>
+      }
     </div>
 
-    <!-- RG_20: rotation également accessible au pas fixe, et retrait du token. -->
-    @if (selectedToken(); as token) {
-      <div class="token-actions">
-        <span>{{ token.placement.rotation }}°</span>
-        <ion-button size="small" fill="clear" (click)="rotateSelected(-15)" aria-label="Pivoter de -15 degrés">
-          <ion-icon name="return-up-back" slot="icon-only"></ion-icon>
-        </ion-button>
-        <ion-button size="small" fill="clear" (click)="rotateSelected(15)" aria-label="Pivoter de +15 degrés">
-          <ion-icon name="return-up-forward" slot="icon-only"></ion-icon>
-        </ion-button>
-        <ion-button size="small" fill="clear" color="danger" (click)="removeSelected()" aria-label="Retirer ce token">
-          <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
-        </ion-button>
-      </div>
-    }
 
     <!-- RG_15/RT_17: bandeau ancré en bas — nom de l'unité, flèches de part et
          d'autre, et liste défilable horizontalement des modèles individuels. -->
@@ -150,36 +165,73 @@
 
       <div class="band-body">
         <div class="band-header">
-          <strong>{{ selectedUnit()?.name ?? 'Aucune unité' }}</strong>
-          <!-- RG_05: ce qu'il reste à poser sur l'unité courante. -->
-          <small>
-            @if (remainingInUnit() > 0) {
-              {{ remainingInUnit() }} modèle{{ remainingInUnit() > 1 ? 's' : '' }} à placer
-            } @else {
-              unité complète
-            }
-          </small>
+          <!-- RT_30/RT_33: nom et état empilés plutôt que côte à côte — sur la
+               largeur restante d'un écran de 375 px, la case de RG_25 et le
+               compte de modèles ne laissaient au nom de l'unité, information
+               primaire du bandeau, que trois caractères. -->
+          <div class="band-unit">
+            <strong>{{ selectedUnit()?.name ?? 'Aucune unité' }}</strong>
+            <!-- RG_05: ce qu'il reste à poser sur l'unité courante.
+                 RG_24/RG_25: l'état de réserve y est énoncé en toutes lettres —
+                 une unité en réserve n'a pas de « modèles à placer ». -->
+            <small>
+              @if (selectedUnitReserved()) {
+                en réserve
+              } @else if (remainingInUnit() > 0) {
+                {{ remainingInUnit() }} modèle{{ remainingInUnit() > 1 ? 's' : '' }} à placer
+              } @else {
+                unité complète
+              }
+            </small>
+          </div>
+
+          <!-- RG_25/RT_17: seul point d'entrée de la mise en réserve, et de son
+               retrait. La case reflète l'unité courante ; le composant la
+               repositionne lui-même quand l'état n'a finalement pas changé. -->
+          <ion-checkbox
+            #reserveBox
+            class="reserve"
+            labelPlacement="start"
+            [checked]="selectedUnitReserved()"
+            [disabled]="!selectedUnit()"
+            (ionChange)="toggleReserve($event, reserveBox)"
+          >
+            Réserve
+          </ion-checkbox>
         </div>
 
-        <div class="models">
+        <!-- RT_33: hauteur réservée constante, pour que le changement
+             d'unité ne re-cadre pas le plateau (RG_17/RT_19).
+             RG_15: seuls les modèles restant à poser y figurent — un modèle
+             déposé sur le plateau en sort aussitôt. -->
+        <div class="models" [style.height.px]="bandRowHeight">
           @for (model of bandModels(); track model.idModele) {
             <button
               type="button"
               class="model"
-              [class.placed]="model.placed"
+              [class.grabbed]="model.idModele === grabbedModelId()"
               [disabled]="!model.shape"
-              [attr.aria-label]="
-                model.group.name + (model.placed ? ' — déjà placé, glisser pour repositionner' : ' — glisser sur le plateau')
-              "
+              [attr.aria-label]="model.group.name + ' — glisser sur le plateau'"
               (pointerdown)="onBandPointerDown($event, model)"
             >
               <app-base-token
                 [shape]="model.shape"
                 [color]="selectedUnit()?.color ?? fallbackColor"
-                [placed]="model.placed"
-                [pixelsPerMm]="0.62"
+                [pixelsPerMm]="bandPixelsPerMm()"
               ></app-base-token>
             </button>
+          } @empty {
+            <!-- RG_15: l'unité n'a plus rien à poser ; la rangée conserve sa
+                 hauteur réservée (RT_33) et le dit plutôt que de rester vide.
+                 RG_25: en réserve, elle n'a rien à poser sans qu'aucun modèle
+                 n'ait été placé — la raison est différente, le message aussi. -->
+            <p class="models-empty">
+              @if (selectedUnitReserved()) {
+                Unité en réserve : aucun modèle à poser sur ce plateau.
+              } @else {
+                Tous les modèles de cette unité sont placés.
+              }
+            </p>
           }
         </div>
       </div>
@@ -188,6 +240,58 @@
         <ion-icon name="chevron-forward" slot="icon-only"></ion-icon>
       </ion-button>
     </div>
+
+    <!-- RT_34: retour visuel du glisser — token provisoire et cercle de visée
+         suivant le doigt (ou la souris). Posé ici, hors du conteneur rogné du
+         plateau (RT_19), il reste visible tant que le doigt n'a pas quitté le
+         bandeau (RG_15) ; superposé, il n'occupe aucune hauteur (RT_33). -->
+    @if (dragGhost(); as ghost) {
+      <div
+        class="drag-ghost"
+        [class.refused]="!ghost.droppable"
+        [style.left.px]="ghost.left"
+        [style.top.px]="ghost.top"
+        aria-hidden="true"
+      >
+        <svg
+          [attr.width]="ghost.box"
+          [attr.height]="ghost.box"
+          [attr.viewBox]="
+            -ghost.box / 2 + ' ' + -ghost.box / 2 + ' ' + ghost.box + ' ' + ghost.box
+          "
+        >
+          <!-- RT_05: le socle provisoire a la taille qu'il aura une fois posé,
+               pour que le joueur juge son emprise avant de lâcher. -->
+          @if (ghost.withToken) {
+            <g [attr.transform]="'rotate(' + ghost.rotation + ')'">
+              @if (ghost.shapeKind === 'rectangle') {
+                <rect
+                  class="ghost-token"
+                  [attr.x]="-ghost.width / 2"
+                  [attr.y]="-ghost.height / 2"
+                  [attr.width]="ghost.width"
+                  [attr.height]="ghost.height"
+                  [attr.fill]="ghost.color"
+                />
+              } @else {
+                <ellipse
+                  class="ghost-token"
+                  [attr.rx]="ghost.width / 2"
+                  [attr.ry]="ghost.height / 2"
+                  [attr.fill]="ghost.color"
+                />
+              }
+            </g>
+          }
+
+          <!-- RT_34: cercle de visée, centré sur le point exact où le centre du
+               socle se posera. Tracé deux fois — halo sombre puis trait clair —
+               car le geste traverse le bandeau clair puis la scène sombre. -->
+          <circle class="aim-halo" [attr.r]="aimRadius" />
+          <circle class="aim" [attr.r]="aimRadius" />
+        </svg>
+      </div>
+    }
   </div>
 
   <!-- RG_16/RT_24: panneau latéral coulissant depuis le bord droit ; le
@@ -215,6 +319,11 @@
         >
           <div class="unit-name">
             <span>{{ view.unit.name }}</span>
+            <!-- RG_24/RG_25: sans cette mention, le 0/10 d'une unité
+                 entièrement en réserve contredirait le fond vert de l'entrée. -->
+            @if (view.reserved) {
+              <em class="reserve-tag">en réserve</em>
+            }
             <small>{{ view.placedCount }}/{{ view.unit.modelCount }}</small>
           </div>
 

@@ -63,6 +63,21 @@
     color: var(--ion-color-primary);
   }
 
+  // RT_33: la carte occupe une hauteur constante — trois lignes, quelle que
+  // soit la longueur du nom de la liste et du libellé de disposition. Le cadre
+  // d'interface laisse le libellé d'un élément de liste se replier
+  // (`white-space: normal`) : un nom long faisait passer la carte de 107 px à
+  // 165 px, les cartes n'avaient donc plus la même hauteur et la liste se
+  // réorganisait à chaque import, renommage ou duplication (RG_21).
+  // RT_30: un contenu qui ne tient pas est tronqué — le texte complet reste
+  // dans l'arbre d'accessibilité, il n'est que masqué visuellement.
+  h2,
+  p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   // RT_30 (hiérarchie): le nom de la liste est ce que le joueur cherche en
   // premier — cran supérieur et texte principal. Ses métadonnées passent au
   // cran inférieur et au texte secondaire. C'était l'inverse.

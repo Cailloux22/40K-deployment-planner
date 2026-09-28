@@ -65,7 +65,12 @@ export class HomePage implements OnInit {
       deploymentCount: this.library
         .deploymentsOfList(list.id)
         // RG_14: un déploiement sans aucun placement compte comme absent.
-        .filter((deployment) => deployment.placements.length > 0).length,
+        // RG_25/RT_35: sauf s'il porte une unité en réserve — c'est alors une
+        // décision enregistrée, au même titre qu'un token posé.
+        .filter(
+          (deployment) =>
+            deployment.placements.length > 0 || (deployment.reservedUnitIds?.length ?? 0) > 0,
+        ).length,
     }));
   });
 

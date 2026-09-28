@@ -3,9 +3,11 @@ import {
   boardStatus,
   dispositionIndicator,
   isDeploymentComplete,
+  isUnitDeployed,
   isUnitFullyPlaced,
   modelId,
   modelIdsOfUnit,
+  reservedUnitIds,
   unitMenuView,
 } from './deployment-status';
 
@@ -36,7 +38,11 @@ function list(units: ArmyUnit[]): ArmyList {
   };
 }
 
-function deployment(placements: Placement[], boardId = 'board_1'): Deployment {
+function deployment(
+  placements: Placement[],
+  boardId = 'board_1',
+  reserved: string[] = [],
+): Deployment {
   return {
     id: `depl_${boardId}`,
     name: 'Déploiement de test',
@@ -44,6 +50,7 @@ function deployment(placements: Placement[], boardId = 'board_1'): Deployment {
     opponentDispositionId: 'disruption',
     boardId,
     placements,
+    reservedUnitIds: reserved,
     createdAt: '2026-09-01T10:00:00.000Z',
     updatedAt: '2026-09-01T10:00:00.000Z',
     versionToken: null,
@@ -199,5 +206,63 @@ describe('RG_16 / RT_18 — regroupement par socle et statut du menu unités', (
       place('u1', [modelId(groups[1], 0), modelId(groups[1], 1), modelId(groups[2], 0)]),
     );
     expect(view.groups.map((g) => g.placed)).toEqual([0, 2, 1]);
+  });
+});
+
+describe('RG_25 / RT_35 — mise en réserve d’une unité', () => {
+  const u1 = unit('u1', [group('u1_g0', 3, 'round-32')]);
+  const u2 = unit('u2', [group('u2_g0', 2, 'round-32')]);
+  const armyList = list([u1, u2]);
+
+  it('lit la réserve d’un enregistrement écrit avant RT_35 comme vide', () => {
+    const { reservedUnitIds: _absent, ...legacy } = deployment([]);
+    expect(reservedUnitIds(legacy as Deployment).size).toBe(0);
+    expect(boardStatus(armyList, legacy as Deployment)).toBe('missing');
+  });
+
+  it('une unité en réserve n’est plus en attente de déploiement (RG_05)', () => {
+    const reserved = new Set(['u1']);
+    expect(isUnitDeployed(u1, [], reserved)).toBe(true);
+    expect(isUnitDeployed(u2, [], reserved)).toBe(false);
+    // La réserve ne fabrique aucun placement (RT_04).
+    expect(isUnitFullyPlaced(u1, [])).toBe(false);
+  });
+
+  it('un déploiement est terminé quand le reste des unités est en réserve', () => {
+    const depl = deployment(place('u1', modelIdsOfUnit(u1)), 'board_1', ['u2']);
+    expect(isDeploymentComplete(armyList, depl)).toBe(true);
+    expect(boardStatus(armyList, depl)).toBe('done');
+  });
+
+  it('une réserve seule suffit à sortir du statut « manquant » (RG_14)', () => {
+    const depl = deployment([], 'board_1', ['u1']);
+    expect(boardStatus(armyList, depl)).toBe('unfinished');
+    expect(dispositionIndicator(armyList, [depl])).toBe('orange');
+  });
+
+  it('un déploiement vraiment vide reste manquant', () => {
+    expect(boardStatus(armyList, deployment([], 'board_1', []))).toBe('missing');
+    expect(dispositionIndicator(armyList, [deployment([], 'board_1', [])])).toBe('white');
+  });
+
+  it('trois plateaux terminés par la réserve donnent le vert agrégé (RG_12)', () => {
+    const full = (boardId: string) =>
+      deployment(place('u1', modelIdsOfUnit(u1)), boardId, ['u2']);
+    expect(dispositionIndicator(armyList, [full('b1'), full('b2'), full('b3')])).toBe('green');
+  });
+
+  it('le menu affiche une unité en réserve comme complète, comptes réels à l’appui', () => {
+    const view = unitMenuView(u1, [], new Set(['u1']));
+    expect(view.reserved).toBe(true);
+    expect(view.status).toBe('green');
+    // RG_24: le compte reste celui des modèles réellement posés — c'est la
+    // mention « en réserve » qui explique le vert, pas un compte gonflé.
+    expect(view.placedCount).toBe(0);
+    expect(view.groups[0].placed).toBe(0);
+  });
+
+  it('sortir une unité de la réserve la remet en attente', () => {
+    expect(unitMenuView(u1, [], new Set()).status).toBe('white');
+    expect(isUnitDeployed(u1, [], new Set())).toBe(false);
   });
 });

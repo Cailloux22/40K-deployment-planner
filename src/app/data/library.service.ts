@@ -46,9 +46,21 @@ export class LibraryService {
         this.store.getAll<Deployment>(STORE_DEPLOYMENTS),
       ]);
       this.lists.set(this.sortLists(lists));
-      this.deployments.set(deployments);
+      this.deployments.set(deployments.map((d) => this.normalizeDeployment(d)));
       this.loaded.set(true);
     })());
+  }
+
+  /**
+   * RT_35: un déploiement enregistré avant la mise en réserve (RG_25) n'a pas
+   * de champ `reservedUnitIds`. Il est normalisé à la lecture plutôt que
+   * migré : le stockage local (RT_08) n'a pas de schéma à faire évoluer, et
+   * tout code en aval reçoit un tableau, jamais `undefined`.
+   */
+  private normalizeDeployment(deployment: Deployment): Deployment {
+    return deployment.reservedUnitIds
+      ? deployment
+      : { ...deployment, reservedUnitIds: [] };
   }
 
   private sortLists(lists: readonly ArmyList[]): ArmyList[] {
@@ -150,7 +162,7 @@ export class LibraryService {
    */
   async saveDeployment(deployment: Deployment): Promise<Deployment> {
     const persisted: Deployment = {
-      ...deployment,
+      ...this.normalizeDeployment(deployment),
       updatedAt: new Date().toISOString(),
       dirty: true,
     };
@@ -177,7 +189,9 @@ export class LibraryService {
     if (existing && !params.reset) return existing;
 
     if (existing && params.reset) {
-      return this.saveDeployment({ ...existing, placements: [] });
+      // RG_14/RG_25: « Nouveau » remet à zéro les placements *et* les
+      // unités en réserve — la réserve est une décision de déploiement.
+      return this.saveDeployment({ ...existing, placements: [], reservedUnitIds: [] });
     }
 
     const now = new Date().toISOString();
@@ -188,6 +202,7 @@ export class LibraryService {
       opponentDispositionId: params.opponentDispositionId,
       boardId: params.boardId,
       placements: [],
+      reservedUnitIds: [],
       createdAt: now,
       updatedAt: now,
       versionToken: null,
@@ -203,6 +218,8 @@ export class LibraryService {
       id: newId('depl'),
       name,
       placements: deployment.placements.map((p: Placement) => ({ ...p })),
+      // RG_25: la copie emporte la réserve au même titre que les placements.
+      reservedUnitIds: [...(deployment.reservedUnitIds ?? [])],
       createdAt: now,
       updatedAt: now,
       versionToken: null,
@@ -257,7 +274,10 @@ export class LibraryService {
     deletedDeploymentIds: readonly string[];
   }): Promise<void> {
     const lists = delta.lists.map((l) => ({ ...l, dirty: false }));
-    const deployments = delta.deployments.map((d) => ({ ...d, dirty: false }));
+    const deployments = delta.deployments.map((d) => ({
+      ...this.normalizeDeployment(d),
+      dirty: false,
+    }));
 
     if (lists.length) await this.store.putMany(STORE_LISTS, lists);
     if (deployments.length) await this.store.putMany(STORE_DEPLOYMENTS, deployments);

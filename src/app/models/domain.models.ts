@@ -80,6 +80,14 @@ export interface Deployment {
   readonly opponentDispositionId: string;
   readonly boardId: string;
   placements: Placement[];
+  /**
+   * RG_25/RT_35: unités déclarées « en réserve » sur ce déploiement —
+   * déployées au sens de RG_05 sans aucun token sur le plateau. Propre au
+   * déploiement, jamais à la liste : la même unité peut être en réserve sur
+   * un plateau et posée sur un autre. Normalisé à `[]` à la lecture d'un
+   * enregistrement écrit avant RT_35.
+   */
+  reservedUnitIds: string[];
   readonly createdAt: string;
   updatedAt: string;
   versionToken: string | null;

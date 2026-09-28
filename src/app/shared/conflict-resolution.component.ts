@@ -130,7 +130,10 @@ export class ConflictResolutionComponent {
       const models = record.units.reduce((sum, unit) => sum + unit.modelCount, 0);
       return `${units} unité(s), ${models} modèle(s)`;
     }
-    return `${record.placements.length} placement(s)`;
+    // RG_25/RT_35: la réserve fait partie de ce que le joueur arbitre.
+    const reserved = record.reservedUnitIds?.length ?? 0;
+    const placements = `${record.placements.length} placement(s)`;
+    return reserved > 0 ? `${placements}, ${reserved} unité(s) en réserve` : placements;
   }
 
   formatDate(iso: string): string {

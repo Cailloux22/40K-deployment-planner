@@ -155,10 +155,14 @@ interface PlacementView {
         overflow: hidden;
       }
       .surface {
+        /* RT_16: la surface doit garder la taille de l'écran. Sans min-width/
+           min-height à 0, l'item flex s'élargit à la taille native de l'image
+           et fitToScreen() la centre alors hors du viewport. */
         flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        position: relative;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
         /* Le composant gère lui-même pincement et déplacement : on neutralise
            les gestes natifs du navigateur sur cette zone. */
         touch-action: none;
@@ -166,7 +170,11 @@ interface PlacementView {
         cursor: grab;
       }
       .stage {
-        position: relative;
+        /* Le placement est entièrement porté par la transformation (offset +
+           échelle) : la scène part du coin haut-gauche de la surface. */
+        position: absolute;
+        top: 0;
+        left: 0;
         transform-origin: 0 0;
         will-change: transform;
       }
