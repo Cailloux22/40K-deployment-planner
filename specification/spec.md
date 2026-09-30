@@ -118,7 +118,7 @@ Le second niveau est un compromis assumé : un gabarit approché à quelques mil
 
 Le joueur doit pouvoir positionner ses unités sur une représentation du plateau de jeu, en tenant compte de la disposition de force qu'il a choisie pour la partie.
 
-Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_23]], [[RT_24]], [[RT_27]], [[RT_34]], [[RG_25]], [[RT_35]], [[RG_26]], [[RT_36]].
+Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_23]], [[RT_24]], [[RT_27]], [[RT_34]], [[RG_25]], [[RT_35]], [[RG_26]], [[RT_36]], [[RG_30]], [[RG_31]], [[RT_40]].
 
 ### RG_03 — Parcours de sélection : liste → disposition adverse → plateau → placement
 
@@ -211,6 +211,33 @@ Une unité de plus d'un modèle doit être déployée **en cohésion**, conform�
 
 **Exemptions.** Une unité d'un seul modèle n'est pas concernée. Une unité en réserve ([[RG_25]]) n'a aucun token sur le plateau et n'est donc pas concernée non plus.
 
+### RG_30 — Sélection multiple par zone de sélection et déplacement groupé
+
+Sur l'écran de placement ([[RG_03]] étape 3), le joueur peut sélectionner **plusieurs tokens posés à la fois** et les déplacer ensemble, pour repositionner d'un geste un groupe de modèles — une unité, une partie d'unité, ou des modèles de plusieurs unités — plutôt que token par token ([[RG_04]]).
+
+**Zone de sélection.** Un glisser qui démarre sur une partie du plateau **où ne se trouve aucun token** trace un rectangle de sélection, matérialisé à l'écran pendant tout le geste. Le plateau n'étant ni zoomable ni déplaçable par le joueur ([[RG_17]]), ce geste n'entre en concurrence avec aucun pan. Au relâchement, sont sélectionnés **tous les tokens posés dont le socle est touché par le rectangle**, même partiellement : à l'échelle du plateau ([[RT_19]]), exiger qu'un socle soit entièrement contenu obligerait à un tracé d'une précision incompatible avec un doigt. Cette sélection remplace la précédente ; un rectangle qui ne touche aucun token, ou un simple appui sur le fond du plateau, désélectionne tout. Sur un appareil à clavier, maintenir **Maj** pendant le tracé **ajoute** les tokens touchés à la sélection existante au lieu de la remplacer. Seuls les tokens déjà posés sont sélectionnables : un modèle encore dans le bandeau ([[RG_15]]) ou en réserve ([[RG_25]]) n'a pas de position ([[RG_29]]).
+
+**Déplacement groupé.** Faire glisser **l'un des tokens sélectionnés** déplace tous les tokens sélectionnés du **même vecteur** : les positions relatives et les orientations ([[RG_20]]) sont conservées, seul `x`/`y` change. Faire glisser un token qui n'appartient pas à la sélection retombe sur le comportement de [[RG_04]] : la sélection devient ce seul token, et lui seul se déplace.
+
+**Tout ou rien.** Le déplacement groupé est validé **dans son ensemble** ou pas du tout. Il est refusé, et **tous** les tokens reprennent leur position d'avant le geste, si l'un au moins des tokens déplacés :
+
+- sortirait du rectangle de jeu ([[RT_19]]), au même titre qu'un dépôt hors du rectangle ([[RT_34]]) ;
+- ferait perdre sa cohésion à une unité qui l'avait ([[RG_26]]). Une unité dont **tous** les modèles posés sont sélectionnés se translate rigidement et conserve donc sa cohésion ; une unité **partiellement** sélectionnée peut la perdre, et c'est alors le groupe entier qui est refusé. Les exemptions de [[RG_26]] (unité d'un seul modèle, unité déjà hors cohésion avant le geste) s'appliquent unité par unité.
+
+Comme pour [[RG_26]], l'issue est annoncée au joueur **avant** le relâchement (état de dépôt refusé de [[RT_34]] appliqué à tous les tokens du groupe), pour qu'il sache que lâcher ici ne déplacera rien.
+
+**Ce qui ne s'applique qu'à un token seul.** La rotation ([[RG_20]]), le retrait d'un token ([[RG_15]]/[[RG_26]]) et la coloration de la zone visible ([[RG_29]]) portent sur **un seul** token sélectionné : dès que la sélection en contient plusieurs, la poignée de rotation, l'action de retrait et la zone visible ne sont plus proposées. Ils redeviennent disponibles quand la sélection est ramenée à un token.
+
+**Second canal ([[RG_24]]).** L'appartenance à la sélection ne repose jamais sur la seule couleur : chaque token sélectionné porte un contour distinct de son état non sélectionné, et le nombre de tokens sélectionnés est énoncé en toutes lettres (« N modèles sélectionnés ») tant que la sélection en contient plusieurs.
+
+### RG_31 — Double clic sur un token : sélection de toute l'unité
+
+Un **double clic** (double appui, sur écran tactile) sur un token posé sélectionne **tous les tokens posés de son unité**. Cette sélection remplace la précédente et se comporte ensuite comme toute sélection multiple ([[RG_30]]) : glisser l'un de ces tokens déplace l'unité entière d'un bloc, sans qu'elle perde sa cohésion ([[RG_26]]) puisque tous ses modèles posés se translatent ensemble.
+
+- Seuls les modèles **déjà posés** de l'unité sont sélectionnés : ceux qui restent dans le bandeau ([[RG_15]]) ne le sont pas, et une unité en réserve ([[RG_25]]) n'a aucun token à sélectionner.
+- Sur une unité d'un seul modèle, le double clic équivaut à la sélection simple du token.
+- Le premier clic du double clic sélectionne le token comme d'ordinaire ([[RG_29]], [[RG_20]]) ; le second étend la sélection à l'unité, ce qui masque la zone visible et la poignée de rotation ([[RG_30]]).
+
 ### RG_15 — Sélecteur d'unité à placer (bandeau bas d'écran)
 
 L'écran de placement ouvert par l'étape 3 de [[RG_03]] (y compris via les actions « Nouveau »/« Éditer » de [[RG_14]]) affiche, ancré en bas de l'écran, un bandeau de sélection de l'unité en cours de placement, regroupant dans un même encadré :
@@ -293,6 +320,14 @@ Les seuils de 2" et 9" sont comparés avec une tolérance de 0,01", pour qu'un t
 **Contrôle pendant le geste.** Lors d'un dépôt ou d'un déplacement ([[RT_34]]), la cohésion est recalculée à chaque mouvement du point de contact, avec le token saisi à sa position provisoire. Un résultat hors cohésion met le token provisoire et son cercle de visée dans le même état de **dépôt refusé** qu'une sortie du rectangle de jeu ; au relâchement, aucun enregistrement de placement n'est écrit ([[RT_04]]) et un token déjà posé reprend sa position d'avant le geste. La rotation ([[RT_22]]) suit le même contrôle. Pour une unité déjà hors cohésion au début du geste (déploiement antérieur à [[RG_26]]), aucun geste n'est refusé.
 
 **Retrait.** Au retrait d'un token, les composantes connexes du graphe restant sont calculées. S'il y en a plus d'une, la plus grande est conservée ; en cas d'égalité, celle qui contient le placement le plus ancien. Le placement le plus ancien est déterminé par l'ordre des enregistrements de placement du déploiement, qui suit l'ordre des dépôts. Les placements des autres composantes sont supprimés dans la même écriture que celui du token retiré, après confirmation du joueur.
+
+### RT_40 — Interaction de sélection multiple et de déplacement groupé
+
+**Sélection.** L'état de sélection de l'éditeur de placement ([[RT_03]]) passe d'un token à un **ensemble** de tokens, identifiés par `{ idUnite, idModele }` ([[RT_04]]). Cet état est purement local à l'écran : il n'est ni persisté ni synchronisé ([[RT_09]]), et n'écrit aucun enregistrement de placement. Le rectangle de sélection ([[RG_30]]) est tracé aux Pointer events, dans le même repère que les tokens, et rendu dans le SVG **au-dessus** des tokens, en couleur de token de [[RT_29]] défini dans les deux thèmes. Le test d'appartenance est une intersection entre le rectangle et le **polygone** de chaque socle, tel que construit par [[RT_36]] (position `x`/`y`, `rotation`, forme cercle/ovale/rectangle), et non un test sur le centre du token.
+
+**Double clic.** L'événement `dblclick` n'étant pas fiable sur écran tactile, le double clic ([[RG_31]]) est détecté à partir des Pointer events : deux appuis sur le **même token**, séparés de moins de 300 ms et de moins de 10 px, sans glisser entre les deux. Le second appui remplace la sélection par l'ensemble des placements de l'unité du token.
+
+**Déplacement groupé.** Le geste de [[RT_34]] est conservé : l'écart entre le point de contact et le centre du token saisi est relevé à la saisie, et le **vecteur de déplacement** ainsi obtenu est appliqué à chaque token de la sélection. À chaque mouvement du point de contact, la validité du groupe est recalculée — appartenance de chaque socle au rectangle de jeu ([[RT_19]]), puis cohésion ([[RT_36]]) de chacune des seules unités dont au moins un token est déplacé, avec tous les tokens du groupe à leur position provisoire. Un seul résultat négatif met **tous** les tokens du groupe dans l'état de dépôt refusé de [[RT_34]]. Le rendu pendant le geste est un rendu seul : les coordonnées [[RT_04]] ne sont écrites qu'au relâchement, **en une seule écriture** pour tous les tokens déplacés (une seule sauvegarde, [[RG_07]]), ou pas du tout en cas de refus. La zone visible ([[RT_38]]) n'est pas calculée tant que la sélection contient plus d'un token.
 
 ### RT_11 — Calcul des indicateurs de déploiement existant
 
@@ -606,7 +641,7 @@ Une zone de terrain du plateau peut être marquée **obscurcissante**. Un point 
 
 ### RG_29 — Coloration de la zone visible à la sélection d'un modèle posé
 
-Sur l'écran de placement ([[RG_03]] étape 3), sélectionner un token déjà posé colore sur le plateau la zone visible depuis ce modèle ([[RG_27]]). Seule la surface visible est colorée : le reste du plateau est laissé tel quel, et c'est l'absence de coloration qui désigne les espaces à l'abri de ce modèle. Désélectionner le token, ou en sélectionner un autre, retire la coloration précédente ; au plus une zone visible est affichée à la fois, celle du token sélectionné, sur le même principe de sélection que [[RG_20]]. Un modèle encore dans le bandeau ([[RG_15]]) ou en réserve ([[RG_25]]) n'a pas de position et n'a donc pas de zone visible.
+Sur l'écran de placement ([[RG_03]] étape 3), sélectionner un token déjà posé colore sur le plateau la zone visible depuis ce modèle ([[RG_27]]). Seule la surface visible est colorée : le reste du plateau est laissé tel quel, et c'est l'absence de coloration qui désigne les espaces à l'abri de ce modèle. Désélectionner le token, ou en sélectionner un autre, retire la coloration précédente ; au plus une zone visible est affichée à la fois, celle du token sélectionné, sur le même principe de sélection que [[RG_20]]. Lorsque la sélection compte plusieurs tokens ([[RG_30]], [[RG_31]]), aucune zone visible n'est affichée. Un modèle encore dans le bandeau ([[RG_15]]) ou en réserve ([[RG_25]]) n'a pas de position et n'a donc pas de zone visible.
 
 **Mise à jour.** La zone est recalculée à la fin de tout geste qui déplace ou fait pivoter le token sélectionné ([[RG_04]], [[RG_20]]) — la forme de son socle et son orientation changeant ce qu'il voit. Pendant le glisser du token sélectionné, la coloration est masquée plutôt que laissée à son ancienne position, pour ne jamais afficher une zone qui ne correspond plus à la position du token. Les gestes portant sur d'autres tokens ne la modifient pas, les modèles n'étant pas des obstacles ([[RG_27]]).
 
@@ -674,3 +709,4 @@ Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_16]] (
 - **[[RT_31]] — grossissement du document désactivé globalement.** Le document désactive aujourd'hui le zoom du navigateur sur l'ensemble de l'application, alors que [[RT_19]] ne l'exige que sur le conteneur du plateau de l'écran de placement, où les gestes sont déjà neutralisés par la feuille de style. La restriction dépasse donc son périmètre et prive le joueur du grossissement système partout ailleurs. À résorber en même temps que la reformulation de [[RT_19]].
 - **[[RT_37]] — deux socles reliés par un mur, sans contact noir, sont extraits comme un seul.** L'extraction réunit les socles accolés par un côté et sépare ceux qui ne se touchent que par un angle ([[RG_28]]) : 608 zones sur les 45 plateaux, de 11 à 16 par plateau. Sur quelques plateaux, un mur en cadre posé à cheval sur l'espace qui sépare deux socles les réunit aussi, alors que leurs contours noirs ne se touchent pas. Le mur relie physiquement les deux socles, ce qui rend la lecture défendable ; elle reste un écart à la lettre de [[RG_28]], à corriger à la main dans `terrain.json` si un joueur le signale. Le seuil qui distingue un côté d'un angle (12 px) est proche des mesures de part et d'autre (8 à 10 px pour un angle, 13 px pour le plus court côté) : une nouvelle version des images peut exiger de le recalibrer, ce que les images de contrôle du script permettent de vérifier.
 - **[[RT_37]] — dépendance aux images embarquées.** Le script d'extraction lit les images `no-measurements` embarquées dans le dépôt. Le passage de [[RT_12]] au chargement réseau (écart ci-dessus) devra fournir ces images au script par un autre moyen (téléchargement au moment de l'extraction), et une mise à jour d'un plateau côté source devra relancer l'extraction, sans quoi le terrain décrit ne correspondrait plus à l'image affichée.
+- **[[RG_30]] / [[RG_31]] / [[RT_40]] — sélection multiple et sélection d'unité spécifiées, pas encore implémentées.** L'éditeur de placement ne gère aujourd'hui qu'un seul token sélectionné ([[RG_20]], [[RG_29]]) ; le rectangle de sélection, le déplacement groupé tout-ou-rien et le double clic sur une unité restent à réaliser.
