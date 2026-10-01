@@ -31,7 +31,7 @@ Layout of the app-specific code:
 - `src/app/referentials/` — access to the three embedded referentials + the `RG_02` name/base matching.
 - `src/app/data/` — IndexedDB store (`RT_08`) and the library of lists/deployments (`RT_06`).
 - `src/app/import/` — `RT_01` format layer, `RT_13` roster JSON parser, `RG_06` colours.
-- `src/app/deployment/` — pure status/grouping logic (`RT_11`, `RT_18`), token geometry (`RT_05`, `RT_19`), shared plane geometry (`geometry.ts`), unit coherency (`RG_26`/`RT_36`) and the zone visible from a model (`RG_27`/`RG_28`/`RT_38`).
+- `src/app/deployment/` — pure status/grouping logic (`RT_11`, `RT_18`), token geometry (`RT_05`, `RT_19`), shared plane geometry (`geometry.ts`), unit coherency (`RG_26`/`RT_36`), multi-token selection (`RG_30`/`RG_31`/`RT_40`, `selection.ts`) and the zone visible from a model (`RG_27`/`RG_28`/`RT_38`).
 - `src/app/net/` — connectivity (`RT_14`), auth (`RT_21`), delta sync (`RT_09`/`RT_10`/`RT_15`).
 - `src/app/pages/` + `src/app/home/` — the screens; `src/app/shared/` — cross-screen components.
 - `scripts/` — the three offline referential ingestion scripts (see below).

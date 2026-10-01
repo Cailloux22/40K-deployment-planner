@@ -61,7 +61,7 @@
               ' ' + current.playArea.width +
               ' ' + current.playArea.height
             "
-            (pointerdown)="selectedPlacementId.set(null)"
+            (pointerdown)="onBoardPointerDown($event)"
           >
             <!-- RG_29/RT_39: zone visible depuis le token sélectionné, sous les
                  tokens. Un seul chemin, sous-chemins de même sens : la réunion
@@ -87,7 +87,9 @@
                     class="token"
                     [class.selected]="token.selected"
                     [class.grabbed]="token.placement.idModele === grabbedModelId()"
-                    [class.refused]="token.placement.idModele === refusedModelId()"
+                    [class.refused]="
+                      token.placement.idModele === refusedModelId() || (groupRefused() && token.selected)
+                    "
                     [attr.x]="-token.rx"
                     [attr.y]="-token.ry"
                     [attr.width]="token.rx * 2"
@@ -100,7 +102,9 @@
                     class="token"
                     [class.selected]="token.selected"
                     [class.grabbed]="token.placement.idModele === grabbedModelId()"
-                    [class.refused]="token.placement.idModele === refusedModelId()"
+                    [class.refused]="
+                      token.placement.idModele === refusedModelId() || (groupRefused() && token.selected)
+                    "
                     [attr.rx]="token.rx"
                     [attr.ry]="token.ry"
                     [attr.fill]="token.color"
@@ -110,7 +114,7 @@
 
                 <!-- RG_20/RT_22: poignée de rotation du token sélectionné,
                      superposée au rendu SVG et indépendante de x/y. -->
-                @if (token.selected) {
+                @if (token.placement.idModele === selectedPlacementId()) {
                   <line
                     class="rotate-arm"
                     x1="0"
@@ -127,6 +131,17 @@
                   />
                 }
               </g>
+            }
+
+            <!-- RG_30/RT_40: rectangle de sélection, au-dessus des tokens. -->
+            @if (marquee(); as rect) {
+              <rect
+                class="marquee"
+                [attr.x]="rect.x1 < rect.x2 ? rect.x1 : rect.x2"
+                [attr.y]="rect.y1 < rect.y2 ? rect.y1 : rect.y2"
+                [attr.width]="rect.x1 < rect.x2 ? rect.x2 - rect.x1 : rect.x1 - rect.x2"
+                [attr.height]="rect.y1 < rect.y2 ? rect.y2 - rect.y1 : rect.y1 - rect.y2"
+              />
             }
           </svg>
         </div>
@@ -162,6 +177,11 @@
           >
             <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
           </ion-button>
+        </div>
+      } @else if (selectedCount() > 1) {
+        <!-- RG_30/RG_24: l'appartenance à la sélection est aussi énoncée. -->
+        <div class="token-actions" role="status">
+          <span>{{ selectedCount() }} modèles sélectionnés</span>
         </div>
       }
     </div>

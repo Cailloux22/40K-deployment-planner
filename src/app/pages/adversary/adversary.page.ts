@@ -20,6 +20,38 @@ interface OpponentOption {
   readonly counter: string;
   /** Position sur le cercle, en degrés depuis le haut. */
   readonly angle: number;
+  /** Tracé SVG du secteur d'anneau, dans le repère 0–100 du cadran. */
+  readonly sector: string;
+}
+
+/**
+ * Géométrie du cadran, en unités du viewBox 0–100 : un anneau découpé en
+ * autant de secteurs que de dispositions adverses, autour d'un disque central
+ * qui rappelle la disposition du joueur.
+ */
+const DIAL_OUTER_RADIUS = 49;
+const DIAL_INNER_RADIUS = 21;
+/** Rayon médian de l'anneau, où l'on centre le contenu de chaque secteur. */
+const DIAL_LABEL_RADIUS = (DIAL_OUTER_RADIUS + DIAL_INNER_RADIUS) / 2;
+
+/** Point du cadran à `radius` et `angle` (degrés, depuis le haut, sens horaire). */
+function dialPoint(radius: number, angle: number): string {
+  const radians = (angle * Math.PI) / 180;
+  const x = 50 + radius * Math.sin(radians);
+  const y = 50 - radius * Math.cos(radians);
+  return `${x.toFixed(3)} ${y.toFixed(3)}`;
+}
+
+/** Secteur d'anneau entre `from` et `to` (degrés, depuis le haut). */
+function ringSector(from: number, to: number, outer: number, inner: number): string {
+  const large = to - from > 180 ? 1 : 0;
+  return [
+    `M ${dialPoint(outer, from)}`,
+    `A ${outer} ${outer} 0 ${large} 1 ${dialPoint(outer, to)}`,
+    `L ${dialPoint(inner, to)}`,
+    `A ${inner} ${inner} 0 ${large} 0 ${dialPoint(inner, from)}`,
+    'Z',
+  ].join(' ');
 }
 
 const INDICATOR_HINTS: Record<DispositionIndicator, string> = {
@@ -85,12 +117,15 @@ export class AdversaryPage implements OnInit {
         counts.unfinished > 0
           ? `${counts.finished}/${counts.total} · à reprendre`
           : `${counts.finished}/${counts.total}`;
+      const span = 360 / all.length;
+      const angle = span * index;
       return {
         disposition,
         indicator,
         hint: INDICATOR_HINTS[indicator],
         counter,
-        angle: (360 / all.length) * index,
+        angle,
+        sector: ringSector(angle - span / 2, angle + span / 2, DIAL_OUTER_RADIUS, DIAL_INNER_RADIUS),
       };
     });
   });
@@ -130,16 +165,23 @@ export class AdversaryPage implements OnInit {
     return this.router.navigate(['/home']);
   }
 
+  readonly innerRadius = DIAL_INNER_RADIUS;
+
   /**
-   * Position d'un bouton sur le cercle, en pourcentage du conteneur.
-   *
-   * RT_30: le rayon est passé de 38 à 36 % pour absorber l'agrandissement des
-   * pastilles, imposé par le passage du libellé de disposition au plancher de
-   * lisibilité (il était rendu à 9,9 px).
+   * Position du contenu (icône, libellé, compteur) d'un secteur, en
+   * pourcentage du conteneur : au milieu de l'anneau, sur la bissectrice du
+   * secteur.
    */
   offset(angle: number, axis: 'x' | 'y'): number {
     const radians = ((angle - 90) * Math.PI) / 180;
-    const radius = 36;
-    return 50 + radius * (axis === 'x' ? Math.cos(radians) : Math.sin(radians));
+    return 50 + DIAL_LABEL_RADIUS * (axis === 'x' ? Math.cos(radians) : Math.sin(radians));
+  }
+
+  /** Un secteur SVG est activable au clavier comme un bouton. */
+  onSectorKey(event: KeyboardEvent, option: OpponentOption): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      void this.choose(option);
+    }
   }
 }

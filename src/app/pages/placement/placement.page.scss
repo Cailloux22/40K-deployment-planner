@@ -140,6 +140,17 @@
   }
 }
 
+/* RG_30/RT_40: rectangle de sélection, jamais cible d'un évènement de pointeur. */
+.marquee {
+  fill: var(--app-token-selected-stroke);
+  fill-opacity: 0.15;
+  stroke: var(--app-token-selected-stroke);
+  stroke-width: 3;
+  stroke-dasharray: 8 6;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
 .rotate-arm {
   stroke: var(--app-token-selected-stroke);
   stroke-width: 3;

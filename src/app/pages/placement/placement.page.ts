@@ -29,6 +29,7 @@ import {
   tokenSize,
 } from '../../deployment/token-geometry';
 import { BaseFootprint } from '../../deployment/geometry';
+import { SelectionRect, idsTouchedByRect, isDoubleTap } from '../../deployment/selection';
 import { CoherencyBase, coherencyBase, detachedAfterRemoval, isCoherent } from '../../deployment/unit-coherency';
 import { prepareTerrain, visibilityBase, visibleZone, visibleZonePath } from '../../deployment/visibility';
 import { ArmyList, ArmyUnit, Deployment, Placement, UnitModelGroup } from '../../models/domain.models';
@@ -57,7 +58,7 @@ interface TokenView {
   readonly selected: boolean;
 }
 
-type DragKind = 'new' | 'move' | 'rotate';
+type DragKind = 'new' | 'move' | 'rotate' | 'group';
 
 /**
  * RT_34: retour visuel d'un glisser en cours — token provisoire suivant le
@@ -140,6 +141,20 @@ interface DragState {
   readonly wasCoherent: boolean;
   /** RT_34: métriques du retour visuel, relevées une fois pour toutes ici. */
   readonly ghost: DragGhostMetrics;
+  /** RG_30/RT_40: tokens déplacés ensemble, et unités en cohésion à la saisie. */
+  readonly group?: {
+    readonly ids: ReadonlySet<string>;
+    readonly coherentUnits: ReadonlySet<string>;
+  };
+}
+
+/** RG_30/RT_40: tracé en cours du rectangle de sélection. */
+interface MarqueeState {
+  readonly pointerId: number;
+  readonly start: { x: number; y: number };
+  /** Maj maintenu : les tokens touchés s'ajoutent à la sélection existante. */
+  readonly additive: boolean;
+  readonly previous: ReadonlySet<string>;
 }
 
 /**
@@ -189,11 +204,29 @@ export class PlacementPage implements OnInit {
   readonly aimRadius = DRAG_AIM_RADIUS_PX;
   private saveTimer?: ReturnType<typeof setTimeout>;
   private drag: DragState | null = null;
+  private marqueeState: MarqueeState | null = null;
+  /** RT_40: dernier appui sur un token, pour reconnaître un double clic (RG_31). */
+  private lastTap: { id: string; time: number; x: number; y: number } | null = null;
 
   readonly board = signal<Board | undefined>(undefined);
   readonly deployment = signal<Deployment | undefined>(undefined);
   readonly selectedUnitIndex = signal(0);
-  readonly selectedPlacementId = signal<string | null>(null);
+  /**
+   * RG_30/RT_40: tokens sélectionnés, par identifiant de modèle. Purement local
+   * à l'écran : ni persisté ni synchronisé.
+   */
+  readonly selection = signal<ReadonlySet<string>>(new Set());
+  /** RG_20/RG_29: l'unique token sélectionné ; nul si la sélection en compte 0 ou plusieurs. */
+  readonly selectedPlacementId = computed<string | null>(() => {
+    const ids = this.selection();
+    return ids.size === 1 ? [...ids][0] : null;
+  });
+  /** RG_30/RT_40: tracé du rectangle de sélection, en coordonnées d'asset. */
+  readonly marquee = signal<SelectionRect | null>(null);
+  /** RG_30/RT_40: déplacement provisoire du groupe, rendu seul jusqu'au relâchement. */
+  private readonly groupOffset = signal<{ dx: number; dy: number } | null>(null);
+  /** RG_30: relâcher ici ne déplacerait pas le groupe. */
+  readonly groupRefused = signal(false);
   /** RG_16/RT_24: panneau latéral des unités, ouvert par le menu burger. */
   readonly menuOpen = signal(false);
   /** RT_19: échelle d'affichage, recalculée sur changement d'espace disponible. */
@@ -323,7 +356,8 @@ export class PlacementPage implements OnInit {
     if (!list) return [];
 
     const perMm = this.pixelsPerMm();
-    const selected = this.selectedPlacementId();
+    const selected = this.selection();
+    const offset = this.groupOffset();
     const groupShape = this.groupShapes();
     const unitColor = new Map(list.units.map((unit) => [unit.id, unit.color]));
 
@@ -332,21 +366,29 @@ export class PlacementPage implements OnInit {
       const shape = groupShape.get(placement.idModele.split('#')[0]);
       if (!shape) continue;
       const size = tokenSize(shape, perMm);
+      const moving = !!offset && selected.has(placement.idModele);
       views.push({
-        placement,
+        // RT_40: le groupe suit le doigt en rendu seul, sans écriture RT_04.
+        placement: moving
+          ? { ...placement, x: placement.x + offset.dx, y: placement.y + offset.dy }
+          : placement,
         // RT_32: repli unique, partagé avec le visualiseur.
         color: unitColor.get(placement.idUnite) ?? UNIT_COLOR_FALLBACK,
         rx: size.width / 2,
         ry: size.height / 2,
         shapeKind: shape.shape,
-        selected: placement.idModele === selected,
+        selected: selected.has(placement.idModele),
       });
     }
     return views;
   });
 
+  /** RG_30: nombre de tokens posés sélectionnés. */
+  readonly selectedCount = computed(() => this.tokens().filter((token) => token.selected).length);
+
+  /** RG_20/RG_29: le token sélectionné, seulement s'il est le seul. */
   readonly selectedToken = computed<TokenView | undefined>(() =>
-    this.tokens().find((token) => token.selected),
+    this.selectedCount() === 1 ? this.tokens().find((token) => token.selected) : undefined,
   );
 
   /** RT_38: terrain du plateau prêt pour le calcul, préparé une fois par plateau. */
@@ -603,10 +645,8 @@ export class PlacementPage implements OnInit {
     this.deployment.set({ ...deployment, placements, reservedUnitIds: [...ids] });
 
     // Le token sélectionné a pu disparaître avec les placements de l'unité.
-    const selected = this.selectedPlacementId();
-    if (selected && !placements.some((placement) => placement.idModele === selected)) {
-      this.selectedPlacementId.set(null);
-    }
+    const remaining = [...this.selection()].filter((id) => placements.some((placement) => placement.idModele === id));
+    if (remaining.length !== this.selection().size) this.selection.set(new Set(remaining));
     this.scheduleSave();
 
     // RG_15: l'unité n'étant plus en attente, le bandeau enchaîne sur la
@@ -736,6 +776,7 @@ export class PlacementPage implements OnInit {
     const droppable = !!point && !!board && this.gestureAllowed(drag, point, board);
     // RT_36: un token posé dont le déplacement serait refusé le montre aussi.
     if (drag.kind === 'move') this.refusedModelId.set(droppable ? null : drag.idModele);
+    if (drag.kind === 'group') this.groupRefused.set(!droppable);
     this.dragGhost.set({
       ...drag.ghost,
       left: event.clientX - rect.left + drag.grabOffset.x * scale,
@@ -758,10 +799,103 @@ export class PlacementPage implements OnInit {
       const { x, y } = this.clamp(point.x, point.y);
       return this.keepsCoherency(drag, { idUnite: drag.idUnite, idModele: drag.idModele, x, y, rotation: 0 });
     }
+    if (drag.kind === 'group') return this.groupMoveAllowed(drag, point, board);
     const placement = this.placements().find((p) => p.idModele === drag.idModele);
     if (!placement) return true;
     const moved = this.clamp(point.x + drag.grabOffset.x, point.y + drag.grabOffset.y);
     return this.keepsCoherency(drag, { ...placement, ...moved });
+  }
+
+  /** RG_30/RT_40: vecteur de déplacement du groupe pour ce point de contact. */
+  private groupDelta(drag: DragState, point: { x: number; y: number }): { dx: number; dy: number } {
+    return {
+      dx: point.x + drag.grabOffset.x - drag.startPosition.x,
+      dy: point.y + drag.grabOffset.y - drag.startPosition.y,
+    };
+  }
+
+  /**
+   * RG_30/RT_40: le groupe, translaté du vecteur courant, reste-t-il tout
+   * entier dans le rectangle de jeu et en cohésion (RG_26) pour chaque unité
+   * qui l'était ? Un seul résultat négatif refuse le groupe entier.
+   */
+  private groupMoveAllowed(drag: DragState, point: { x: number; y: number }, board: Board): boolean {
+    const group = drag.group;
+    if (!group) return true;
+    const { dx, dy } = this.groupDelta(drag, point);
+    const moved = this.placements().map((p) =>
+      group.ids.has(p.idModele) ? { ...p, x: p.x + dx, y: p.y + dy } : p,
+    );
+    // RG_30: un token qui sortirait du rectangle de jeu refuse le groupe.
+    if (moved.some((p) => group.ids.has(p.idModele) && !this.isInsideBoard(p, board))) return false;
+    // RG_26: seules les unités en cohésion à la saisie sont contrôlées.
+    return [...group.coherentUnits].every((idUnite) => this.unitCoherent(idUnite, moved));
+  }
+
+  /**
+   * RG_30/RT_40: début du glissement d'un token appartenant à une sélection
+   * multiple — tous les tokens sélectionnés suivent le même vecteur.
+   */
+  private startGroupDrag(event: PointerEvent, token: TokenView): void {
+    const ids = new Set(this.tokens().filter((t) => t.selected).map((t) => t.placement.idModele));
+    const placements = this.placements();
+    const units = new Set(placements.filter((p) => ids.has(p.idModele)).map((p) => p.idUnite));
+    const coherentUnits = new Set([...units].filter((idUnite) => this.unitCoherent(idUnite, placements)));
+    const point = this.toAssetCoords(event);
+    this.drag = {
+      kind: 'group',
+      idModele: token.placement.idModele,
+      pointerId: event.pointerId,
+      grabOffset: point
+        ? { x: token.placement.x - point.x, y: token.placement.y - point.y }
+        : { x: 0, y: 0 },
+      startRotation: token.placement.rotation,
+      startAngle: 0,
+      idUnite: token.placement.idUnite,
+      startPosition: { x: token.placement.x, y: token.placement.y },
+      wasCoherent: true,
+      ghost: this.ghostMetrics(token.rx * 2, token.ry * 2, token.shapeKind, token.color, token.placement.rotation, false),
+      group: { ids, coherentUnits },
+    };
+    this.grabbedModelId.set(token.placement.idModele);
+    this.gestureActive.set(true);
+    this.groupOffset.set({ dx: 0, dy: 0 });
+    this.trackGhost(this.drag, event);
+  }
+
+  /**
+   * RG_30/RT_40: un appui sur le fond du plateau commence un rectangle de
+   * sélection. Le plateau n'ayant ni pan ni zoom (RG_17), le geste n'entre en
+   * concurrence avec aucun autre.
+   */
+  onBoardPointerDown(event: PointerEvent): void {
+    const point = this.toAssetCoords(event);
+    if (!point) return;
+    event.preventDefault();
+    this.capturePointer(event);
+    const additive = event.shiftKey || event.ctrlKey || event.metaKey;
+    this.marqueeState = { pointerId: event.pointerId, start: point, additive, previous: this.selection() };
+    if (!additive) this.selection.set(new Set());
+    this.marquee.set({ x1: point.x, y1: point.y, x2: point.x, y2: point.y });
+  }
+
+  /** RG_30: au relâchement, sélectionne les tokens touchés par le rectangle. */
+  private finishMarquee(state: MarqueeState, event: PointerEvent): void {
+    this.marquee.set(null);
+    const point = this.toAssetCoords(event);
+    if (!point) return;
+    const rect: SelectionRect = { x1: state.start.x, y1: state.start.y, x2: point.x, y2: point.y };
+    // Un simple appui (ou un tracé de moins de 3 px) ne touche rien : il
+    // désélectionne, ce qu'a déjà fait la saisie.
+    if (Math.hypot(rect.x2 - rect.x1, rect.y2 - rect.y1) * this.scale() < 3) return;
+    const perMm = this.pixelsPerMm();
+    const groupShape = this.groupShapes();
+    const items = this.placements().flatMap((placement) => {
+      const shape = groupShape.get(placement.idModele.split('#')[0]);
+      return shape ? [{ id: placement.idModele, base: visibilityBase(placement, shape, perMm) }] : [];
+    });
+    const touched = idsTouchedByRect(items, rect);
+    this.selection.set(new Set(state.additive ? [...state.previous, ...touched] : touched));
   }
 
   /**
@@ -795,7 +929,7 @@ export class PlacementPage implements OnInit {
         true,
       ),
     };
-    this.selectedPlacementId.set(model.idModele);
+    this.selection.set(new Set([model.idModele]));
     this.gestureActive.set(true);
     // RT_34: dès le premier contact, le geste se voit — sans quoi rien ne
     // distingue un glisser commencé d'un appui sans effet.
@@ -809,7 +943,28 @@ export class PlacementPage implements OnInit {
     event.stopPropagation();
     this.capturePointer(event);
     const point = this.toAssetCoords(event);
-    this.selectedPlacementId.set(token.placement.idModele);
+
+    // RG_31/RT_40: le second appui d'un double clic étend la sélection à tous
+    // les tokens posés de l'unité.
+    const tap = { id: token.placement.idModele, time: event.timeStamp, x: event.clientX, y: event.clientY };
+    if (isDoubleTap(this.lastTap, tap)) {
+      this.lastTap = null;
+      const unitIds = this.placements()
+        .filter((p) => p.idUnite === token.placement.idUnite)
+        .map((p) => p.idModele);
+      this.selection.set(new Set(unitIds));
+    } else {
+      this.lastTap = tap;
+      // RG_30: saisir un token de la sélection la déplace en bloc ; saisir un
+      // autre token la remplace par lui seul (RG_04).
+      if (!this.selection().has(token.placement.idModele)) {
+        this.selection.set(new Set([token.placement.idModele]));
+      }
+    }
+    if (this.selectedCount() > 1) {
+      this.startGroupDrag(event, token);
+      return;
+    }
     this.drag = {
       kind: 'move',
       idModele: token.placement.idModele,
@@ -875,6 +1030,12 @@ export class PlacementPage implements OnInit {
   }
 
   onPointerMove(event: PointerEvent): void {
+    const marquee = this.marqueeState;
+    if (marquee && marquee.pointerId === event.pointerId) {
+      const point = this.toAssetCoords(event);
+      if (point) this.marquee.set({ x1: marquee.start.x, y1: marquee.start.y, x2: point.x, y2: point.y });
+      return;
+    }
     const drag = this.drag;
     if (!drag || drag.pointerId !== event.pointerId) return;
     const point = this.toAssetCoords(event);
@@ -896,6 +1057,16 @@ export class PlacementPage implements OnInit {
       return;
     }
 
+    // RT_40: un glissé de plus de 10 px n'est plus l'un des deux appuis d'un double clic.
+    if (this.lastTap && Math.hypot(event.clientX - this.lastTap.x, event.clientY - this.lastTap.y) > 10) {
+      this.lastTap = null;
+    }
+
+    if (drag.kind === 'group') {
+      this.groupOffset.set(this.groupDelta(drag, point));
+      return;
+    }
+
     if (drag.kind === 'move') {
       this.updatePlacement(drag.idModele, this.clamp(point.x + drag.grabOffset.x, point.y + drag.grabOffset.y));
     }
@@ -904,8 +1075,16 @@ export class PlacementPage implements OnInit {
   }
 
   onPointerUp(event: PointerEvent): void {
+    const marquee = this.marqueeState;
+    if (marquee && marquee.pointerId === event.pointerId) {
+      this.marqueeState = null;
+      this.finishMarquee(marquee, event);
+      return;
+    }
     const drag = this.drag;
     this.drag = null;
+    this.groupOffset.set(null);
+    this.groupRefused.set(false);
     // RT_34: le geste est terminé — le retour visuel disparaît avec lui, quelle
     // qu'ait été son issue (placement créé, déplacement, dépôt refusé).
     this.dragGhost.set(null);
@@ -916,6 +1095,25 @@ export class PlacementPage implements OnInit {
     // règle plus bas, avant tout rendu.
     this.gestureActive.set(false);
     if (!drag || drag.pointerId !== event.pointerId) return;
+
+    if (drag.kind === 'group' && drag.group) {
+      // RG_30/RT_40: tout ou rien, en une seule écriture pour tout le groupe.
+      const point = this.toAssetCoords(event);
+      const board = this.board();
+      if (!point || !board || !this.groupMoveAllowed(drag, point, board)) return;
+      const { dx, dy } = this.groupDelta(drag, point);
+      if (Math.hypot(dx, dy) * this.scale() < 3) {
+        // Simple appui sur un token de la sélection : elle se réduit à lui,
+        // sauf s'il s'agit du second appui d'un double clic (RG_31).
+        if (this.lastTap?.id === drag.idModele) this.selection.set(new Set([drag.idModele]));
+        return;
+      }
+      const ids = drag.group.ids;
+      this.mutatePlacements((placements) =>
+        placements.map((p) => (ids.has(p.idModele) ? { ...p, x: p.x + dx, y: p.y + dy } : p)),
+      );
+      return;
+    }
 
     if (drag.kind !== 'new') {
       // RT_36: un déplacement ou une rotation qui romprait la cohésion est
@@ -1035,7 +1233,7 @@ export class PlacementPage implements OnInit {
     // RT_36: token choisi et groupes détachés disparaissent dans la même écriture.
     const removed = new Set([placement.idModele, ...detached]);
     this.mutatePlacements((current) => current.filter((p) => !removed.has(p.idModele)));
-    this.selectedPlacementId.set(null);
+    this.selection.set(new Set());
   }
 
   private updatePlacement(idModele: string, patch: Partial<Pick<Placement, 'x' | 'y' | 'rotation'>>): void {

@@ -16,14 +16,30 @@
       <p>Contre quelle disposition de force jouez-vous&nbsp;?</p>
     </div>
 
-    <!-- Figma « choix force dispo adversaire » : 1 icône centrale (la
-         disposition du joueur, déjà connue — RG_02/RG_03) entourée des 5
-         dispositions adverses sélectionnables. -->
+    <!-- Cadran : un anneau découpé en 5 secteurs — les dispositions adverses
+         sélectionnables — autour d'un disque central qui rappelle la
+         disposition du joueur, déjà connue (RG_02/RG_03). -->
     <div class="dial">
-      <!-- RG_03: ce n'est pas un choix, mais le rappel de la disposition du
-           joueur, déjà fixée à l'import. Sa forme (carré arrondi, sans
-           bordure) le distingue sans ambiguïté des 5 options sélectionnables,
-           et il ne porte jamais de code couleur de RG_12. -->
+      <svg class="ring" viewBox="0 0 100 100" role="group" aria-label="Dispositions adverses">
+        @for (option of options(); track option.disposition.id) {
+          <!-- RG_12: la couleur du secteur est l'indicateur agrégé du couple.
+               RG_24: le nom accessible porte aussi le compteur. -->
+          <path
+            class="sector"
+            [class]="'indicator-' + option.indicator"
+            [attr.d]="option.sector"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="option.disposition.label + ' — ' + option.hint + ' (' + option.counter + ')'"
+            (click)="choose(option)"
+            (keydown)="onSectorKey($event, option)"
+          />
+        }
+        <!-- RG_03: le disque central n'est pas un choix et ne porte jamais de
+             code couleur de RG_12. -->
+        <circle class="hub" cx="50" cy="50" [attr.r]="innerRadius" />
+      </svg>
+
       <div class="center" [attr.aria-label]="'Votre disposition : ' + (playerDisposition()?.label ?? '')">
         <small aria-hidden="true">Vous</small>
         <app-disposition-icon [disposition]="playerDisposition()" [size]="34"></app-disposition-icon>
@@ -31,21 +47,21 @@
       </div>
 
       @for (option of options(); track option.disposition.id) {
-        <button
-          type="button"
+        <!-- Contenu posé sur le secteur ; les clics le traversent jusqu'au
+             secteur, seul porteur du rôle de bouton. -->
+        <div
           class="option"
           [class]="'indicator-' + option.indicator"
           [style.left.%]="offset(option.angle, 'x')"
           [style.top.%]="offset(option.angle, 'y')"
-          [attr.aria-label]="option.disposition.label + ' — ' + option.hint"
-          (click)="choose(option)"
+          aria-hidden="true"
         >
           <app-disposition-icon [disposition]="option.disposition" [size]="24"></app-disposition-icon>
           <span>{{ option.disposition.label }}</span>
-          <!-- RG_24: le compte accompagne la couleur du bouton, de sorte que
+          <!-- RG_24: le compte accompagne la couleur du secteur, de sorte que
                les 4 états restent distinguables sans percevoir la teinte. -->
-          <em class="counter" aria-hidden="true">{{ option.counter }}</em>
-        </button>
+          <em class="counter">{{ option.counter }}</em>
+        </div>
       }
     </div>
 
