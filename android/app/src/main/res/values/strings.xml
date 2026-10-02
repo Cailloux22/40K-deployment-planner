@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">40K Deployment Planner</string>
+    <string name="title_activity_main">40K Deployment Planner</string>
+    <string name="package_name">fr.rocher.deploymentplanner</string>
+    <string name="custom_url_scheme">fr.rocher.deploymentplanner</string>
+</resources>

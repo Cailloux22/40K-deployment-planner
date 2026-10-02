@@ -1,8 +1,8 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+﻿import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
-  appName: '40K-deployment-planner',
+  appId: 'fr.rocher.deploymentplanner',
+  appName: '40K Deployment Planner',
   webDir: 'www'
 };
 
