@@ -220,15 +220,21 @@
   }
 }
 
-/* RG_33/RT_43: bouton du mode « Règle », ancré dans l'angle haut-gauche de la
-   zone du plateau — superposé (RT_33), à l'opposé de la barre d'actions de
-   token (angle bas-droit). RT_31: 44 px au moins ; RT_29: bordure contrastée
-   face à la scène sombre, seul délimiteur en thème sombre. */
-.ruler-toggle {
+/* RG_33/RT_43, RG_38/RG_39/RT_49: rangée de contrôles ancrée dans l'angle
+   haut-gauche de la zone du plateau — superposée (RT_33), à l'opposé de la
+   barre d'actions de token (angle bas-droit), et fixe quand la vue se déplace
+   (RT_47). RT_31: 44 px au moins ; RT_29: bordure contrastée face à la scène
+   sombre, seul délimiteur en thème sombre. */
+.board-tools {
   position: absolute;
   top: 8px;
   left: 8px;
   z-index: 2;
+  display: flex;
+  gap: 8px;
+}
+
+.board-tool {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -243,17 +249,44 @@
   font-size: 22px;
   cursor: pointer;
 
-  /* RG_24: actif = plein, inactif = contour ; le nom accessible l'énonce aussi. */
+  /* RG_24/RG_38/RG_39: actif = plein, inactif = contour ; le nom accessible
+     l'énonce aussi. */
   &.active {
-    background: var(--app-ruler-stroke);
-    border-color: var(--app-ruler-stroke);
-    color: var(--app-ruler-label-bg);
+    background: var(--app-text);
+    border-color: var(--app-text);
+    color: var(--app-surface-raised);
+  }
+
+  /* RG_39: désactivé au zoom de base — rendu comme tel, pas masqué (RT_33). */
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   &:focus-visible {
     outline: 3px solid var(--app-token-selected-stroke);
     outline-offset: 2px;
   }
+}
+
+/* RG_33/RT_43: le mode « Règle » garde la couleur de son tracé. */
+.ruler-toggle.active {
+  background: var(--app-ruler-stroke);
+  border-color: var(--app-ruler-stroke);
+  color: var(--app-ruler-label-bg);
+}
+
+/* RG_39/RT_48: main ouverte en mode « Déplacement », fermée pendant le geste —
+   prioritaire sur les curseurs des tokens et des poignées. Les contrôles
+   superposés gardent le leur. */
+.board-area.pan-mode,
+.board-area.pan-mode .board-surface * {
+  cursor: grab !important;
+}
+
+.board-area.panning,
+.board-area.panning .board-surface * {
+  cursor: grabbing !important;
 }
 
 .visually-hidden {

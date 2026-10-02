@@ -158,3 +158,25 @@ export function measureInches(
 export function formatInches(inches: number): string {
   return `${(Math.round(inches * 10) / 10).toFixed(1).replace('.', ',')}"`;
 }
+
+/**
+ * RT_47: décalage de vue borné, en pixels CSS. La surface du plateau est
+ * centrée dans la zone : sur chaque axe, elle peut glisser d'au plus la moitié
+ * de ce qui dépasse, pour couvrir toujours la zone là où elle la dépasse, et
+ * reste centrée (décalage nul) là où elle y tient.
+ */
+export function clampViewOffset(
+  offset: { readonly dx: number; readonly dy: number },
+  surface: { readonly width: number; readonly height: number },
+  area: { readonly width: number; readonly height: number },
+): { dx: number; dy: number } {
+  const bound = (value: number, overflow: number) => {
+    const max = Math.max(0, overflow / 2);
+    // `+ 0` ramène un éventuel -0 à 0.
+    return Math.min(max, Math.max(-max, value)) + 0;
+  };
+  return {
+    dx: bound(offset.dx, surface.width - area.width),
+    dy: bound(offset.dy, surface.height - area.height),
+  };
+}

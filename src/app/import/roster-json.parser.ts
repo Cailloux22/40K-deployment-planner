@@ -5,13 +5,16 @@
  * `roster.name`, le nœud « Force Disposition » et les champs
  * `name`/`number`/`type` des sélections de premier niveau, de leurs enfants
  * directs de `type = "model"` et des `type = "upgrade"` que ces modèles
- * portent (l'équipement, dont dépendent certains socles — RG_02). Tout le
+ * portent (l'équipement, dont dépendent certains socles — RG_02), ainsi que
+ * les `associations` qui attachent un personnage à une unité (RT_45). Tout le
  * reste de l'arborescence (`rules`, `profiles`, `categories`, coûts) est
  * ignoré.
  *
  * RG_01: un import qui ne peut pas être interprété est rejeté avec un message
  * explicite — jamais interprété partiellement.
  */
+
+import { AttachmentRole } from '../models/domain.models';
 
 /** Profil de modèle d'une unité : un nom et un nombre de modèles. */
 export interface ParsedModelProfile {
@@ -27,10 +30,28 @@ export interface ParsedModelProfile {
 }
 
 export interface ParsedUnit {
+  /**
+   * RT_45: `id` de la sélection dans le roster — sert seulement à résoudre les
+   * attachements ; l'unité reçoit son propre identifiant à l'import (RT_07).
+   */
+  readonly selectionId: string;
   readonly name: string;
   /** RT_13: somme des `number` des profils, ou `number` d'une entrée `model`. */
   readonly modelCount: number;
   readonly modelProfiles: readonly ParsedModelProfile[];
+}
+
+/**
+ * RG_36/RT_45: attachement déclaré par le roster, en identifiants de
+ * sélection. Un `role` nul signale une association de nom inconnu : le rôle
+ * n'est pas deviné, l'attachement sera signalé comme illisible.
+ */
+export interface ParsedAttachment {
+  readonly characterSelectionId: string;
+  readonly bodyguardSelectionId: string;
+  readonly role: AttachmentRole | null;
+  /** `name` brut de l'association, cité si elle est illisible. */
+  readonly associationName: string;
 }
 
 export interface ParsedRoster {
@@ -39,6 +60,8 @@ export interface ParsedRoster {
   /** Libellé de la disposition choisie, à rapprocher de RT_23. */
   readonly forceDispositionName: string;
   readonly units: readonly ParsedUnit[];
+  /** RG_36/RT_45: attachements choisis par le joueur dans son list-builder. */
+  readonly attachments: readonly ParsedAttachment[];
 }
 
 /** RG_01: erreur d'import porteuse d'un message affichable au joueur. */
@@ -54,16 +77,31 @@ const FORCE_DISPOSITION = 'Force Disposition';
 const UNIT_TYPES = ['unit', 'model'];
 
 interface RawSelection {
+  readonly id?: unknown;
   readonly name?: unknown;
   readonly type?: unknown;
   readonly number?: unknown;
   readonly from?: unknown;
   readonly group?: unknown;
   readonly selections?: unknown;
+  readonly associations?: unknown;
 }
 
-function asArray(value: unknown): RawSelection[] {
-  return Array.isArray(value) ? (value as RawSelection[]) : [];
+/** RT_45: entrée `associations[]` d'une sélection de premier niveau. */
+interface RawAssociation {
+  readonly type?: unknown;
+  readonly to?: unknown;
+  readonly name?: unknown;
+}
+
+/** RT_45: le `name` de l'association donne le rôle du personnage. */
+const ASSOCIATION_ROLES: Readonly<Record<string, AttachmentRole>> = {
+  Leading: 'leader',
+  Supporting: 'support',
+};
+
+function asArray<T = RawSelection>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
 }
 
 function asString(value: unknown): string {
@@ -166,6 +204,7 @@ function collectModelProfiles(
 function parseUnit(selection: RawSelection): ParsedUnit {
   const name = asString(selection.name);
   const type = asString(selection.type);
+  const selectionId = asString(selection.id);
 
   if (type === 'model') {
     const count = asCount(selection.number);
@@ -173,6 +212,7 @@ function parseUnit(selection: RawSelection): ParsedUnit {
       throw new RosterParseError(`Nombre de modèles illisible pour l'unité « ${name} ».`);
     }
     return {
+      selectionId,
       name,
       modelCount: count,
       modelProfiles: [{ name, count, equipment: collectEquipment(selection) }],
@@ -189,10 +229,34 @@ function parseUnit(selection: RawSelection): ParsedUnit {
   }
 
   return {
+    selectionId,
     name,
     modelCount: profiles.reduce((sum, p) => sum + p.count, 0),
     modelProfiles: profiles,
   };
+}
+
+/**
+ * RT_45: attachements déclarés par les sélections de premier niveau. Seule
+ * l'entrée `outgoing` du personnage fait foi ; l'entrée `incoming` symétrique
+ * de l'unité escortée est redondante et n'est pas lue — une `outgoing` sans
+ * contrepartie reste donc prise en compte.
+ */
+function extractAttachments(selections: readonly RawSelection[]): ParsedAttachment[] {
+  return selections.flatMap((selection) =>
+    asArray<RawAssociation>(selection.associations)
+      .filter((association) => asString(association.type) === 'outgoing')
+      .map((association) => {
+        const associationName = asString(association.name);
+        return {
+          characterSelectionId: asString(selection.id),
+          bodyguardSelectionId: asString(association.to),
+          // RT_45: un nom inconnu ne fait pas deviner le rôle.
+          role: ASSOCIATION_ROLES[associationName] ?? null,
+          associationName,
+        };
+      }),
+  );
 }
 
 /** Interprète le contenu JSON d'un roster exporté. RG_01: tout ou rien. */
@@ -224,10 +288,10 @@ export function parseRosterJson(raw: unknown): ParsedRoster {
   const allSelections = forces.flatMap((force) => asArray(force.selections));
   const forceDispositionName = extractForceDisposition(allSelections);
 
-  const units = allSelections
+  const unitSelections = allSelections
     .filter((selection) => UNIT_TYPES.includes(asString(selection.type)))
-    .filter((selection) => asString(selection.name) !== '')
-    .map(parseUnit);
+    .filter((selection) => asString(selection.name) !== '');
+  const units = unitSelections.map(parseUnit);
 
   if (units.length === 0) {
     throw new RosterParseError(
@@ -235,7 +299,10 @@ export function parseRosterJson(raw: unknown): ParsedRoster {
     );
   }
 
-  return { name, forceDispositionName, units };
+  // RG_36/RT_45: un attachement n'est pas une condition d'interprétation de la
+  // liste (RG_01) — un attachement illisible est signalé plus loin, au
+  // récapitulatif, sans faire rejeter l'import.
+  return { name, forceDispositionName, units, attachments: extractAttachments(unitSelections) };
 }
 
 /** Interprète le texte d'un fichier importé. RG_01: message explicite. */

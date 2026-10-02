@@ -17,6 +17,7 @@ import {
   UnitModelGroup,
   UnitPlacementStatus,
 } from '../models/domain.models';
+import { DeploymentGroup, deploymentGroups, singleUnitGroup } from './attachments';
 
 /** RT_04: identité d'un modèle précis — `<groupe>#<rang>`. */
 export function modelId(group: UnitModelGroup, index: number): string {
@@ -181,13 +182,20 @@ export function dispositionIndicator(
 // ---------------------------------------------------------------------------
 
 export interface UnitBaseGroupView {
+  /** Groupe représentatif : tous ceux qu'il réunit partagent son socle. */
   readonly group: UnitModelGroup;
+  /**
+   * RG_37/RG_06: couleur des composantes qui le fournissent — nulle si des
+   * composantes de couleurs différentes partagent ce socle.
+   */
+  readonly color: string | null;
   readonly total: number;
   readonly placed: number;
 }
 
 export interface UnitMenuView {
-  readonly unit: ArmyUnit;
+  /** RT_46: l'unité de déploiement — unité attachée, ou unité indépendante. */
+  readonly deploymentGroup: DeploymentGroup;
   readonly groups: readonly UnitBaseGroupView[];
   readonly placedCount: number;
   readonly status: UnitPlacementStatus;
@@ -196,54 +204,110 @@ export interface UnitMenuView {
 }
 
 /**
- * RT_18: pour une unité, regroupe ses modèles par socle et compte, pour
- * chaque groupe, ceux déjà placés — en filtrant les placements par
- * identifiant d'unité puis en croisant chaque modèle placé avec son groupe.
- *
- * Le statut global de l'unité (RG_16) en découle : blanc si aucun modèle
- * placé, vert si tous le sont, orange sinon.
+ * RG_37/RT_46: un groupe de déploiement est en réserve dès que l'une de ses
+ * unités y figure — la liste est complétée à la prochaine écriture.
  */
-export function unitMenuView(
-  unit: ArmyUnit,
+export function isGroupReserved(group: DeploymentGroup, reserved: ReadonlySet<string> = NO_RESERVE): boolean {
+  return group.units.some((unit) => reserved.has(unit.id));
+}
+
+/** RG_37: modèles posés d'un groupe de déploiement, toutes composantes confondues. */
+export function placedCountOfGroup(group: DeploymentGroup, placements: readonly Placement[]): number {
+  return group.units.reduce((sum, unit) => sum + placedModelIds(placements, unit.id).size, 0);
+}
+
+/**
+ * RG_05/RG_15/RG_37: un groupe n'est plus en attente quand il est en réserve,
+ * ou quand toutes ses composantes ont tous leurs modèles posés.
+ */
+export function isGroupDeployed(
+  group: DeploymentGroup,
+  placements: readonly Placement[],
+  reserved: ReadonlySet<string> = NO_RESERVE,
+): boolean {
+  return isGroupReserved(group, reserved) || group.units.every((unit) => isUnitFullyPlaced(unit, placements));
+}
+
+/**
+ * RT_18: pour un groupe de déploiement, regroupe ses modèles par socle et
+ * compte, pour chaque groupe de socle, ceux déjà placés — en filtrant les
+ * placements par identifiant d'unité puis en croisant chaque modèle placé
+ * avec son groupe.
+ *
+ * RG_37: les modèles de composantes différentes qui partagent un socle du
+ * référentiel sont réunis ; un rectangle sur mesure ou un socle non résolu
+ * reste un groupe à part.
+ *
+ * Le statut global (RG_16) en découle : blanc si aucun modèle placé, vert si
+ * tous le sont, orange sinon.
+ */
+export function groupMenuView(
+  deploymentGroup: DeploymentGroup,
   placements: readonly Placement[],
   reserved: ReadonlySet<string> = NO_RESERVE,
 ): UnitMenuView {
-  const placed = placedModelIds(placements, unit.id);
-
-  const placedPerGroup = new Map<string, number>();
-  for (const id of placed) {
-    const groupId = groupIdOfModel(id);
-    placedPerGroup.set(groupId, (placedPerGroup.get(groupId) ?? 0) + 1);
+  const merged = new Map<string, { group: UnitModelGroup; colors: Set<string>; total: number; placed: number }>();
+  for (const unit of deploymentGroup.units) {
+    const placedPerGroup = new Map<string, number>();
+    for (const id of placedModelIds(placements, unit.id)) {
+      const groupId = groupIdOfModel(id);
+      placedPerGroup.set(groupId, (placedPerGroup.get(groupId) ?? 0) + 1);
+    }
+    for (const group of unit.modelGroups) {
+      // Un groupe ne peut pas afficher plus de modèles placés qu'il n'en a.
+      const placed = Math.min(placedPerGroup.get(group.id) ?? 0, group.count);
+      const key = group.baseShapeId ?? group.id;
+      const entry = merged.get(key);
+      if (entry) {
+        entry.colors.add(unit.color);
+        entry.total += group.count;
+        entry.placed += placed;
+      } else {
+        merged.set(key, { group, colors: new Set([unit.color]), total: group.count, placed });
+      }
+    }
   }
 
-  const groups = unit.modelGroups.map((group) => ({
+  const groups = [...merged.values()].map(({ group, colors, total, placed }) => ({
     group,
-    total: group.count,
-    // Un groupe ne peut pas afficher plus de modèles placés qu'il n'en a.
-    placed: Math.min(placedPerGroup.get(group.id) ?? 0, group.count),
+    color: colors.size === 1 ? [...colors][0] : null,
+    total,
+    placed,
   }));
 
   const placedCount = groups.reduce((sum, g) => sum + g.placed, 0);
   // RG_16/RG_25: une unité en réserve est complète au même titre qu'une unité
   // entièrement posée ; ses comptes par groupe restent, eux, ceux des modèles
   // réellement posés — c'est la mention « en réserve » qui l'explique (RG_24).
-  const isReserved = reserved.has(unit.id);
+  const isReserved = isGroupReserved(deploymentGroup, reserved);
   const status: UnitPlacementStatus = isReserved
     ? 'green'
     : placedCount === 0
       ? 'white'
-      : placedCount >= unit.modelCount
+      : placedCount >= deploymentGroup.modelCount
         ? 'green'
         : 'orange';
 
-  return { unit, groups, placedCount, status, reserved: isReserved };
+  return { deploymentGroup, groups, placedCount, status, reserved: isReserved };
 }
 
-/** RG_16: le menu burger liste toutes les unités de la liste déployée. */
+/** RT_18: vue du menu d'une unité indépendante. */
+export function unitMenuView(
+  unit: ArmyUnit,
+  placements: readonly Placement[],
+  reserved: ReadonlySet<string> = NO_RESERVE,
+): UnitMenuView {
+  return groupMenuView(singleUnitGroup(unit), placements, reserved);
+}
+
+/**
+ * RG_16/RG_37: le menu burger liste toutes les unités de déploiement de la
+ * liste — une unité attachée y est une seule entrée.
+ */
 export function unitMenuViews(
   list: ArmyList,
   placements: readonly Placement[],
   reserved: ReadonlySet<string> = NO_RESERVE,
 ): readonly UnitMenuView[] {
-  return list.units.map((unit) => unitMenuView(unit, placements, reserved));
+  return deploymentGroups(list.units).map((group) => groupMenuView(group, placements, reserved));
 }

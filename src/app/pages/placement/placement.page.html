@@ -25,18 +25,23 @@
   (pointercancel)="onPointerUp($event)"
 >
   <div #layout class="layout">
-    <!-- RG_17/RT_19: le plateau occupe tout l'espace restant, à un zoom fixe
-         calculé par ajustement « contenir ». Aucun geste de zoom/pan n'est
-         branché ici, et les gestes natifs sont neutralisés en CSS.
+    <!-- RG_17/RT_19: le plateau occupe tout l'espace restant, à un zoom de base
+         calculé par ajustement « contenir ». Les gestes natifs de zoom/pan sont
+         neutralisés en CSS ; seuls l'agrandissement ×2 (RG_38) et le
+         déplacement de vue (RG_39) sont offerts, par leurs contrôles.
          RT_19: l'affichage est rogné au rectangle de jeu mesuré (`playArea`)
          — bandeau de titre, pied de légende et marges latérales exclus. -->
-    <div #boardArea class="board-area">
+    <!-- RG_39/RT_48: main ouverte en mode « Déplacement », fermée pendant le geste. -->
+    <div #boardArea class="board-area" [class.pan-mode]="panMode()" [class.panning]="panning()">
       @if (board(); as current) {
+        <!-- RT_47: surface à l'échelle d'affichage (base × agrandissement),
+             centrée puis décalée de la vue ; la zone masque ce qui dépasse. -->
         <div
           #boardSurface
           class="board-surface"
           [style.width.px]="current.playArea.width * scale()"
           [style.height.px]="current.playArea.height * scale()"
+          [style.transform]="'translate(' + viewOffset().dx + 'px, ' + viewOffset().dy + 'px)'"
         >
           <img
             class="board-image"
@@ -95,6 +100,8 @@
                     [attr.width]="token.rx * 2"
                     [attr.height]="token.ry * 2"
                     [attr.fill]="token.color"
+                    role="img"
+                    [attr.aria-label]="token.label"
                     (pointerdown)="onTokenPointerDown($event, token)"
                   />
                 } @else {
@@ -108,6 +115,8 @@
                     [attr.rx]="token.rx"
                     [attr.ry]="token.ry"
                     [attr.fill]="token.color"
+                    role="img"
+                    [attr.aria-label]="token.label"
                     (pointerdown)="onTokenPointerDown($event, token)"
                   />
                 }
@@ -185,21 +194,53 @@
         <ion-spinner></ion-spinner>
       }
 
-      <!-- RG_33/RT_43: bouton du mode « Règle », superposé à l'angle haut-gauche
-           du plateau (RT_33) — il ne consomme aucune hauteur. RG_24: son état
-           est porté par le rendu (plein/contour) et par son nom accessible. -->
-      <!-- Bouton natif : un aria-* lié dynamiquement sur ion-button est relu
+      <!-- RG_33/RT_43, RG_38/RG_39/RT_49: rangée de contrôles superposée à
+           l'angle haut-gauche du plateau (RT_33) — elle ne consomme aucune
+           hauteur et ne suit pas le décalage de vue (RT_47). RG_24: chaque
+           état est porté par le rendu (plein/contour) et par le nom accessible. -->
+      <!-- Boutons natifs : un aria-* lié dynamiquement sur ion-button est relu
            par le composant avant son initialisation. -->
-      <button
-        type="button"
-        class="ruler-toggle"
-        [class.active]="rulerMode()"
-        [attr.aria-pressed]="rulerMode()"
-        [attr.aria-label]="rulerMode() ? 'Règle activée' : 'Règle désactivée'"
-        (click)="toggleRuler()"
-      >
-        <ion-icon src="assets/icons/ruler.svg" aria-hidden="true"></ion-icon>
-      </button>
+      <div class="board-tools">
+        <button
+          type="button"
+          class="board-tool ruler-toggle"
+          [class.active]="rulerMode()"
+          [attr.aria-pressed]="rulerMode()"
+          [attr.aria-label]="rulerMode() ? 'Règle activée' : 'Règle désactivée'"
+          (click)="toggleRuler()"
+        >
+          <ion-icon src="assets/icons/ruler.svg" aria-hidden="true"></ion-icon>
+        </button>
+        <!-- RG_38: bascule ×1 / ×2, sans autre niveau ; l'icône change avec l'état.
+             RT_49: `data-view-control` laisse la mesure de RG_33 en place. -->
+        <button
+          type="button"
+          class="board-tool"
+          data-view-control
+          [class.active]="zoom() === 2"
+          [attr.aria-pressed]="zoom() === 2"
+          [attr.aria-label]="zoom() === 2 ? 'Revenir à la taille d’origine' : 'Agrandir le plateau ×2'"
+          (click)="toggleZoom()"
+        >
+          <ion-icon
+            [src]="zoom() === 2 ? 'assets/icons/zoom-out.svg' : 'assets/icons/zoom-in.svg'"
+            aria-hidden="true"
+          ></ion-icon>
+        </button>
+        <!-- RG_39: mode « Déplacement », désactivé au zoom de base. -->
+        <button
+          type="button"
+          class="board-tool"
+          data-view-control
+          [class.active]="panMode()"
+          [disabled]="zoom() === 1"
+          [attr.aria-pressed]="panMode()"
+          [attr.aria-label]="panMode() ? 'Déplacement de la vue activé' : 'Déplacement de la vue désactivé'"
+          (click)="togglePanMode()"
+        >
+          <ion-icon name="hand-left-outline" aria-hidden="true"></ion-icon>
+        </button>
+      </div>
       <span class="visually-hidden" aria-live="polite">{{ measureAnnouncement() }}</span>
 
       <!-- RG_20: rotation également accessible au pas fixe, et retrait du token.
@@ -256,7 +297,8 @@
                compte de modèles ne laissaient au nom de l'unité, information
                primaire du bandeau, que trois caractères. -->
           <div class="band-unit">
-            <strong>{{ selectedUnit()?.name ?? 'Aucune unité' }}</strong>
+            <!-- RG_37: une unité attachée énonce sa composition, personnages d'abord. -->
+            <strong>{{ selectedGroup()?.name ?? 'Aucune unité' }}</strong>
             <!-- RG_05: ce qu'il reste à poser sur l'unité courante.
                  RG_24/RG_25: l'état de réserve y est énoncé en toutes lettres —
                  une unité en réserve n'a pas de « modèles à placer ». -->
@@ -286,7 +328,7 @@
             class="reserve"
             labelPlacement="start"
             [checked]="selectedUnitReserved()"
-            [disabled]="!selectedUnit()"
+            [disabled]="!selectedGroup()"
             (ionChange)="toggleReserve($event, reserveBox)"
           >
             Réserve
@@ -308,12 +350,12 @@
               [class.selected]="bandSelection().has(model.idModele)"
               [attr.aria-pressed]="bandSelection().has(model.idModele)"
               [disabled]="!model.shape"
-              [attr.aria-label]="model.group.name + ' — glisser sur le plateau'"
+              [attr.aria-label]="model.label + ' — glisser sur le plateau'"
               (pointerdown)="onBandPointerDown($event, model)"
             >
               <app-base-token
                 [shape]="model.shape"
-                [color]="selectedUnit()?.color ?? fallbackColor"
+                [color]="model.color"
                 [pixelsPerMm]="bandPixelsPerMm()"
               ></app-base-token>
             </button>
@@ -393,7 +435,7 @@
                   [attr.y]="member.y - member.height / 2"
                   [attr.width]="member.width"
                   [attr.height]="member.height"
-                  [attr.fill]="ghost.color"
+                  [attr.fill]="member.color"
                 />
               } @else {
                 <ellipse
@@ -402,7 +444,7 @@
                   [attr.cy]="member.y"
                   [attr.rx]="member.width / 2"
                   [attr.ry]="member.height / 2"
-                  [attr.fill]="ghost.color"
+                  [attr.fill]="member.color"
                 />
               }
             }
@@ -434,7 +476,8 @@
     </header>
 
     <div class="units-scroll">
-      @for (view of menuViews(); track view.unit.id) {
+      @for (view of menuViews(); track view.deploymentGroup.id) {
+        <!-- RG_37: une unité attachée est une seule entrée, sous son nom composé. -->
         <!-- RG_16: le fond reflète l'état de placement de l'unité
              (blanc / orange / vert). -->
         <button
@@ -444,17 +487,17 @@
           (click)="selectUnitFromMenu(view)"
         >
           <div class="unit-name">
-            <span>{{ view.unit.name }}</span>
+            <span>{{ view.deploymentGroup.name }}</span>
             <!-- RG_24/RG_25: sans cette mention, le 0/10 d'une unité
                  entièrement en réserve contredirait le fond vert de l'entrée. -->
             @if (view.reserved) {
               <em class="reserve-tag">en réserve</em>
             }
             <!-- RG_35/RG_24: unité à retailler à la sortie du mode « Règle ». -->
-            @if (rulerBrokenUnits().has(view.unit.id)) {
+            @if (rulerBrokenUnits().has(view.deploymentGroup.id)) {
               <em class="reserve-tag">hors cohésion</em>
             }
-            <small>{{ view.placedCount }}/{{ view.unit.modelCount }}</small>
+            <small>{{ view.placedCount }}/{{ view.deploymentGroup.modelCount }}</small>
           </div>
 
           <!-- RG_16/RT_18: socles regroupés par forme/taille, avec un compte
@@ -468,7 +511,7 @@
               <span class="group">
                 <app-base-token
                   [shape]="shapeOf(group.group)"
-                  [color]="view.unit.color"
+                  [color]="group.color ?? fallbackColor"
                   [pixelsPerMm]="0.42"
                 ></app-base-token>
                 <em>{{ group.placed }}/{{ group.total }}</em>

@@ -1,4 +1,4 @@
-import { formatInches, measureInches } from './geometry';
+import { clampViewOffset, formatInches, measureInches } from './geometry';
 
 describe('ruler measure (RG_33, RT_42)', () => {
   it('converts an asset-pixel distance to inches with the board scale', () => {
@@ -20,5 +20,25 @@ describe('ruler measure (RG_33, RT_42)', () => {
     expect(formatInches(6.36)).toBe('6,4"');
     expect(formatInches(0)).toBe('0,0"');
     expect(formatInches(12)).toBe('12,0"');
+  });
+});
+
+describe('view offset bounds (RG_38, RG_39, RT_47)', () => {
+  const area = { width: 400, height: 600 };
+
+  it('keeps a surface that fits the area centred', () => {
+    expect(clampViewOffset({ dx: 50, dy: -80 }, { width: 300, height: 600 }, area)).toEqual({ dx: 0, dy: 0 });
+  });
+
+  it('lets an enlarged surface slide by at most half its overflow', () => {
+    const surface = { width: 800, height: 1200 };
+    expect(clampViewOffset({ dx: 120, dy: -90 }, surface, area)).toEqual({ dx: 120, dy: -90 });
+    expect(clampViewOffset({ dx: 500, dy: -500 }, surface, area)).toEqual({ dx: 200, dy: -300 });
+    expect(clampViewOffset({ dx: -500, dy: 500 }, surface, area)).toEqual({ dx: -200, dy: 300 });
+  });
+
+  it('bounds each axis independently', () => {
+    // Plus large que la zone, mais pas plus haute : seul dx peut varier.
+    expect(clampViewOffset({ dx: 90, dy: 40 }, { width: 800, height: 500 }, area)).toEqual({ dx: 90, dy: 0 });
   });
 });

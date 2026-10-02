@@ -83,3 +83,41 @@ describe('ListImportService.buildDraft — RG_02/RG_16', () => {
     expect(service.isDraftComplete(draft)).toBe(true);
   });
 });
+
+describe('ListImportService.buildDraft — RG_36/RT_45 (unités attachées)', () => {
+  let service: ListImportService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [{ provide: HttpClient, useValue: http }],
+    });
+    service = TestBed.inject(ListImportService);
+  });
+
+  it('convertit les attachements du roster en identifiants d’unité', async () => {
+    const draft = await service.buildDraft('roster.json', readFileSync(FIXTURE_PATH, 'utf8'));
+    const byName = (name: string) => draft.units.find((u) => u.name === name)!;
+    expect(byName('Tech-Priest Manipulus').attachment).toEqual({
+      bodyguardUnitId: byName('Kataphron Breachers').id,
+      role: 'leader',
+    });
+    expect(byName('Cybernetica Datasmith').attachment).toEqual({
+      bodyguardUnitId: byName('Kastelan Robots').id,
+      role: 'support',
+    });
+    expect(draft.units.filter((u) => u.attachment)).toHaveLength(2);
+    expect(draft.attachmentIssues).toEqual([]);
+  });
+
+  it('signale un attachement illisible sans rejeter la liste (RG_36, RG_01)', async () => {
+    const raw = JSON.parse(readFileSync(FIXTURE_PATH, 'utf8'));
+    const selections = raw.roster.forces[0].selections as { name: string; associations?: { name: string }[] }[];
+    selections.find((s) => s.name === 'Tech-Priest Manipulus')!.associations![0].name = 'Escorting';
+    const draft = await service.buildDraft('roster.json', JSON.stringify(raw));
+    expect(draft.units.find((u) => u.name === 'Tech-Priest Manipulus')!.attachment).toBeUndefined();
+    expect(draft.attachmentIssues).toHaveLength(1);
+    expect(draft.attachmentIssues[0]).toContain('Tech-Priest Manipulus');
+    expect(draft.attachmentIssues[0]).toContain('Kataphron Breachers');
+    expect(draft.units).toHaveLength(14);
+  });
+});

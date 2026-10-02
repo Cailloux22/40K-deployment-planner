@@ -15,12 +15,15 @@ import { AlertController, ToastController } from '@ionic/angular/lazy';
 import { LibraryService } from '../../data/library.service';
 import {
   UnitMenuView,
-  isUnitDeployed,
+  isGroupDeployed,
+  isGroupReserved,
   modelIdsOfGroup,
+  placedCountOfGroup,
   placedModelIds,
   reservedUnitIds,
   unitMenuViews,
 } from '../../deployment/deployment-status';
+import { DeploymentGroup, componentLabel, deploymentGroups, groupIdByUnit } from '../../deployment/attachments';
 import {
   assetPixelsPerMm,
   clampToPlayArea,
@@ -30,7 +33,7 @@ import {
   tokenSize,
 } from '../../deployment/token-geometry';
 import { clusterLayout } from '../../deployment/cluster';
-import { BaseFootprint, formatInches, measureInches } from '../../deployment/geometry';
+import { BaseFootprint, clampViewOffset, formatInches, measureInches } from '../../deployment/geometry';
 import { SelectionRect, idsTouchedByRect, isDoubleTap, soleSelectedUnit } from '../../deployment/selection';
 import { CoherencyBase, coherencyBase, detachedAfterRemoval, isCoherent } from '../../deployment/unit-coherency';
 import { prepareTerrain, visibilityBase, visibleZone, visibleZonePath } from '../../deployment/visibility';
@@ -45,8 +48,14 @@ import { ReferentialService } from '../../referentials/referential.service';
  */
 interface BandModel {
   readonly idModele: string;
+  /** RG_37: composante du groupe de déploiement à laquelle appartient le modèle. */
+  readonly unit: ArmyUnit;
   readonly group: UnitModelGroup;
   readonly shape?: BaseShape;
+  /** RG_37/RG_06: chaque composante garde sa couleur. */
+  readonly color: string;
+  /** RG_37/RG_24: nom accessible — composante, rôle, profil. */
+  readonly label: string;
 }
 
 /** Un token posé sur le plateau, prêt à être rendu en SVG. */
@@ -58,6 +67,8 @@ interface TokenView {
   /** RT_26: rectangle rendu comme tel plutôt qu'inscrit dans une ellipse. */
   readonly shapeKind: BaseShapeKind;
   readonly selected: boolean;
+  /** RG_37/RG_24: nom accessible — composante et, pour un personnage, son rôle. */
+  readonly label: string;
 }
 
 type DragKind = 'new' | 'move' | 'rotate' | 'group' | 'cluster';
@@ -69,6 +80,8 @@ interface GhostMember {
   readonly width: number;
   readonly height: number;
   readonly shapeKind: BaseShapeKind;
+  /** RG_37: couleur de la composante du socle (RG_06). */
+  readonly color: string;
 }
 
 /**
@@ -144,8 +157,13 @@ interface DragState {
   readonly grabOffset: { x: number; y: number };
   readonly startRotation: number;
   readonly startAngle: number;
-  /** Unité du modèle saisi — celle dont la cohésion est contrôlée (RG_26). */
+  /** Unité (composante) du modèle saisi — celle d'un placement créé (RT_04). */
   readonly idUnite: string;
+  /**
+   * RG_37/RT_46: groupe de déploiement du modèle saisi — celui dont la
+   * cohésion est contrôlée (RG_26), toutes composantes confondues.
+   */
+  readonly groupId: string;
   /** RT_36: position du token posé à la saisie, rétablie si le geste est refusé. */
   readonly startPosition: { x: number; y: number };
   /**
@@ -156,7 +174,7 @@ interface DragState {
   readonly wasCoherent: boolean;
   /** RT_34: métriques du retour visuel, relevées une fois pour toutes ici. */
   readonly ghost: DragGhostMetrics;
-  /** RG_30/RT_40: tokens déplacés ensemble, et unités en cohésion à la saisie. */
+  /** RG_30/RT_40: tokens déplacés ensemble, et groupes en cohésion à la saisie. */
   readonly group?: {
     readonly ids: ReadonlySet<string>;
     readonly coherentUnits: ReadonlySet<string>;
@@ -165,7 +183,12 @@ interface DragState {
    * RG_32/RT_41: modèles du bandeau posés ensemble, avec leur décalage au
    * centre de la grappe en pixels d'asset — figé à la saisie.
    */
-  readonly cluster?: readonly { readonly idModele: string; readonly dx: number; readonly dy: number }[];
+  readonly cluster?: readonly {
+    readonly idUnite: string;
+    readonly idModele: string;
+    readonly dx: number;
+    readonly dy: number;
+  }[];
   /**
    * RG_34/RG_35: déplacement saisi en mode « Règle » — tracé de la mesure, et
    * contrôle de cohésion suspendu. Relevé à la saisie : il vaut pour tout le geste.
@@ -212,9 +235,10 @@ interface MarqueeState {
  * Écran 6 — Écran de placement (RG_03 étape 3).
  *
  * RG_17/RT_19: le plateau occupe la plus grande taille possible dans l'espace
- * disponible, à un zoom fixe calculé par ajustement « contenir ». Ce zoom
- * n'est ni réglable ni déplaçable par le joueur : aucun pincer-zoomer, aucun
- * pan, aucun défilement du plateau. Seuls les tokens sont manipulables.
+ * disponible, à un zoom de base calculé par ajustement « contenir ». Ce zoom
+ * n'est pas réglable librement : aucun pincer-zoomer, aucun zoom à la
+ * molette. RG_38/RG_39: seuls un agrandissement unique ×2, par son bouton, et
+ * le déplacement de la vue agrandie sont offerts au joueur.
  * RT_03: plateau et tokens sont rendus en SVG, pour un drag-and-drop tactile
  * précis sans perte de précision de positionnement.
  * RG_04: un token = un modèle — une unité de 10 modèles demande 10 placements.
@@ -274,14 +298,15 @@ export class PlacementPage implements OnInit {
   /** RT_43: mesure annoncée aux technologies d'assistance, au relâchement seulement. */
   readonly measureAnnouncement = signal('');
   /**
-   * RG_35/RT_44: unités en cohésion à l'activation du mode — les seules qui
-   * seront retaillées à sa sortie.
+   * RG_35/RT_44: groupes de déploiement en cohésion à l'activation du mode —
+   * les seuls qui seront retaillés à sa sortie.
    */
   private readonly rulerCoherentUnits = signal<ReadonlySet<string>>(new Set());
 
   readonly board = signal<Board | undefined>(undefined);
   readonly deployment = signal<Deployment | undefined>(undefined);
-  readonly selectedUnitIndex = signal(0);
+  /** RG_15/RG_37: rang, parmi les groupes de déploiement, de celui du bandeau. */
+  readonly selectedGroupIndex = signal(0);
   /**
    * RG_30/RT_40: tokens sélectionnés, par identifiant de modèle. Purement local
    * à l'écran : ni persisté ni synchronisé.
@@ -307,8 +332,31 @@ export class PlacementPage implements OnInit {
   readonly groupRefused = signal(false);
   /** RG_16/RT_24: panneau latéral des unités, ouvert par le menu burger. */
   readonly menuOpen = signal(false);
-  /** RT_19: échelle d'affichage, recalculée sur changement d'espace disponible. */
-  readonly scale = signal(0);
+  /** RT_19: facteur de base, recalculé sur changement d'espace disponible. */
+  private readonly baseScale = signal(0);
+  /**
+   * RG_38/RT_47: niveau d'agrandissement — 1 (zoom de base) ou 2. Local à
+   * l'écran, ni persisté ni synchronisé : l'écran s'ouvre toujours à 1.
+   */
+  readonly zoom = signal<1 | 2>(1);
+  /** RT_47: décalage de vue de la surface, en pixels CSS, borné par `clampViewOffset`. */
+  readonly viewOffset = signal<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
+  /** RG_39/RT_48: mode « Déplacement » — local, remis à faux au retour au zoom de base. */
+  readonly panMode = signal(false);
+  /** RT_48: un déplacement de vue est en cours (mode actif ou bouton du milieu). */
+  readonly panning = signal(false);
+  /** RT_48: geste de déplacement de vue en cours. */
+  private panDrag: {
+    pointerId: number;
+    start: { x: number; y: number };
+    startOffset: { dx: number; dy: number };
+  } | null = null;
+  /**
+   * RT_47: échelle d'affichage — facteur de base de RT_19 × agrandissement.
+   * C'est elle qu'emploient le rendu, le retour de glisser et les conversions
+   * écran ↔ asset ; les placements (RT_04) n'en dépendent pas.
+   */
+  readonly scale = computed(() => this.baseScale() * this.zoom());
   /** RT_34: retour visuel du glisser en cours ; nul hors de tout geste. */
   readonly dragGhost = signal<DragGhostView | null>(null);
   /** RT_34: modèle actuellement saisi, rendu comme tel au bandeau et au plateau. */
@@ -328,8 +376,18 @@ export class PlacementPage implements OnInit {
 
   readonly list = computed<ArmyList | undefined>(() => this.library.list(this.listId()));
 
-  readonly selectedUnit = computed<ArmyUnit | undefined>(
-    () => this.list()?.units[this.selectedUnitIndex()],
+  /**
+   * RT_46: groupes de déploiement de la liste — une unité attachée (RG_36) y
+   * est un seul groupe. Recalculés au chargement, ni persistés ni synchronisés.
+   */
+  readonly groups = computed<readonly DeploymentGroup[]>(() => deploymentGroups(this.list()?.units ?? []));
+
+  /** RT_46: groupe de déploiement de chaque unité, par identifiant. */
+  private readonly groupOfUnit = computed(() => groupIdByUnit(this.groups()));
+
+  /** RG_15/RG_37: l'unité de déploiement sur laquelle est positionné le bandeau. */
+  readonly selectedGroup = computed<DeploymentGroup | undefined>(
+    () => this.groups()[this.selectedGroupIndex()],
   );
 
   readonly placements = computed<readonly Placement[]>(() => this.deployment()?.placements ?? []);
@@ -337,10 +395,13 @@ export class PlacementPage implements OnInit {
   /** RG_25/RT_35: unités déclarées en réserve sur ce déploiement. */
   readonly reservedUnits = computed<ReadonlySet<string>>(() => reservedUnitIds(this.deployment()));
 
-  /** RG_25: état de la case à cocher du bandeau, pour l'unité courante. */
+  /**
+   * RG_25: état de la case à cocher du bandeau, pour l'unité courante.
+   * RG_37: une unité attachée est en réserve dès que l'une de ses composantes l'est.
+   */
   readonly selectedUnitReserved = computed(() => {
-    const unit = this.selectedUnit();
-    return !!unit && this.reservedUnits().has(unit.id);
+    const group = this.selectedGroup();
+    return !!group && isGroupReserved(group, this.reservedUnits());
   });
 
   /** RT_05: pixels d'asset par millimètre réel du socle. */
@@ -362,21 +423,30 @@ export class PlacementPage implements OnInit {
    * de cette différence.
    */
   readonly bandModels = computed<readonly BandModel[]>(() => {
-    const unit = this.selectedUnit();
+    const deploymentGroup = this.selectedGroup();
     // RG_25: une unité en réserve n'a aucun modèle à poser sur le plateau.
-    if (!unit || this.reservedUnits().has(unit.id)) return [];
-    const placed = placedModelIds(this.placements(), unit.id);
+    if (!deploymentGroup || isGroupReserved(deploymentGroup, this.reservedUnits())) return [];
     const shapes = this.shapes();
-    return unit.modelGroups.flatMap((group) =>
-      modelIdsOfGroup(group)
-        .filter((idModele) => !placed.has(idModele))
-        .map((idModele) => ({
-          idModele,
-          group,
-          // RT_28: un rectangle sur mesure se rend comme n'importe quel socle.
-          shape: resolveGroupShape(group, shapes),
-        })),
-    );
+    // RG_37/RT_46: la rangée réunit les modèles restant à poser de toutes les
+    // composantes, personnages d'abord. Un `idModele` (`<idUnite>_g<n>#<rang>`)
+    // porte déjà sa composante : il identifie le modèle dans tout le groupe.
+    return deploymentGroup.units.flatMap((unit) => {
+      const placed = placedModelIds(this.placements(), unit.id);
+      const component = componentLabel(deploymentGroup, unit);
+      return unit.modelGroups.flatMap((group) =>
+        modelIdsOfGroup(group)
+          .filter((idModele) => !placed.has(idModele))
+          .map((idModele) => ({
+            idModele,
+            unit,
+            group,
+            // RT_28: un rectangle sur mesure se rend comme n'importe quel socle.
+            shape: resolveGroupShape(group, shapes),
+            color: unit.color ?? UNIT_COLOR_FALLBACK,
+            label: deploymentGroup.units.length > 1 ? `${component} — ${group.name}` : group.name,
+          })),
+      );
+    });
   });
 
   /**
@@ -389,13 +459,15 @@ export class PlacementPage implements OnInit {
    * exactes, seule l'échelle commune est abaissée.
    */
   readonly bandPixelsPerMm = computed(() => {
-    const unit = this.selectedUnit();
-    if (!unit) return BAND_PIXELS_PER_MM;
+    const deploymentGroup = this.selectedGroup();
+    if (!deploymentGroup) return BAND_PIXELS_PER_MM;
     const shapes = this.shapes();
     // RG_15/RT_33: l'échelle se mesure sur *tous* les socles de l'unité, y
     // compris ceux déjà posés et donc sortis du bandeau — sinon le départ du
     // plus grand socle ferait grandir d'un coup les modèles restants.
-    const largestMm = unit.modelGroups.reduce((max, group) => {
+    // RG_37: toutes composantes confondues, pour une unité attachée.
+    const modelGroups = deploymentGroup.units.flatMap((unit) => unit.modelGroups);
+    const largestMm = modelGroups.reduce((max, group) => {
       const shape = resolveGroupShape(group, shapes);
       return shape ? Math.max(max, shape.widthMm, shape.lengthMm) : max;
     }, 0);
@@ -415,9 +487,9 @@ export class PlacementPage implements OnInit {
   });
 
   readonly remainingInUnit = computed(() => {
-    const unit = this.selectedUnit();
-    if (!unit) return 0;
-    return unit.modelCount - placedModelIds(this.placements(), unit.id).size;
+    const deploymentGroup = this.selectedGroup();
+    if (!deploymentGroup) return 0;
+    return deploymentGroup.modelCount - placedCountOfGroup(deploymentGroup, this.placements());
   });
 
   /** RG_16/RT_18: vue du menu unités — groupes de socles, comptes et statuts. */
@@ -447,6 +519,10 @@ export class PlacementPage implements OnInit {
     const offset = this.groupOffset();
     const groupShape = this.groupShapes();
     const unitColor = new Map(list.units.map((unit) => [unit.id, unit.color]));
+    // RG_37/RG_24: le nom accessible de chaque token énonce sa composante.
+    const unitLabel = new Map(
+      this.groups().flatMap((group) => group.units.map((unit) => [unit.id, componentLabel(group, unit)] as const)),
+    );
 
     const views: TokenView[] = [];
     for (const placement of this.placements()) {
@@ -465,6 +541,7 @@ export class PlacementPage implements OnInit {
         ry: size.height / 2,
         shapeKind: shape.shape,
         selected: selected.has(placement.idModele),
+        label: unitLabel.get(placement.idUnite) ?? '',
       });
     }
     return views;
@@ -533,13 +610,13 @@ export class PlacementPage implements OnInit {
   readonly rulerBrokenUnits = computed<ReadonlySet<string>>(() => {
     if (!this.rulerMode()) return new Set();
     const placements = this.placements();
-    return new Set([...this.rulerCoherentUnits()].filter((idUnite) => !this.unitCoherent(idUnite, placements)));
+    return new Set([...this.rulerCoherentUnits()].filter((groupId) => !this.groupCoherent(groupId, placements)));
   });
 
   /** RG_35/RG_24: l'unité du bandeau est-elle à retailler à la sortie du mode ? */
   readonly selectedUnitBroken = computed(() => {
-    const unit = this.selectedUnit();
-    return !!unit && this.rulerBrokenUnits().has(unit.id);
+    const deploymentGroup = this.selectedGroup();
+    return !!deploymentGroup && this.rulerBrokenUnits().has(deploymentGroup.id);
   });
 
   /**
@@ -580,19 +657,18 @@ export class PlacementPage implements OnInit {
   });
 
   /**
-   * RG_05/RG_15: rangs, dans la liste, des unités ayant encore au moins un
-   * modèle à poser — les seules que les flèches du bandeau parcourent.
+   * RG_05/RG_15: rangs, parmi les groupes de déploiement, de ceux ayant encore
+   * au moins un modèle à poser — les seuls que les flèches du bandeau
+   * parcourent. RG_37: une unité attachée n'y figure qu'une fois.
    */
   private readonly pendingUnitIndexes = computed<readonly number[]>(() => {
-    const list = this.list();
-    if (!list) return [];
     const placements = this.placements();
     // RG_25: une unité en réserve est déployée — les flèches ne s'y arrêtent
     // plus, exactement comme sur une unité dont tous les modèles sont posés.
     const reserved = this.reservedUnits();
     const indexes: number[] = [];
-    list.units.forEach((unit, index) => {
-      if (!isUnitDeployed(unit, placements, reserved)) indexes.push(index);
+    this.groups().forEach((group, index) => {
+      if (!isGroupDeployed(group, placements, reserved)) indexes.push(index);
     });
     return indexes;
   });
@@ -601,7 +677,13 @@ export class PlacementPage implements OnInit {
     // RG_33/RT_42: le premier appui suivant, où qu'il porte, efface le tracé.
     // En capture, avant sa cible, sans en bloquer l'effet ordinaire : le geste
     // qui commence une nouvelle mesure la crée ensuite dans son gestionnaire.
-    const clearMeasure = () => this.measure.set(null);
+    // RG_33/RT_42: les contrôles de vue (RT_49) et le déplacement de vue
+    // (RT_48) ne changent rien au plateau et laissent la mesure en place.
+    const clearMeasure = (event: PointerEvent) => {
+      if ((event.target as Element | null)?.closest?.('[data-view-control]')) return;
+      if (this.startsViewPan(event)) return;
+      this.measure.set(null);
+    };
     const hostElement = this.host.nativeElement;
     hostElement.addEventListener('pointerdown', clearMeasure, true);
     this.destroyRef.onDestroy(() => hostElement.removeEventListener('pointerdown', clearMeasure, true));
@@ -642,9 +724,23 @@ export class PlacementPage implements OnInit {
     // positionne d'emblée sur la première unité ayant encore des modèles à
     // poser — les unités complètes n'y sont plus proposées.
     const firstPending = this.pendingUnitIndexes()[0];
-    if (firstPending !== undefined) this.selectedUnitIndex.set(firstPending);
+    if (firstPending !== undefined) this.selectedGroupIndex.set(firstPending);
+
+    // RT_46: un groupe est en réserve dès que l'une de ses unités y figure ; la
+    // liste est complétée ici, et écrite avec la prochaine sauvegarde.
+    const deployment = this.deployment();
+    if (deployment) {
+      const reserved = reservedUnitIds(deployment);
+      const completed = this.groups()
+        .filter((group) => isGroupReserved(group, reserved))
+        .flatMap((group) => group.units.map((unit) => unit.id));
+      if (completed.some((id) => !reserved.has(id))) {
+        this.deployment.set({ ...deployment, reservedUnitIds: [...new Set([...reserved, ...completed])] });
+      }
+    }
 
     this.observeAvailableSpace();
+    this.listenViewPan();
   }
 
   /**
@@ -658,7 +754,9 @@ export class PlacementPage implements OnInit {
       const host = this.boardArea?.nativeElement;
       const board = this.board();
       if (!host || !board) return;
-      this.scale.set(
+      // RT_19/RT_47: seul le facteur de base est recalculé ; l'agrandissement
+      // en cours est conservé, et le décalage de vue reborné.
+      this.baseScale.set(
         containFitScale(
           { width: host.clientWidth, height: host.clientHeight },
           // RT_19: le facteur se calcule sur le rectangle de jeu mesuré
@@ -666,6 +764,7 @@ export class PlacementPage implements OnInit {
           { width: board.playArea.width, height: board.playArea.height },
         ),
       );
+      this.setViewOffset(this.viewOffset());
     };
 
     // Premier calcul après le rendu initial du gabarit.
@@ -679,6 +778,133 @@ export class PlacementPage implements OnInit {
       globalThis.addEventListener?.('resize', recompute);
       this.destroyRef.onDestroy(() => globalThis.removeEventListener?.('resize', recompute));
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // RG_38/RG_39 — agrandissement ×2 et déplacement de la vue
+  // -------------------------------------------------------------------------
+
+  /**
+   * RG_38: bascule entre le zoom de base et ×2 — aucun autre niveau. Le
+   * passage à ×2 part du décalage nul (RT_47) : la surface étant centrée, le
+   * point sous le centre de la zone y reste. Le retour au zoom de base rétablit
+   * le cadrage de RG_17 et quitte le mode « Déplacement » (RG_39). Rien n'est
+   * écrit : seul l'affichage change.
+   */
+  toggleZoom(): void {
+    this.zoom.set(this.zoom() === 1 ? 2 : 1);
+    this.viewOffset.set({ dx: 0, dy: 0 });
+    if (this.zoom() === 1) this.panMode.set(false);
+  }
+
+  /** RG_39: le mode « Déplacement » n'est disponible qu'à ×2. */
+  togglePanMode(): void {
+    if (this.zoom() === 1) return;
+    this.panMode.set(!this.panMode());
+  }
+
+  /** RT_47: pose le décalage de vue, borné pour que la vue ne sorte pas du plateau. */
+  private setViewOffset(offset: { dx: number; dy: number }): void {
+    const area = this.boardArea?.nativeElement;
+    const board = this.board();
+    const scale = this.scale();
+    if (!area || !board || scale <= 0) {
+      this.viewOffset.set({ dx: 0, dy: 0 });
+      return;
+    }
+    this.viewOffset.set(
+      clampViewOffset(
+        offset,
+        { width: board.playArea.width * scale, height: board.playArea.height * scale },
+        { width: area.clientWidth, height: area.clientHeight },
+      ),
+    );
+  }
+
+  /**
+   * RT_48: cet appui commence-t-il un déplacement de vue ? Mode « Déplacement »
+   * actif et appui sur le plateau, ou bouton du milieu — quel que soit le mode.
+   * Les contrôles superposés au plateau (RT_49, barre d'actions de RT_33) en
+   * sont exclus.
+   */
+  private startsViewPan(event: PointerEvent): boolean {
+    const area = this.boardArea?.nativeElement;
+    const target = event.target as Element | null;
+    if (!area || !target || !area.contains(target)) return false;
+    if (target.closest('[data-view-control], .token-actions')) return false;
+    return event.button === 1 || this.panMode();
+  }
+
+  /**
+   * RT_48: écoute en capture sur la zone du plateau, avant les gestionnaires
+   * des tokens, de la poignée de rotation et du fond, qui ne reçoivent donc
+   * pas l'appui d'un déplacement de vue.
+   */
+  private listenViewPan(): void {
+    const area = this.boardArea?.nativeElement;
+    if (!area) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!this.startsViewPan(event)) return;
+      event.stopPropagation();
+      // RG_39: pas de défilement automatique du navigateur au clic molette.
+      event.preventDefault();
+      if (this.panDrag) return;
+      this.panDrag = {
+        pointerId: event.pointerId,
+        start: { x: event.clientX, y: event.clientY },
+        startOffset: this.viewOffset(),
+      };
+      this.panning.set(true);
+      try {
+        area.setPointerCapture?.(event.pointerId);
+      } catch {
+        // Confort seulement : le geste reste suivi par les écouteurs de l'écran.
+      }
+    };
+    // RG_39: le défilement automatique se déclenche sur le `mousedown` du
+    // bouton du milieu, que l'annulation du `pointerdown` ne couvre pas partout.
+    const onMouseDown = (event: MouseEvent) => {
+      if (event.button === 1) event.preventDefault();
+    };
+    area.addEventListener('pointerdown', onPointerDown, true);
+    area.addEventListener('mousedown', onMouseDown, true);
+    this.destroyRef.onDestroy(() => {
+      area.removeEventListener('pointerdown', onPointerDown, true);
+      area.removeEventListener('mousedown', onMouseDown, true);
+    });
+  }
+
+  /** RT_48: le plateau suit le pointeur ; rien n'est écrit. */
+  private trackViewPan(event: PointerEvent): boolean {
+    const pan = this.panDrag;
+    if (!pan || pan.pointerId !== event.pointerId) return false;
+    this.setViewOffset({
+      dx: pan.startOffset.dx + event.clientX - pan.start.x,
+      dy: pan.startOffset.dy + event.clientY - pan.start.y,
+    });
+    return true;
+  }
+
+  /** RT_48: fin du geste — relâchement du doigt, du bouton principal ou du milieu. */
+  private endViewPan(event: PointerEvent): boolean {
+    const pan = this.panDrag;
+    if (!pan || pan.pointerId !== event.pointerId) return false;
+    this.panDrag = null;
+    this.panning.set(false);
+    return true;
+  }
+
+  /**
+   * RG_38: un dépôt depuis le bandeau ne vaut que sur la partie affichée du
+   * plateau — la partie masquée par l'agrandissement est hors d'atteinte.
+   */
+  private isInsideView(event: PointerEvent): boolean {
+    const area = this.boardArea?.nativeElement;
+    if (!area) return false;
+    const rect = area.getBoundingClientRect();
+    return (
+      event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom
+    );
   }
 
   // -------------------------------------------------------------------------
@@ -701,10 +927,10 @@ export class PlacementPage implements OnInit {
    * sur l'unité courante, qui s'annonce complète.
    */
   private stepUnit(direction: 1 | -1): void {
-    const count = this.list()?.units.length ?? 0;
+    const count = this.groups().length;
     const pending = this.pendingUnitIndexes();
     if (count === 0 || pending.length === 0) return;
-    const current = this.selectedUnitIndex();
+    const current = this.selectedGroupIndex();
     for (let offset = 1; offset <= count; offset += 1) {
       const candidate = (((current + direction * offset) % count) + count) % count;
       if (pending.includes(candidate)) {
@@ -719,7 +945,7 @@ export class PlacementPage implements OnInit {
    * bandeau sur l'unité choisie.
    */
   selectUnitFromMenu(view: UnitMenuView): void {
-    const index = this.list()?.units.findIndex((unit) => unit.id === view.unit.id) ?? -1;
+    const index = this.groups().findIndex((group) => group.id === view.deploymentGroup.id);
     if (index >= 0) this.selectUnitIndex(index);
     this.menuOpen.set(false);
   }
@@ -729,8 +955,8 @@ export class PlacementPage implements OnInit {
    * bandeau ne survit pas au changement d'unité.
    */
   private selectUnitIndex(index: number): void {
-    if (index !== this.selectedUnitIndex()) this.bandSelection.set(new Set());
-    this.selectedUnitIndex.set(index);
+    if (index !== this.selectedGroupIndex()) this.bandSelection.set(new Set());
+    this.selectedGroupIndex.set(index);
   }
 
   /**
@@ -743,9 +969,10 @@ export class PlacementPage implements OnInit {
   private selectOnBoard(ids: Iterable<string>): void {
     const selection = new Set(ids);
     this.selection.set(selection);
-    const unitId = soleSelectedUnit(this.placements(), selection);
-    if (unitId === null) return;
-    const index = this.list()?.units.findIndex((unit) => unit.id === unitId) ?? -1;
+    // RG_37/RT_40: la bascule compte des groupes de déploiement, pas des unités.
+    const groupId = soleSelectedUnit(this.placements(), selection, (idUnite) => this.groupIdOf(idUnite));
+    if (groupId === null) return;
+    const index = this.groups().findIndex((group) => group.id === groupId);
     if (index >= 0) this.selectUnitIndex(index);
   }
 
@@ -766,16 +993,17 @@ export class PlacementPage implements OnInit {
    * ne l'est pas.
    */
   async toggleReserve(event: Event, checkbox: { checked: boolean }): Promise<void> {
-    const unit = this.selectedUnit();
+    const deploymentGroup = this.selectedGroup();
     const wanted = (event as CustomEvent<{ checked: boolean }>).detail.checked;
-    if (!unit || !this.deployment() || wanted === this.reservedUnits().has(unit.id)) {
+    if (!deploymentGroup || !this.deployment() || wanted === this.selectedUnitReserved()) {
       checkbox.checked = this.selectedUnitReserved();
       return;
     }
 
-    const placed = placedModelIds(this.placements(), unit.id).size;
+    // RG_37: la confirmation compte les tokens de toutes les composantes.
+    const placed = placedCountOfGroup(deploymentGroup, this.placements());
     if (!wanted || placed === 0) {
-      this.setReserved(unit, wanted);
+      this.setReserved(deploymentGroup, wanted);
       checkbox.checked = this.selectedUnitReserved();
       return;
     }
@@ -783,7 +1011,7 @@ export class PlacementPage implements OnInit {
     const alert = await this.alerts.create({
       header: 'Mettre cette unité en réserve ?',
       message:
-        `${placed} modèle(s) de « ${unit.name} » sont posés sur le plateau. ` +
+        `${placed} modèle(s) de « ${deploymentGroup.name} » sont posés sur le plateau. ` +
         `Une unité en réserve n'a aucun token sur le plateau : ces placements ` +
         `seront définitivement retirés.`,
       buttons: [
@@ -793,7 +1021,7 @@ export class PlacementPage implements OnInit {
     });
     await alert.present();
     const { role } = await alert.onDidDismiss();
-    if (role === 'destructive') this.setReserved(unit, true);
+    if (role === 'destructive') this.setReserved(deploymentGroup, true);
     checkbox.checked = this.selectedUnitReserved();
   }
 
@@ -802,19 +1030,25 @@ export class PlacementPage implements OnInit {
    * placements — aucun placement n'est fabriqué pour une unité réservée, et
    * ceux qu'elle avait sont retirés (RG_25). EX_04/RG_07: l'écriture est
    * continue, comme pour un placement.
+   *
+   * RG_37/RT_46: une unité attachée entre en réserve et en sort tout entière —
+   * toutes ses composantes sont inscrites, ou retirées, en une seule écriture.
    */
-  private setReserved(unit: ArmyUnit, reserved: boolean): void {
+  private setReserved(deploymentGroup: DeploymentGroup, reserved: boolean): void {
     const deployment = this.deployment();
     if (!deployment) return;
 
+    const unitIds = new Set(deploymentGroup.units.map((unit) => unit.id));
     const ids = new Set(deployment.reservedUnitIds ?? []);
-    if (reserved) ids.add(unit.id);
-    else ids.delete(unit.id);
+    for (const id of unitIds) {
+      if (reserved) ids.add(id);
+      else ids.delete(id);
+    }
     // RG_32: la mise en réserve vide le bandeau, et sa sélection avec lui.
     this.bandSelection.set(new Set());
 
     const placements = reserved
-      ? deployment.placements.filter((placement) => placement.idUnite !== unit.id)
+      ? deployment.placements.filter((placement) => !unitIds.has(placement.idUnite))
       : deployment.placements;
 
     this.deployment.set({ ...deployment, placements, reservedUnitIds: [...ids] });
@@ -833,24 +1067,31 @@ export class PlacementPage implements OnInit {
   // RG_26 — cohésion d'unité
   // -------------------------------------------------------------------------
 
+  /** RT_46: groupe de déploiement d'une unité — elle-même si elle est indépendante. */
+  private groupIdOf(idUnite: string): string {
+    return this.groupOfUnit().get(idUnite) ?? idUnite;
+  }
+
   /**
-   * RT_36: socles posés d'une unité, en pouces réels, dans l'ordre des
-   * placements — donc des dépôts, que suit le départage de RG_26 au retrait.
+   * RT_36: socles posés d'un groupe de déploiement, en pouces réels, dans
+   * l'ordre des placements — donc des dépôts, que suit le départage de RG_26
+   * au retrait. RG_37/RT_46: toutes les composantes d'une unité attachée,
+   * personnages compris, forment un seul graphe de cohésion.
    */
-  private unitBases(idUnite: string, placements: readonly Placement[]): CoherencyBase[] {
+  private groupBases(groupId: string, placements: readonly Placement[]): CoherencyBase[] {
     const groupShape = this.groupShapes();
     const perMm = this.pixelsPerMm();
     const bases: CoherencyBase[] = [];
     for (const placement of placements) {
-      if (placement.idUnite !== idUnite) continue;
+      if (this.groupIdOf(placement.idUnite) !== groupId) continue;
       const shape = groupShape.get(placement.idModele.split('#')[0]);
       if (shape) bases.push(coherencyBase(placement, shape, perMm));
     }
     return bases;
   }
 
-  private unitCoherent(idUnite: string, placements: readonly Placement[]): boolean {
-    return isCoherent(this.unitBases(idUnite, placements));
+  private groupCoherent(groupId: string, placements: readonly Placement[]): boolean {
+    return isCoherent(this.groupBases(groupId, placements));
   }
 
   /**
@@ -861,7 +1102,7 @@ export class PlacementPage implements OnInit {
   private keepsCoherency(drag: DragState, candidate: Placement): boolean {
     if (!drag.wasCoherent) return true;
     const others = this.placements().filter((placement) => placement.idModele !== candidate.idModele);
-    return this.unitCoherent(drag.idUnite, [...others, candidate]);
+    return this.groupCoherent(drag.groupId, [...others, candidate]);
   }
 
   /** RG_26: l'issue refusée d'un geste sans retour de glisser est annoncée. */
@@ -883,9 +1124,9 @@ export class PlacementPage implements OnInit {
     // RT_44: instantané des unités en cohésion à l'activation — seules
     // candidates au rétablissement de la sortie du mode.
     const placements = this.placements();
-    const coherent = (this.list()?.units ?? [])
-      .map((unit) => unit.id)
-      .filter((idUnite) => this.unitCoherent(idUnite, placements));
+    const coherent = this.groups()
+      .map((group) => group.id)
+      .filter((groupId) => this.groupCoherent(groupId, placements));
     this.rulerCoherentUnits.set(new Set(coherent));
     this.rulerMode.set(true);
   }
@@ -900,22 +1141,23 @@ export class PlacementPage implements OnInit {
   private async leaveRulerMode(): Promise<boolean> {
     if (!this.rulerMode()) return true;
     const placements = this.placements();
-    const units = this.list()?.units ?? [];
+    const groups = this.groups();
     const removed = new Set<string>();
     const trimmed: string[] = [];
     const stretched: string[] = [];
-    for (const idUnite of this.rulerBrokenUnits()) {
-      const name = units.find((unit) => unit.id === idUnite)?.name ?? idUnite;
-      // RT_44: même algorithme que le retrait (RT_36), sur l'unité entière.
-      const detached = new Set(detachedAfterRemoval(this.unitBases(idUnite, placements)));
+    for (const groupId of this.rulerBrokenUnits()) {
+      const name = groups.find((group) => group.id === groupId)?.name ?? groupId;
+      // RT_44: même algorithme que le retrait (RT_36), sur l'unité entière —
+      // RG_37: l'unité attachée entière.
+      const detached = new Set(detachedAfterRemoval(this.groupBases(groupId, placements)));
       if (detached.size > 0) {
         detached.forEach((id) => removed.add(id));
         trimmed.push(`« ${name} » : ${detached.size} token(s)`);
       }
       // RG_35: l'étendue de 9" n'est pas retaillée — l'unité est seulement
       // signalée, et traitée ensuite comme déjà hors cohésion (RG_26).
-      const kept = placements.filter((p) => p.idUnite === idUnite && !detached.has(p.idModele));
-      if (!this.unitCoherent(idUnite, kept)) stretched.push(`« ${name} »`);
+      const kept = placements.filter((p) => this.groupIdOf(p.idUnite) === groupId && !detached.has(p.idModele));
+      if (!this.groupCoherent(groupId, kept)) stretched.push(`« ${name} »`);
     }
 
     const stretchedNote =
@@ -1048,7 +1290,11 @@ export class PlacementPage implements OnInit {
     const rect = host.getBoundingClientRect();
     const scale = this.scale();
     const point = this.toAssetCoords(event);
-    const droppable = !!point && !!board && this.gestureAllowed(drag, point, board);
+    // RG_38: un dépôt depuis le bandeau sur la partie masquée par
+    // l'agrandissement est refusé, comme hors du rectangle de jeu.
+    const fromBand = drag.kind === 'new' || drag.kind === 'cluster';
+    const droppable =
+      !!point && !!board && this.gestureAllowed(drag, point, board) && (!fromBand || this.isInsideView(event));
     // RT_36: un token posé dont le déplacement serait refusé le montre aussi.
     if (drag.kind === 'move') this.refusedModelId.set(droppable ? null : drag.idModele);
     if (drag.kind === 'group') this.groupRefused.set(!droppable);
@@ -1118,7 +1364,7 @@ export class PlacementPage implements OnInit {
     // RG_35/RT_44: en mode « Règle », seule la sortie du rectangle refuse le groupe.
     if (drag.ruler) return true;
     // RG_26: seules les unités en cohésion à la saisie sont contrôlées.
-    return [...group.coherentUnits].every((idUnite) => this.unitCoherent(idUnite, moved));
+    return [...group.coherentUnits].every((groupId) => this.groupCoherent(groupId, moved));
   }
 
   /**
@@ -1128,8 +1374,9 @@ export class PlacementPage implements OnInit {
   private startGroupDrag(event: PointerEvent, token: TokenView): void {
     const ids = new Set(this.tokens().filter((t) => t.selected).map((t) => t.placement.idModele));
     const placements = this.placements();
-    const units = new Set(placements.filter((p) => ids.has(p.idModele)).map((p) => p.idUnite));
-    const coherentUnits = new Set([...units].filter((idUnite) => this.unitCoherent(idUnite, placements)));
+    // RG_37/RT_46: la cohésion se contrôle par groupe de déploiement.
+    const groupIds = new Set(placements.filter((p) => ids.has(p.idModele)).map((p) => this.groupIdOf(p.idUnite)));
+    const coherentUnits = new Set([...groupIds].filter((groupId) => this.groupCoherent(groupId, placements)));
     const point = this.toAssetCoords(event);
     this.drag = {
       kind: 'group',
@@ -1141,6 +1388,7 @@ export class PlacementPage implements OnInit {
       startRotation: token.placement.rotation,
       startAngle: 0,
       idUnite: token.placement.idUnite,
+      groupId: this.groupIdOf(token.placement.idUnite),
       startPosition: { x: token.placement.x, y: token.placement.y },
       wasCoherent: true,
       ghost: this.ghostMetrics(token.rx * 2, token.ry * 2, token.shapeKind, token.color, token.placement.rotation, false),
@@ -1155,8 +1403,8 @@ export class PlacementPage implements OnInit {
 
   /**
    * RG_30/RT_40: un appui sur le fond du plateau commence un rectangle de
-   * sélection. Le plateau n'ayant ni pan ni zoom (RG_17), le geste n'entre en
-   * concurrence avec aucun autre.
+   * sélection. Le déplacement de vue (RG_39/RT_48) est intercepté en amont,
+   * en capture : ce gestionnaire ne reçoit jamais son appui.
    */
   onBoardPointerDown(event: PointerEvent): void {
     const point = this.toAssetCoords(event);
@@ -1204,8 +1452,8 @@ export class PlacementPage implements OnInit {
    * enregistrement de placement au sens de RT_04 — un par modèle (RG_04).
    */
   onBandPointerDown(event: PointerEvent, model: BandModel): void {
-    const unit = this.selectedUnit();
-    if (!model.shape || !unit) return;
+    const deploymentGroup = this.selectedGroup();
+    if (!model.shape || !deploymentGroup) return;
     event.preventDefault();
     // RT_41: l'appui est compté ici, pas une seconde fois par le corps du bandeau.
     event.stopPropagation();
@@ -1214,7 +1462,7 @@ export class PlacementPage implements OnInit {
     // bandeau ; saisir un modèle de cette sélection emporte la grappe.
     if (this.registerBandTap(event)) this.selectWholeBand();
     if (this.bandSelection().has(model.idModele) && this.bandSelectedCount() > 1) {
-      this.startClusterDrag(event, unit);
+      this.startClusterDrag(event, deploymentGroup);
       return;
     }
     this.bandSelection.set(new Set());
@@ -1226,19 +1474,15 @@ export class PlacementPage implements OnInit {
       grabOffset: { x: 0, y: 0 },
       startRotation: 0,
       startAngle: 0,
-      idUnite: unit.id,
+      // RG_37: le placement créé porte la composante du modèle, la cohésion
+      // contrôlée est celle de tout le groupe.
+      idUnite: model.unit.id,
+      groupId: deploymentGroup.id,
       startPosition: { x: 0, y: 0 },
-      wasCoherent: this.unitCoherent(unit.id, this.placements()),
+      wasCoherent: this.groupCoherent(deploymentGroup.id, this.placements()),
       // RT_34: le token provisoire est celui qui sera posé — même forme (RT_26),
-      // même couleur d'unité (RG_06), même taille à l'écran (RT_05).
-      ghost: this.ghostMetrics(
-        size.width,
-        size.height,
-        model.shape.shape,
-        this.selectedUnit()?.color ?? UNIT_COLOR_FALLBACK,
-        0,
-        true,
-      ),
+      // même couleur de composante (RG_06/RG_37), même taille à l'écran (RT_05).
+      ghost: this.ghostMetrics(size.width, size.height, model.shape.shape, model.color, 0, true),
     };
     this.selection.set(new Set([model.idModele]));
     this.gestureActive.set(true);
@@ -1277,7 +1521,7 @@ export class PlacementPage implements OnInit {
    * pouces réels, puis figée en décalages d'asset : le geste ne fait que la
    * translater sous le point de contact.
    */
-  private startClusterDrag(event: PointerEvent, unit: ArmyUnit): void {
+  private startClusterDrag(event: PointerEvent, deploymentGroup: DeploymentGroup): void {
     const selected = this.bandSelection();
     const models = this.bandModels().filter(
       (model): model is BandModel & { shape: BaseShape } => !!model.shape && selected.has(model.idModele),
@@ -1293,7 +1537,13 @@ export class PlacementPage implements OnInit {
     const perMm = this.pixelsPerMm();
     const cluster = models.map((model) => {
       const offset = layout.get(model.idModele)!;
-      return { idModele: model.idModele, dx: offset.x * MM_PER_INCH * perMm, dy: offset.y * MM_PER_INCH * perMm };
+      // RG_37: chaque socle de la grappe garde sa composante.
+      return {
+        idUnite: model.unit.id,
+        idModele: model.idModele,
+        dx: offset.x * MM_PER_INCH * perMm,
+        dy: offset.y * MM_PER_INCH * perMm,
+      };
     });
 
     // RT_41: chaque socle provisoire à sa taille exacte (RT_05), et un cercle
@@ -1307,6 +1557,8 @@ export class PlacementPage implements OnInit {
         width: size.width * scale,
         height: size.height * scale,
         shapeKind: model.shape.shape,
+        // RG_37: chaque socle provisoire dans la couleur de sa composante.
+        color: model.color,
       };
     });
     const envelope =
@@ -1327,17 +1579,18 @@ export class PlacementPage implements OnInit {
       grabOffset: { x: 0, y: 0 },
       startRotation: 0,
       startAngle: 0,
-      idUnite: unit.id,
+      idUnite: models[0].unit.id,
+      groupId: deploymentGroup.id,
       startPosition: { x: 0, y: 0 },
       // RG_26: une unité déjà hors cohésion n'est pas contrôlée.
-      wasCoherent: this.unitCoherent(unit.id, this.placements()),
+      wasCoherent: this.groupCoherent(deploymentGroup.id, this.placements()),
       ghost: {
         box: Math.max(DRAG_AIM_RADIUS_PX, envelope) * 2 + 8,
         width: 0,
         height: 0,
         rotation: 0,
         shapeKind: 'round',
-        color: unit.color ?? UNIT_COLOR_FALLBACK,
+        color: models[0].color,
         withToken: false,
         members,
         envelope,
@@ -1354,7 +1607,7 @@ export class PlacementPage implements OnInit {
   private clusterPlacements(drag: DragState, point: { x: number; y: number }): Placement[] {
     // RG_32: rotation par défaut pour tous les modèles de la grappe.
     return (drag.cluster ?? []).map((member) => ({
-      idUnite: drag.idUnite,
+      idUnite: member.idUnite,
       idModele: member.idModele,
       x: point.x + member.dx,
       y: point.y + member.dy,
@@ -1370,7 +1623,7 @@ export class PlacementPage implements OnInit {
     const candidates = this.clusterPlacements(drag, point);
     if (candidates.some((placement) => !this.isInsideBoard(placement, board))) return false;
     if (!drag.wasCoherent) return true;
-    return this.unitCoherent(drag.idUnite, [...this.placements(), ...candidates]);
+    return this.groupCoherent(drag.groupId, [...this.placements(), ...candidates]);
   }
 
   /** Déplacement d'un token déjà posé (RG_04 : « déplacer rapidement »). */
@@ -1387,8 +1640,10 @@ export class PlacementPage implements OnInit {
     const tap = { id: token.placement.idModele, time: event.timeStamp, x: event.clientX, y: event.clientY };
     if (isDoubleTap(this.lastTap, tap)) {
       this.lastTap = null;
+      // RG_37: l'unité attachée entière, toutes composantes confondues.
+      const groupId = this.groupIdOf(token.placement.idUnite);
       const unitIds = this.placements()
-        .filter((p) => p.idUnite === token.placement.idUnite)
+        .filter((p) => this.groupIdOf(p.idUnite) === groupId)
         .map((p) => p.idModele);
       this.selectOnBoard(unitIds);
     } else {
@@ -1413,8 +1668,9 @@ export class PlacementPage implements OnInit {
       startRotation: token.placement.rotation,
       startAngle: 0,
       idUnite: token.placement.idUnite,
+      groupId: this.groupIdOf(token.placement.idUnite),
       startPosition: { x: token.placement.x, y: token.placement.y },
-      wasCoherent: this.unitCoherent(token.placement.idUnite, this.placements()),
+      wasCoherent: this.groupCoherent(this.groupIdOf(token.placement.idUnite), this.placements()),
       // RT_34: le token posé suit déjà le doigt par ses coordonnées RT_04 —
       // seul le cercle de visée s'y ajoute, pour rester lisible sous le doigt.
       ghost: this.ghostMetrics(
@@ -1453,8 +1709,9 @@ export class PlacementPage implements OnInit {
         ? this.angleTo(token.placement, point)
         : token.placement.rotation,
       idUnite: token.placement.idUnite,
+      groupId: this.groupIdOf(token.placement.idUnite),
       startPosition: { x: token.placement.x, y: token.placement.y },
-      wasCoherent: this.unitCoherent(token.placement.idUnite, this.placements()),
+      wasCoherent: this.groupCoherent(this.groupIdOf(token.placement.idUnite), this.placements()),
       // RT_34: la rotation ne déplace pas le token — aucun retour de glisser
       // n'est affiché, la poignée elle-même suivant le doigt.
       ghost: this.ghostMetrics(token.rx * 2, token.ry * 2, token.shapeKind, token.color, 0, false),
@@ -1469,6 +1726,8 @@ export class PlacementPage implements OnInit {
   }
 
   onPointerMove(event: PointerEvent): void {
+    // RT_48: un déplacement de vue ne concerne aucun autre geste.
+    if (this.trackViewPan(event)) return;
     // RG_33/RT_42: le second point suit le doigt, borné au rectangle de jeu.
     const ruler = this.rulerDrag;
     if (ruler && ruler.pointerId === event.pointerId) {
@@ -1527,6 +1786,7 @@ export class PlacementPage implements OnInit {
   }
 
   onPointerUp(event: PointerEvent): void {
+    if (this.endViewPan(event)) return;
     const ruler = this.rulerDrag;
     if (ruler && ruler.pointerId === event.pointerId) {
       this.rulerDrag = null;
@@ -1600,8 +1860,9 @@ export class PlacementPage implements OnInit {
 
     const point = this.toAssetCoords(event);
     const board = this.board();
-    const unit = this.selectedUnit();
-    if (!point || !board || !unit) return;
+    const deploymentGroup = this.selectedGroup();
+    // RG_38: hors de la partie affichée du plateau, rien n'est posé.
+    if (!point || !board || !deploymentGroup || !this.isInsideView(event)) return;
 
     // Drop hors du plateau, ou rompant la cohésion (RG_26) : aucun placement
     // créé — issue déjà annoncée par le retour visuel (RT_34/RT_36).
@@ -1622,13 +1883,14 @@ export class PlacementPage implements OnInit {
     // RT_04: un enregistrement indépendant par modèle.
     this.mutatePlacements((placements) => [
       ...placements,
-      { idUnite: unit.id, idModele: drag.idModele, x: clamped.x, y: clamped.y, rotation: 0 },
+      { idUnite: drag.idUnite, idModele: drag.idModele, x: clamped.x, y: clamped.y, rotation: 0 },
     ]);
 
     // RG_15: l'unité qui vient d'être complétée n'est plus proposée par le
     // bandeau — on enchaîne sur la suivante encore en attente plutôt que
     // d'afficher une liste vide. S'il n'en reste aucune, stepUnit ne bouge pas.
-    if (isUnitDeployed(unit, this.placements(), this.reservedUnits())) this.stepUnit(1);
+    // RG_37: avance quand toute l'unité attachée est posée.
+    if (isGroupDeployed(deploymentGroup, this.placements(), this.reservedUnits())) this.stepUnit(1);
   }
 
   /**
@@ -1655,8 +1917,10 @@ export class PlacementPage implements OnInit {
   private dropCluster(drag: DragState, event: PointerEvent): void {
     const point = this.toAssetCoords(event);
     const board = this.board();
-    const unit = this.selectedUnit();
-    if (!point || !board || !unit || !this.clusterAllowed(drag, point, board)) return;
+    const deploymentGroup = this.selectedGroup();
+    // RG_38: hors de la partie affichée du plateau, rien n'est posé.
+    if (!point || !board || !deploymentGroup || !this.isInsideView(event)) return;
+    if (!this.clusterAllowed(drag, point, board)) return;
 
     // RT_04: un enregistrement par modèle, jamais dupliqué (voir le dépôt simple).
     const placed = new Set(this.placements().map((p) => p.idModele));
@@ -1669,7 +1933,7 @@ export class PlacementPage implements OnInit {
     this.selection.set(new Set(created.map((p) => p.idModele)));
 
     // RG_15: avance automatique, comme après la pose du dernier modèle.
-    if (isUnitDeployed(unit, this.placements(), this.reservedUnits())) this.stepUnit(1);
+    if (isGroupDeployed(deploymentGroup, this.placements(), this.reservedUnits())) this.stepUnit(1);
   }
 
   private isInsideBoard(point: { x: number; y: number }, board: Board): boolean {
@@ -1700,7 +1964,8 @@ export class PlacementPage implements OnInit {
     // cohésion avant le geste.
     const placements = this.placements();
     const rotated = placements.map((p) => (p === placement ? { ...p, rotation } : p));
-    if (this.unitCoherent(placement.idUnite, placements) && !this.unitCoherent(placement.idUnite, rotated)) {
+    const groupId = this.groupIdOf(placement.idUnite);
+    if (this.groupCoherent(groupId, placements) && !this.groupCoherent(groupId, rotated)) {
       void this.announceRefusal('Rotation refusée : l’unité ne serait plus en cohésion.');
       return;
     }
@@ -1723,8 +1988,10 @@ export class PlacementPage implements OnInit {
     if (!placement) return;
 
     const remaining = placements.filter((p) => p !== placement);
-    const detached = this.unitCoherent(placement.idUnite, placements)
-      ? detachedAfterRemoval(this.unitBases(placement.idUnite, remaining))
+    // RG_37: le plus grand groupe conservé est celui de l'unité attachée entière.
+    const groupId = this.groupIdOf(placement.idUnite);
+    const detached = this.groupCoherent(groupId, placements)
+      ? detachedAfterRemoval(this.groupBases(groupId, remaining))
       : [];
 
     if (detached.length > 0) {

@@ -4,10 +4,18 @@ import { AlertController } from '@ionic/angular/lazy';
 
 import { LibraryService } from '../../data/library.service';
 import { resolveGroupShape } from '../../deployment/token-geometry';
+import {
+  ATTACHMENT_ROLE_LABELS,
+  attachUnit,
+  attachmentBlocker,
+  detachUnit,
+  isAttachmentRole,
+  validAttachments,
+} from '../../deployment/attachments';
 import { ImportDraft, ListImportService } from '../../import/list-import.service';
 import { RosterParseError } from '../../import/roster-json.parser';
 import { selectableUnitColors } from '../../import/unit-colors';
-import { ArmyUnit, UnitModelGroup } from '../../models/domain.models';
+import { ArmyUnit, AttachmentRole, UnitModelGroup } from '../../models/domain.models';
 import { BaseShape } from '../../models/referential.models';
 import { ConnectivityService } from '../../net/connectivity.service';
 import { ReferentialService } from '../../referentials/referential.service';
@@ -16,7 +24,16 @@ interface UnitRow {
   readonly unit: ArmyUnit;
   readonly groups: readonly { group: UnitModelGroup; shape?: BaseShape }[];
   readonly unresolved: number;
+  /** RG_36: unité escortée par ce personnage, et son rôle en toutes lettres. */
+  readonly attachedTo?: { readonly name: string; readonly title: string };
+  /** RG_36: personnages attachés à cette unité, rôle compris. */
+  readonly characters: readonly { readonly name: string; readonly role: string }[];
+  /** RG_36: attachements qu'il est permis de constituer depuis cette unité. */
+  readonly attachOptions: readonly { readonly value: string; readonly label: string }[];
 }
+
+/** RG_36: ordre de présentation des rôles proposés à l'attachement. */
+const ROLES: readonly AttachmentRole[] = ['leader', 'support'];
 
 /**
  * Écran 2 — Import de liste.
@@ -62,16 +79,43 @@ export class ImportPage implements OnInit {
     const draft = this.draft();
     if (!draft) return [];
     const shapes = this.shapesById();
-    return draft.units.map((unit) => ({
-      unit,
-      groups: unit.modelGroups.map((group) => ({
-        group,
-        // RT_28: un rectangle sur mesure est résolu au même titre qu'un socle
-        // du référentiel — resolveGroupShape masque l'origine des deux.
-        shape: resolveGroupShape(group, shapes),
-      })),
-      unresolved: unit.modelGroups.filter((g) => !g.baseShapeId && !g.customRectangleMm).length,
-    }));
+    const attachments = validAttachments(draft.units);
+    const nameOf = new Map(draft.units.map((unit) => [unit.id, unit.name]));
+    return draft.units.map((unit) => {
+      const attachment = attachments.get(unit.id);
+      return {
+        unit,
+        groups: unit.modelGroups.map((group) => ({
+          group,
+          // RT_28: un rectangle sur mesure est résolu au même titre qu'un socle
+          // du référentiel — resolveGroupShape masque l'origine des deux.
+          shape: resolveGroupShape(group, shapes),
+        })),
+        unresolved: unit.modelGroups.filter((g) => !g.baseShapeId && !g.customRectangleMm).length,
+        attachedTo: attachment
+          ? {
+              name: nameOf.get(attachment.bodyguardUnitId) ?? '',
+              title: attachment.role === 'leader' ? 'Meneur' : 'Soutien',
+            }
+          : undefined,
+        characters: draft.units.flatMap((candidate) => {
+          const link = attachments.get(candidate.id);
+          return link?.bodyguardUnitId === unit.id
+            ? [{ name: candidate.name, role: ATTACHMENT_ROLE_LABELS[link.role] }]
+            : [];
+        }),
+        // RG_36: seuls les choix qui respectent les contraintes structurelles
+        // sont proposés — aucun contrôle des règles « peut mener ».
+        attachOptions: draft.units
+          .filter((bodyguard) => attachmentBlocker(draft.units, unit.id, bodyguard.id) === null)
+          .flatMap((bodyguard) =>
+            ROLES.map((role) => ({
+              value: `${role}:${bodyguard.id}`,
+              label: `${role === 'leader' ? 'Meneur' : 'Soutien'} de « ${bodyguard.name} »`,
+            })),
+          ),
+      };
+    });
   });
 
   readonly totalModels = computed(() =>
@@ -176,6 +220,27 @@ export class ImportPage implements OnInit {
             },
       ),
     });
+  }
+
+  /**
+   * RG_36: constitue un attachement depuis le récapitulatif — la valeur porte
+   * le rôle et l'unité escortée (`<rôle>:<idUnite>`). Ne vaut que pour cet
+   * import : rien n'est mémorisé ailleurs.
+   */
+  attach(unit: ArmyUnit, value: string): void {
+    const draft = this.draft();
+    const separator = value?.indexOf(':') ?? -1;
+    if (!draft || separator < 0) return;
+    const role = value.slice(0, separator);
+    const bodyguardId = value.slice(separator + 1);
+    if (!isAttachmentRole(role)) return;
+    this.draft.set({ ...draft, units: attachUnit(draft.units, unit.id, bodyguardId, role) });
+  }
+
+  /** RG_36: défait un attachement — le personnage redevient indépendant. */
+  detach(unit: ArmyUnit): void {
+    const draft = this.draft();
+    if (draft) this.draft.set({ ...draft, units: detachUnit(draft.units, unit.id) });
   }
 
   /** RG_06: réassignation manuelle de la couleur d'une unité. */

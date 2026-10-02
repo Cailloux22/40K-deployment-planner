@@ -391,6 +391,24 @@ components:
         color:
           type: string
           description: Couleur assignée à l'unité (RG_06), format hex CSS.
+        attachment:
+          $ref: '#/components/schemas/UnitAttachment'
+
+    # RG_36/RT_45 : attachement d'un personnage à l'unité qu'il escorte. Porté
+    # par le seul personnage ; absent pour une unité indépendante. Un client
+    # ignore sans erreur un attachement qui ne respecte plus les contraintes
+    # structurelles de RG_36 (lecture tolérante, RT_45).
+    UnitAttachment:
+      type: object
+      required: [bodyguardUnitId, role]
+      properties:
+        bodyguardUnitId:
+          type: string
+          description: Identifiant (ArmyUnit.id) de l'unité escortée, dans la même liste.
+        role:
+          type: string
+          enum: [leader, support]
+          description: Meneur (leader) ou soutien (support).
 
     # RG_01/RG_02/RT_07/RT_13 : liste d'armée importée. Sert d'ancre stable
     # (`id`) pour la liaison déploiement -> liste (RT_07), synchronisée pour

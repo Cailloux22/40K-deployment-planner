@@ -65,11 +65,16 @@ export function isDoubleTap(
 /**
  * RG_15/RT_40: unité commune à tous les tokens sélectionnés, sur laquelle le
  * bandeau bascule ; nulle si la sélection est vide ou mêle plusieurs unités.
+ *
+ * RG_37/RT_46: `groupOf` ramène chaque `idUnite` à son groupe de déploiement —
+ * des tokens de composantes différentes d'une même unité attachée désignent
+ * alors un seul groupe.
  */
 export function soleSelectedUnit(
   placements: readonly { readonly idUnite: string; readonly idModele: string }[],
   selection: ReadonlySet<string>,
+  groupOf: (idUnite: string) => string = (idUnite) => idUnite,
 ): string | null {
-  const unitIds = new Set(placements.filter((p) => selection.has(p.idModele)).map((p) => p.idUnite));
-  return unitIds.size === 1 ? [...unitIds][0] : null;
+  const groupIds = new Set(placements.filter((p) => selection.has(p.idModele)).map((p) => groupOf(p.idUnite)));
+  return groupIds.size === 1 ? [...groupIds][0] : null;
 }

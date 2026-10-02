@@ -124,6 +124,20 @@
         </ion-note>
       }
 
+      <!-- RG_36: un attachement déclaré par la source mais inexploitable n'est
+           pas créé ; il est énoncé ici, unités nommées, et le joueur peut le
+           recréer à la main. Le reste de la liste est importé normalement. -->
+      @if (current.attachmentIssues.length > 0) {
+        <ion-note class="unresolved-note attachment-issues">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          <span>
+            @for (issue of current.attachmentIssues; track $index) {
+              <span class="issue">{{ issue }}</span>
+            }
+          </span>
+        </ion-note>
+      }
+
       <ion-list lines="full">
         @for (row of rows(); track row.unit.id) {
           <ion-item-group class="unit" [class.needs-attention]="row.unresolved > 0">
@@ -148,6 +162,49 @@
               </ion-select>
               <span class="swatch" slot="end" [style.background]="row.unit.color"></span>
             </ion-item-divider>
+
+            <!-- RG_36: composition de l'unité attachée, rôles en toutes lettres.
+                 Le joueur peut défaire un attachement, ou en constituer un
+                 parmi les seuls choix structurellement permis. -->
+            @if (row.attachedTo; as link) {
+              <ion-item class="attachment">
+                <ion-icon name="link-outline" slot="start" aria-hidden="true"></ion-icon>
+                <ion-label>
+                  <h3>{{ link.title }} de « {{ link.name }} »</h3>
+                  <p>Déployée avec elle comme une seule unité.</p>
+                </ion-label>
+                <ion-button slot="end" fill="outline" size="small" (click)="detach(row.unit)">
+                  Détacher
+                </ion-button>
+              </ion-item>
+            } @else {
+              @if (row.characters.length > 0) {
+                <ion-item class="attachment">
+                  <ion-icon name="link-outline" slot="start" aria-hidden="true"></ion-icon>
+                  <ion-label>
+                    <h3>Unité escortée</h3>
+                    @for (character of row.characters; track $index) {
+                      <p>{{ character.name }} ({{ character.role }})</p>
+                    }
+                  </ion-label>
+                </ion-item>
+              } @else if (row.attachOptions.length > 0) {
+                <ion-item class="attachment">
+                  <ion-select
+                    label="Attacher à"
+                    labelPlacement="stacked"
+                    interface="alert"
+                    placeholder="Aucune (unité indépendante)"
+                    [value]="null"
+                    (ionChange)="attach(row.unit, $any($event.detail.value))"
+                  >
+                    @for (option of row.attachOptions; track option.value) {
+                      <ion-select-option [value]="option.value">{{ option.label }}</ion-select-option>
+                    }
+                  </ion-select>
+                </ion-item>
+              }
+            }
 
             <!-- RG_16/RG_22: socles regroupés par forme/taille avec compte. -->
             @for (entry of row.groups; track entry.group.id) {

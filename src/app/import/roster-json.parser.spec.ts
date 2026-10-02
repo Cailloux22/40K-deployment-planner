@@ -136,9 +136,61 @@ describe('parseRosterJson — RT_13 (roster JSON BattleScribe / NewRecruit)', ()
     expect(unit.modelProfiles[2].equipment).toEqual(['8 chainblades', 'Autopistol']);
   });
 
-  it('ne consomme que name/number/type — les coûts et profils sont ignorés', () => {
+  it('ne consomme que id/name/number/type — les coûts et profils sont ignorés', () => {
     const unit = parseRosterJson(fixture()).units[0];
-    expect(Object.keys(unit).sort()).toEqual(['modelCount', 'modelProfiles', 'name']);
+    // RT_45: l'`id` de sélection ne sert qu'à résoudre les attachements.
+    expect(Object.keys(unit).sort()).toEqual(['modelCount', 'modelProfiles', 'name', 'selectionId']);
+  });
+});
+
+describe('parseRosterJson — RT_45 (unités attachées)', () => {
+  it('lit les associations sortantes de la liste de référence, rôle compris', () => {
+    const roster = parseRosterJson(fixture());
+    const nameOf = new Map(roster.units.map((unit) => [unit.selectionId, unit.name]));
+    const links = roster.attachments.map((a) => [
+      nameOf.get(a.characterSelectionId),
+      a.role,
+      nameOf.get(a.bodyguardSelectionId),
+    ]);
+    expect(links).toEqual([
+      ['Cybernetica Datasmith', 'support', 'Kastelan Robots'],
+      ['Tech-Priest Manipulus', 'leader', 'Kataphron Breachers'],
+    ]);
+  });
+
+  /** Roster minimal : un personnage, une unité escortée, une association. */
+  function rosterWith(association: Record<string, unknown>): unknown {
+    const model = (id: string, name: string) => ({ id, name, type: 'model', number: 1 });
+    return {
+      roster: {
+        name: 'Test',
+        forces: [
+          {
+            selections: [
+              {
+                type: 'upgrade',
+                name: 'Force Disposition',
+                selections: [{ from: 'group', group: 'Force Disposition', name: 'Priority Assets' }],
+              },
+              { ...model('c1', 'Captain'), associations: [association] },
+              model('b1', 'Intercessors'),
+            ],
+          },
+        ],
+      },
+    };
+  }
+
+  it('ne devine pas le rôle d’une association de nom inconnu', () => {
+    const roster = parseRosterJson(rosterWith({ type: 'outgoing', to: 'b1', name: 'Escorting' }));
+    expect(roster.attachments).toEqual([
+      { characterSelectionId: 'c1', bodyguardSelectionId: 'b1', role: null, associationName: 'Escorting' },
+    ]);
+  });
+
+  it('ne lit que les associations sortantes', () => {
+    const roster = parseRosterJson(rosterWith({ type: 'incoming', from: 'b1', name: 'Leading' }));
+    expect(roster.attachments).toEqual([]);
   });
 });
 

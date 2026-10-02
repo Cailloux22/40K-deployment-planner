@@ -7,8 +7,10 @@ import {
   isUnitFullyPlaced,
   modelId,
   modelIdsOfUnit,
+  isGroupDeployed,
   reservedUnitIds,
   unitMenuView,
+  unitMenuViews,
 } from './deployment-status';
 
 function group(id: string, count: number, baseShapeId: string | null): UnitModelGroup {
@@ -264,5 +266,44 @@ describe('RG_25 / RT_35 — mise en réserve d’une unité', () => {
   it('sortir une unité de la réserve la remet en attente', () => {
     expect(unitMenuView(u1, [], new Set()).status).toBe('white');
     expect(isUnitDeployed(u1, [], new Set())).toBe(false);
+  });
+});
+
+describe('RG_37 / RT_46 — unité attachée au menu et dans les statuts', () => {
+  const leader: ArmyUnit = { ...unit('l', [group('l_g0', 1, 'round-40')], '#111111'), attachment: { bodyguardUnitId: 'b', role: 'leader' } };
+  const bodyguard = unit('b', [group('b_g0', 4, 'round-40'), group('b_g1', 1, 'round-50')], '#222222');
+  const other = unit('o', [group('o_g0', 2, 'round-32')]);
+  const armyList = list([leader, bodyguard, other]);
+
+  it('présente l’unité attachée comme une seule entrée du menu', () => {
+    const views = unitMenuViews(armyList, []);
+    expect(views.map((v) => v.deploymentGroup.name)).toEqual(['Unité l + Unité b', 'Unité o']);
+    expect(views[0].deploymentGroup.modelCount).toBe(6);
+  });
+
+  it('réunit les modèles de composantes différentes qui partagent un socle', () => {
+    const view = unitMenuViews(armyList, place('l', ['l_g0#0']).concat(place('b', ['b_g0#0'])))[0];
+    expect(view.groups.map((g) => [g.group.baseShapeId, g.placed, g.total])).toEqual([
+      ['round-40', 2, 5],
+      ['round-50', 0, 1],
+    ]);
+    // RG_06: deux couleurs de composante sur un même socle — pas de couleur unique.
+    expect(view.groups[0].color).toBeNull();
+    expect(view.groups[1].color).toBe('#222222');
+    expect(view.placedCount).toBe(2);
+    expect(view.status).toBe('orange');
+  });
+
+  it('n’est complète que lorsque toutes ses composantes sont posées', () => {
+    const [attached] = unitMenuViews(armyList, []).map((v) => v.deploymentGroup);
+    const bodyguardOnly = place('b', modelIdsOfUnit(bodyguard));
+    expect(isGroupDeployed(attached, bodyguardOnly)).toBe(false);
+    expect(isGroupDeployed(attached, [...bodyguardOnly, ...place('l', modelIdsOfUnit(leader))])).toBe(true);
+  });
+
+  it('est en réserve dès que l’une de ses composantes l’est', () => {
+    const [attached] = unitMenuViews(armyList, []).map((v) => v.deploymentGroup);
+    expect(isGroupDeployed(attached, [], new Set(['l']))).toBe(true);
+    expect(unitMenuViews(armyList, [], new Set(['b']))[0].reserved).toBe(true);
   });
 });

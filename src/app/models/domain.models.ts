@@ -32,6 +32,19 @@ export interface UnitModelGroup {
   customRectangleMm?: { widthMm: number; lengthMm: number };
 }
 
+/** RG_36: rôle d'un personnage attaché — meneur (*leader*) ou soutien (*support*). */
+export type AttachmentRole = 'leader' | 'support';
+
+/**
+ * RG_36/RT_45: attachement d'un personnage à l'unité qu'il escorte. Porté par
+ * le seul personnage : la composition de l'unité escortée s'en dérive, ce qui
+ * exclut deux descriptions divergentes du même lien.
+ */
+export interface UnitAttachment {
+  readonly bodyguardUnitId: string;
+  readonly role: AttachmentRole;
+}
+
 /** RG_02/RT_13: une unité de la liste importée. */
 export interface ArmyUnit {
   readonly id: string;
@@ -41,6 +54,11 @@ export interface ArmyUnit {
   readonly modelGroups: readonly UnitModelGroup[];
   /** RG_06: couleur partagée par tous les tokens de l'unité. */
   color: string;
+  /**
+   * RG_36/RT_45: unité escortée par ce personnage, et son rôle. Absent pour
+   * une unité indépendante, et sur toute liste importée avant RG_36.
+   */
+  readonly attachment?: UnitAttachment;
 }
 
 /** RG_01/RT_07: une liste d'armée importée, ancre stable des déploiements. */

@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 
 import { ArmyList, ArmyUnit, Deployment, Placement } from '../models/domain.models';
+import { remapAttachments } from '../deployment/attachments';
 import {
   LocalStoreService,
   STORE_DEPLOYMENTS,
@@ -130,7 +131,7 @@ export class LibraryService {
       // Les unités reçoivent aussi de nouveaux identifiants : les placements
       // d'un déploiement de la liste d'origine ne doivent jamais pointer sur
       // les unités de la copie.
-      units: source.units.map((unit) => this.cloneUnit(unit)),
+      units: this.cloneUnits(source.units),
       importedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       versionToken: null,
@@ -139,16 +140,22 @@ export class LibraryService {
     return this.saveList(copy);
   }
 
-  private cloneUnit(unit: ArmyUnit): ArmyUnit {
-    const unitId = newId('unit');
-    return {
-      ...unit,
-      id: unitId,
-      modelGroups: unit.modelGroups.map((group, index) => ({
-        ...group,
-        id: `${unitId}_g${index}`,
-      })),
-    };
+  private cloneUnits(units: readonly ArmyUnit[]): ArmyUnit[] {
+    const newIdOf = new Map(units.map((unit) => [unit.id, newId('unit')]));
+    const clones = units.map((unit) => {
+      const unitId = newIdOf.get(unit.id)!;
+      return {
+        ...unit,
+        id: unitId,
+        modelGroups: unit.modelGroups.map((group, index) => ({
+          ...group,
+          id: `${unitId}_g${index}`,
+        })),
+      };
+    });
+    // RG_21/RT_45: les attachements suivent les nouveaux identifiants dans la
+    // même opération — la copie ne pointe jamais sur les unités de l'original.
+    return remapAttachments(clones, newIdOf);
   }
 
   // -------------------------------------------------------------------------

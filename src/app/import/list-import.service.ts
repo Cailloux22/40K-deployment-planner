@@ -6,6 +6,7 @@ import { ReferentialService } from '../referentials/referential.service';
 import { newId } from '../data/library.service';
 import { autoUnitColor } from './unit-colors';
 import { ParsedRoster, RosterParseError, parseRosterJsonText } from './roster-json.parser';
+import { attachUnit, attachmentBlocker } from '../deployment/attachments';
 
 /**
  * RT_01 — couche de parsing des formats d'import, isolée de l'UI.
@@ -43,6 +44,11 @@ export interface ImportDraft {
   readonly forceDisposition: ForceDisposition;
   readonly units: ArmyUnit[];
   readonly sourceFileName: string;
+  /**
+   * RG_36: attachements déclarés par la source mais non repris, chacun énoncé
+   * en toutes lettres au récapitulatif, unités concernées nommées.
+   */
+  readonly attachmentIssues: readonly string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -91,9 +97,13 @@ export class ListImportService {
       );
     }
 
-    const units: ArmyUnit[] = [];
+    let units: ArmyUnit[] = [];
+    // RT_45: les `id` de sélection du roster ne sont pas conservés ; ils ne
+    // servent qu'à convertir les attachements en identifiants d'unité.
+    const unitIdBySelection = new Map<string, string>();
     for (const [index, parsedUnit] of roster.units.entries()) {
       const unitId = newId('unit');
+      if (parsedUnit.selectionId) unitIdBySelection.set(parsedUnit.selectionId, unitId);
 
       // RG_02: chaque profil de modèle est résolu séparément vers un socle —
       // une unité peut légitimement mêler plusieurs formes/tailles (RG_16).
@@ -123,12 +133,43 @@ export class ListImportService {
       });
     }
 
+    // RG_36/RT_45: chaque attachement est converti en identifiants d'unité puis
+    // soumis aux contraintes structurelles, dans l'ordre de la source. Un
+    // attachement illisible n'est pas créé ; il est signalé, et le reste de la
+    // liste est importé normalement.
+    const attachmentIssues: string[] = [];
+    const nameOfSelection = new Map(roster.units.map((u) => [u.selectionId, u.name]));
+    for (const parsed of roster.attachments) {
+      const characterName = nameOfSelection.get(parsed.characterSelectionId) ?? 'une unité';
+      const bodyguardName = nameOfSelection.get(parsed.bodyguardSelectionId);
+      const characterId = unitIdBySelection.get(parsed.characterSelectionId);
+      const bodyguardId = unitIdBySelection.get(parsed.bodyguardSelectionId);
+      const subject = `L'attachement de « ${characterName} »${bodyguardName ? ` à « ${bodyguardName} »` : ''}`;
+      if (!characterId || !bodyguardId) {
+        attachmentIssues.push(`${subject} n'a pas été repris : l'unité visée n'est pas une unité de la liste.`);
+        continue;
+      }
+      if (!parsed.role) {
+        attachmentIssues.push(
+          `${subject} n'a pas été repris : rôle « ${parsed.associationName || 'non précisé'} » inconnu.`,
+        );
+        continue;
+      }
+      const blocker = attachmentBlocker(units, characterId, bodyguardId);
+      if (blocker) {
+        attachmentIssues.push(`${subject} n'a pas été repris : ${blocker}`);
+        continue;
+      }
+      units = attachUnit(units, characterId, bodyguardId, parsed.role);
+    }
+
     return {
       formatId: format.id,
       name: roster.name,
       forceDisposition: disposition,
       units,
       sourceFileName: fileName,
+      attachmentIssues,
     };
   }
 
