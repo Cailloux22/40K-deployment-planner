@@ -40,13 +40,13 @@ Layout of the app-specific code:
 
 Architectural decisions previously marked unmade are now taken and recorded in spec.md (`RT_06`/`RT_08` storage, `RT_16` pan/zoom). Do not treat them as open.
 
-No native platforms have been added; `capacitor.config.ts` still carries the placeholder `appId`.
+The Android platform has been added (`android/`, debug APK builds); iOS has not.
 
 ## Stack
 
 - Angular 22 + Ionic Angular 9, packaged for mobile via Capacitor 8 (`@capacitor/core`, `@capacitor/app`, `@capacitor/haptics`, `@capacitor/keyboard`, `@capacitor/status-bar`).
-- Capacitor `appId` in [capacitor.config.ts](capacitor.config.ts) is still the placeholder `io.ionic.starter` — update before any real device build/release.
-- No native platforms (`ios/`, `android/`) have been added yet (`npx cap add ...` has not been run).
+- Capacitor `appId` in [capacitor.config.ts](capacitor.config.ts) is `fr.rocher.deploymentplanner` — it is baked into `android/` (package name), so changing it later means editing the Gradle/manifest files too, and it cannot change once published on the Play Store.
+- `android/` exists (`@capacitor/android`, checked in); `ios/` has not been added. Release signing (keystore, `assembleRelease`) is not set up — only debug APKs are built.
 
 ## Commands
 
@@ -60,7 +60,15 @@ ng lint
 
 To run a single test file/spec, pass it through the Angular CLI test builder, e.g. `ng test -- --project src/app/home/home.page.spec.ts` (this project uses Vitest under the hood — see Testing below — so Vitest's own filtering flags also apply once you're through the builder).
 
-Capacitor (once native platforms exist): `npx cap sync`, `npx cap open ios`, `npx cap open android`.
+Android APK (needs a JDK and the Android SDK via `ANDROID_HOME`; output at `android/app/build/outputs/apk/debug/app-debug.apk`):
+
+```bash
+ng build && npx cap sync android   # rebuild www/ and copy it into android/
+cd android && ./gradlew assembleDebug
+npx cap open android               # open in Android Studio
+```
+
+The production build enforces a per-component style budget (`anyComponentStyle` in `angular.json`, 6 kB warning / 12 kB error); `placement.page.scss` is already over the warning threshold.
 
 Referential regeneration — run offline, never at app runtime (`EX_05`); both require network access to their source and fail explicitly rather than emitting a partial referential:
 
