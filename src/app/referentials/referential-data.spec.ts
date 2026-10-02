@@ -213,6 +213,16 @@ describe('RT_12 — référentiel des plateaux', () => {
     }
   });
 
+  it('donne pour chaque variante l\'URL gdmissions.app appelée en ligne (RT_12)', () => {
+    for (const board of referential.boards) {
+      for (const variant of referential.variants) {
+        expect(board.remoteAssets[variant]).toBe(
+          `https://gdmissions.app/assets/11th/layouts/${variant}/${board.sourceFileName}`,
+        );
+      }
+    }
+  });
+
   it('mesure une zone de jeu au rapport 44"x60" dans chaque asset (RT_05)', () => {
     expect(referential.boardInches).toEqual({ width: 44, height: 60 });
     for (const board of referential.boards) {

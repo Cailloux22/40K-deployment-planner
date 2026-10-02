@@ -28,7 +28,7 @@ The client application is implemented against [specification/spec.md](specificat
 Layout of the app-specific code:
 
 - `src/app/models/` — domain, referential and sync types.
-- `src/app/referentials/` — access to the three embedded referentials + the `RG_02` name/base matching.
+- `src/app/referentials/` — access to the embedded referentials, the `RG_02` name/base matching, and `board-image.service.ts` (`RT_12`/`RT_27`/`RG_23`: which board image to display — network, cache or bundled).
 - `src/app/data/` — IndexedDB store (`RT_08`) and the library of lists/deployments (`RT_06`).
 - `src/app/import/` — `RT_01` format layer, `RT_13` roster JSON parser, `RG_06` colours.
 - `src/app/deployment/` — pure status/grouping logic (`RT_11`, `RT_18`), token geometry (`RT_05`, `RT_19`), shared plane geometry and the ruler measure (`geometry.ts`, `RG_33`/`RT_42`), unit coherency (`RG_26`/`RT_36`), multi-token selection (`RG_30`/`RG_31`/`RT_40`, `selection.ts`), the compact cluster for a grouped drop from the band (`RG_32`/`RT_41`, `cluster.ts`), attached units and the deployment groups the placement rules operate on (`RG_36`/`RG_37`/`RT_45`/`RT_46`, `attachments.ts` — a leader/support and its bodyguard form one group; placements still carry the component's `idUnite`) and the zone visible from a model (`RG_27`/`RG_28`/`RT_38`).
@@ -110,6 +110,8 @@ Global styles in [src/global.scss](src/global.scss), Ionic theme variables/token
 ### Offline + sync
 
 Offline-first is implemented: everything except importing a new list (`RG_13`, a deliberate restriction) works without network. Records live in IndexedDB (`src/app/data/local-store.service.ts`), light config (session, sync token) behind `getConfig`/`setConfig` in the same service — that pair is the single substitution point for `@capacitor/preferences` on native. Referentials are read as asset files, not copied into the database, so an errata update can replace them without a code release.
+
+Board images are the exception (`RT_12`/`RT_27`/`RG_23`): when online, `BoardImageService` fetches each image directly from its gdmissions.app URL (`remoteAssets` in `boards.json`, CORS is `*`), accepts it only if it is a PNG with the referential's exact dimensions (placements, `playArea` and terrain are in that pixel space), and stores it as a blob in the IndexedDB store `boardImages`. Offline or on failure it serves that cached copy, then the bundled `assets` image. One network call per image per app session. Templates use `board | boardImage: variant | async` (pipe in `SharedModule`), never `board.assets[...]` directly. Only images refresh: `playArea`, terrain and the list of boards still come from the offline ingestion, so a board newly published upstream needs `ingest-boards.mjs` (+ `ingest-terrain.mjs`) to be re-run.
 
 The sync client (`src/app/net/sync.service.ts`) pulls then pushes a delta, never overwrites a locally-modified record, and queues genuine conflicts for the player to arbitrate (`RG_11`) instead of resolving them. All failures are swallowed into a visible-but-non-blocking state (`RG_09`). No server implements the contract yet — see "Current state".
 

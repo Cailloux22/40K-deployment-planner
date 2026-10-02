@@ -19,9 +19,11 @@ export const STORE_LISTS = 'lists';
 export const STORE_DEPLOYMENTS = 'deployments';
 /** RT_15: identifiants supprimés localement, à pousser au prochain sync. */
 export const STORE_TOMBSTONES = 'tombstones';
+/** RT_27: cache des images de plateau obtenues par le réseau (RT_12). */
+export const STORE_BOARD_IMAGES = 'boardImages';
 
 const DB_NAME = '40k-deployment-planner';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const CONFIG_PREFIX = '40kdp.';
 
 export interface Tombstone {
@@ -51,6 +53,11 @@ export class LocalStoreService {
         }
         if (!db.objectStoreNames.contains(STORE_TOMBSTONES)) {
           db.createObjectStore(STORE_TOMBSTONES, { keyPath: 'id' });
+        }
+        // RT_27: store dédié aux blobs d'images, distinct des enregistrements
+        // métier synchronisés.
+        if (!db.objectStoreNames.contains(STORE_BOARD_IMAGES)) {
+          db.createObjectStore(STORE_BOARD_IMAGES, { keyPath: 'id' });
         }
       };
       request.onsuccess = () => resolve(request.result);

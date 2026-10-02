@@ -93,7 +93,7 @@
             (click)="openBoardOnly(slide)"
           >
             <img
-              [src]="slide.board.assets['no-measurements']"
+              [src]="slide.board | boardImage: 'no-measurements' | async"
               [style]="previewImage(slide.board)"
               [alt]="boardLabel(slide.board)"
             />

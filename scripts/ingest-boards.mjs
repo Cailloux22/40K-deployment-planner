@@ -3,9 +3,11 @@
 //
 // Génère `src/assets/referentials/boards.json` + les images de plateaux dans
 // `src/assets/referentials/boards/`, à partir des images statiques publiées
-// sur gdmissions.app. Exécuté HORS-LIGNE (build / mise à jour du référentiel),
-// jamais à l'exécution de l'application (EX_05) : le résultat est versionné
-// avec l'application pour que la planification reste utilisable sans réseau.
+// sur gdmissions.app. Exécuté HORS-LIGNE (build / mise à jour du référentiel).
+// RT_12: à l'exécution, l'application appelle directement les URLs distantes
+// enregistrées ici (`remoteAssets`) pour afficher la version la plus à jour ;
+// les images écrites par ce script servent de version embarquée de dernier
+// recours (RG_23) et de matière à l'extraction du terrain (RT_37).
 //
 // RT_12: gdmissions.app n'expose pas d'API stable -> ce script échoue
 // explicitement (exit != 0) plutôt que de produire un référentiel partiel dès
@@ -178,6 +180,7 @@ async function main() {
     for (const index of LAYOUT_INDEXES) {
       const { fileName, asset } = await resolveFileName(a, b, index);
       const variantFiles = {};
+      const remoteFiles = {};
       let playArea = null;
 
       for (const variant of VARIANTS) {
@@ -205,6 +208,7 @@ async function main() {
 
         const localName = `${variant}/${fileName}`;
         variantFiles[variant] = `assets/referentials/boards/${localName}`;
+        remoteFiles[variant] = fetched.url;
 
         if (!args.metadataOnly) {
           mkdirSync(join(assetDir, variant), { recursive: true });
@@ -228,6 +232,9 @@ async function main() {
         // RT_16: variante `with-measurements` pour la consultation du plateau
         // seul, `no-measurements` pour la consultation d'un déploiement.
         assets: variantFiles,
+        // RT_12: URLs appelées directement par le client quand il est en
+        // ligne ; `assets` reste la version embarquée de dernier recours.
+        remoteAssets: remoteFiles,
       });
     }
   }

@@ -45,7 +45,7 @@
         >
           <img
             class="board-image"
-            [src]="current.assets['no-measurements']"
+            [src]="current | boardImage: 'no-measurements' | async"
             alt="Plateau de déploiement"
             draggable="false"
             [style.width.px]="current.width * scale()"

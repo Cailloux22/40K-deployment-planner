@@ -23,6 +23,10 @@ const board: Board = {
     'no-measurements': 'assets/referentials/boards/no-measurements/take-and-hold-mirror-1.png',
     'with-measurements': 'assets/referentials/boards/with-measurements/take-and-hold-mirror-1.png',
   },
+  remoteAssets: {
+    'no-measurements': 'https://gdmissions.app/assets/11th/layouts/no-measurements/take-and-hold-mirror-1.png',
+    'with-measurements': 'https://gdmissions.app/assets/11th/layouts/with-measurements/take-and-hold-mirror-1.png',
+  },
 };
 
 const referential = {

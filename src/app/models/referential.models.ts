@@ -190,7 +190,10 @@ export interface Board {
   readonly width: number;
   readonly height: number;
   readonly playArea: BoardPlayArea;
+  /** RG_23: version embarquée, dernier recours hors-ligne. */
   readonly assets: Readonly<Record<BoardVariant, string>>;
+  /** RT_12: URLs gdmissions.app appelées directement quand l'appareil est en ligne. */
+  readonly remoteAssets: Readonly<Record<BoardVariant, string>>;
 }
 
 export interface BoardReferential {

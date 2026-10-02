@@ -8,7 +8,6 @@ import {
   Board,
   BoardReferential,
   BoardTerrain,
-  BoardVariant,
   DispositionReferential,
   ForceDisposition,
   ReferentialSource,
@@ -216,11 +215,6 @@ export class ReferentialService {
 
   async board(boardId: string): Promise<Board | undefined> {
     return (await this.boardReferential()).boards.find((b) => b.id === boardId);
-  }
-
-  /** RT_16: chemin de l'asset selon la variante attendue par la vue. */
-  boardAsset(board: Board, variant: BoardVariant): string {
-    return board.assets[variant];
   }
 
   /** RT_19: dimensions communes à tous les plateaux du référentiel. */

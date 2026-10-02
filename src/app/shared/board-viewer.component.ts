@@ -75,7 +75,7 @@ interface PlacementView {
           @if (board) {
             <img
               class="board"
-              [src]="assetSrc()"
+              [src]="board | boardImage: variant | async"
               [alt]="title || 'Plateau'"
               draggable="false"
               (load)="onImageLoad()"
@@ -248,10 +248,6 @@ export class BoardViewerComponent {
     const { x, y } = this.offset();
     return `translate(${x}px, ${y}px) scale(${this.scale()})`;
   });
-
-  assetSrc(): string {
-    return this.board ? this.board.assets[this.variant] : '';
-  }
 
   /**
    * Placements rendus en lecture seule. Les coordonnées sont celles du repère
