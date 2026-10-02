@@ -32,13 +32,52 @@
 }
 
 /**
- * RG_03: rappel de la disposition du joueur, PAS un contrôle.
- *
- * Il portait auparavant la même forme, la même taille et la même bordure
- * qu'une option, et se lisait donc comme un 6e choix déjà sélectionné. Le
- * carré arrondi rompt la similitude de gabarit, et l'absence de bordure le
- * retire de la famille visuelle des boutons.
+ * L'anneau et ses secteurs : chaque secteur est le bouton d'une disposition
+ * adverse. Les traits de séparation sont la bordure de chaque secteur.
  */
+.ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.sector {
+  fill: var(--dispo-bg);
+  stroke: var(--app-border-interactive);
+  stroke-width: 0.5;
+  stroke-linejoin: round;
+  cursor: pointer;
+  outline: none;
+  transition: filter 0.15s ease;
+
+  &:hover {
+    filter: brightness(0.94);
+  }
+
+  &:active {
+    filter: brightness(0.88);
+  }
+
+  // Focus clavier : contour épais, dans la couleur de texte du secteur.
+  &:focus-visible {
+    stroke: var(--app-text);
+    stroke-width: 1.4;
+  }
+}
+
+/**
+ * RG_03: rappel de la disposition du joueur, PAS un contrôle — disque plein
+ * sans code couleur, au centre de l'anneau.
+ */
+.hub {
+  fill: var(--app-surface-raised);
+  stroke: var(--app-border-interactive);
+  stroke-width: 0.5;
+  pointer-events: none;
+}
+
 .center {
   position: absolute;
   left: 50%;
@@ -49,13 +88,12 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  width: 30%;
+  width: 34%;
   aspect-ratio: 1;
-  border-radius: var(--app-radius-lg);
-  background: var(--app-surface-raised);
   color: var(--app-text);
   text-align: center;
   padding: 6px;
+  pointer-events: none;
 
   // « Vous » se lit avant le nom de la disposition : c'est ce qui qualifie le
   // bloc. L'ordre inverse faisait lire le nom d'abord, comme une option.
@@ -75,8 +113,12 @@
 }
 
 /**
- * RT_31: 44 px minimum. À 460 px de cadran, 30 % vaut 138 px — largement
- * au-dessus, la contrainte vient ici de la lisibilité du libellé.
+ * Contenu d'un secteur, centré au milieu de l'anneau. Il laisse passer les
+ * clics : c'est le secteur, bien plus grand, qui est la cible tactile.
+ *
+ * RT_31: 44 px minimum. L'anneau a une épaisseur de 28 % du cadran (≈ 100 px
+ * sur un écran de 360 px) et un secteur de 72° est plus large encore — la
+ * contrainte vient ici de la lisibilité du libellé.
  */
 .option {
   position: absolute;
@@ -86,16 +128,10 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  width: 30%;
-  aspect-ratio: 1;
-  min-width: var(--app-touch-min);
-  min-height: var(--app-touch-min);
-  padding: 4px;
-  border: 2px solid var(--app-border-interactive);
-  border-radius: 50%;
-  font: inherit;
+  width: 28%;
+  color: var(--dispo-on);
   text-align: center;
-  cursor: pointer;
+  pointer-events: none;
 
   span {
     font-size: var(--app-font-sm);
@@ -128,27 +164,27 @@
  * (1,05:1) relevés par l'audit.
  */
 .indicator-white {
-  background: var(--app-dispo-none-bg);
-  border-color: var(--app-dispo-none-border);
-  color: var(--app-dispo-none-on);
+  --dispo-bg: var(--app-dispo-none-bg);
+  --dispo-border: var(--app-dispo-none-border);
+  --dispo-on: var(--app-dispo-none-on);
 }
 
 .indicator-yellow {
-  background: var(--app-dispo-partial-bg);
-  border-color: var(--app-dispo-partial-border);
-  color: var(--app-dispo-partial-on);
+  --dispo-bg: var(--app-dispo-partial-bg);
+  --dispo-border: var(--app-dispo-partial-border);
+  --dispo-on: var(--app-dispo-partial-on);
 }
 
 .indicator-orange {
-  background: var(--app-dispo-resume-bg);
-  border-color: var(--app-dispo-resume-border);
-  color: var(--app-dispo-resume-on);
+  --dispo-bg: var(--app-dispo-resume-bg);
+  --dispo-border: var(--app-dispo-resume-border);
+  --dispo-on: var(--app-dispo-resume-on);
 }
 
 .indicator-green {
-  background: var(--app-dispo-done-bg);
-  border-color: var(--app-dispo-done-border);
-  color: var(--app-dispo-done-on);
+  --dispo-bg: var(--app-dispo-done-bg);
+  --dispo-border: var(--app-dispo-done-border);
+  --dispo-on: var(--app-dispo-done-on);
 }
 
 /**
@@ -186,7 +222,8 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    border: 1px solid var(--app-border-interactive);
+    background: var(--dispo-bg);
+    border: 1px solid var(--dispo-border);
     margin-inline-end: 12px;
   }
 }
