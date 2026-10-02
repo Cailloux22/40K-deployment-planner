@@ -61,3 +61,15 @@ export function isDoubleTap(
     Math.hypot(current.x - previous.x, current.y - previous.y) <= DOUBLE_TAP_DISTANCE_PX
   );
 }
+
+/**
+ * RG_15/RT_40: unité commune à tous les tokens sélectionnés, sur laquelle le
+ * bandeau bascule ; nulle si la sélection est vide ou mêle plusieurs unités.
+ */
+export function soleSelectedUnit(
+  placements: readonly { readonly idUnite: string; readonly idModele: string }[],
+  selection: ReadonlySet<string>,
+): string | null {
+  const unitIds = new Set(placements.filter((p) => selection.has(p.idModele)).map((p) => p.idUnite));
+  return unitIds.size === 1 ? [...unitIds][0] : null;
+}

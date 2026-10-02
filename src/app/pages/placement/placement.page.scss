@@ -125,6 +125,12 @@
     stroke-dasharray: 6 5;
   }
 
+  /* RT_41: cercle englobant de la grappe — plus discret que le cercle de
+     visée qu'il entoure. */
+  .envelope {
+    stroke-dasharray: 2 4;
+  }
+
   /* RT_34: point de contact hors du rectangle de jeu (RT_19) — relâcher ici ne
      posera rien, et cela se voit avant le relâchement. */
   &.refused {
@@ -324,6 +330,13 @@
   /* RT_34: l'élément saisi reste en place — le retirer de la rangée pendant le
      geste la rétrécirait sous le doigt (RT_33) — mais s'efface au profit du
      token provisoire qui le représente désormais sous le doigt. */
+  /* RG_32/RG_24: modèle sélectionné par double appui — un contour, pas
+     seulement une couleur, distingue la sélection. */
+  &.selected {
+    outline: 3px solid var(--app-token-selected-stroke);
+    outline-offset: -1px;
+  }
+
   &.grabbed {
     opacity: 0.25;
     cursor: grabbing;

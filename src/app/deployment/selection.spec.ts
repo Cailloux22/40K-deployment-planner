@@ -1,5 +1,5 @@
 import { BaseFootprint } from './geometry';
-import { idsTouchedByRect, isDoubleTap, rectTouchesBase } from './selection';
+import { idsTouchedByRect, isDoubleTap, rectTouchesBase, soleSelectedUnit } from './selection';
 
 const round = (x: number, y: number): BaseFootprint => ({
   x,
@@ -46,5 +46,27 @@ describe('selection (RG_30, RT_40)', () => {
     expect(isDoubleTap(first, { id: 'a', time: 1400, x: 10, y: 10 })).toBe(false);
     expect(isDoubleTap(first, { id: 'a', time: 1100, x: 40, y: 10 })).toBe(false);
     expect(isDoubleTap(null, first)).toBe(false);
+  });
+});
+
+describe('soleSelectedUnit (RG_15, RT_40)', () => {
+  const placements = [
+    { idUnite: 'a', idModele: 'a1' },
+    { idUnite: 'a', idModele: 'a2' },
+    { idUnite: 'b', idModele: 'b1' },
+  ];
+
+  it('returns the unit when every selected token belongs to it', () => {
+    expect(soleSelectedUnit(placements, new Set(['a1']))).toBe('a');
+    expect(soleSelectedUnit(placements, new Set(['a1', 'a2']))).toBe('a');
+  });
+
+  it('returns null for an empty or mixed selection', () => {
+    expect(soleSelectedUnit(placements, new Set())).toBeNull();
+    expect(soleSelectedUnit(placements, new Set(['a1', 'b1']))).toBeNull();
+  });
+
+  it('ignores identifiers with no placement', () => {
+    expect(soleSelectedUnit(placements, new Set(['b1', 'gone']))).toBe('b');
   });
 });

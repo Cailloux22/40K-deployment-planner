@@ -24,12 +24,14 @@ import {
 import {
   assetPixelsPerMm,
   clampToPlayArea,
+  MM_PER_INCH,
   containFitScale,
   resolveGroupShape,
   tokenSize,
 } from '../../deployment/token-geometry';
+import { clusterLayout } from '../../deployment/cluster';
 import { BaseFootprint } from '../../deployment/geometry';
-import { SelectionRect, idsTouchedByRect, isDoubleTap } from '../../deployment/selection';
+import { SelectionRect, idsTouchedByRect, isDoubleTap, soleSelectedUnit } from '../../deployment/selection';
 import { CoherencyBase, coherencyBase, detachedAfterRemoval, isCoherent } from '../../deployment/unit-coherency';
 import { prepareTerrain, visibilityBase, visibleZone, visibleZonePath } from '../../deployment/visibility';
 import { ArmyList, ArmyUnit, Deployment, Placement, UnitModelGroup } from '../../models/domain.models';
@@ -58,7 +60,16 @@ interface TokenView {
   readonly selected: boolean;
 }
 
-type DragKind = 'new' | 'move' | 'rotate' | 'group';
+type DragKind = 'new' | 'move' | 'rotate' | 'group' | 'cluster';
+
+/** RG_32/RT_41: un socle de la grappe, relatif à son centre, en pixels CSS. */
+interface GhostMember {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly shapeKind: BaseShapeKind;
+}
 
 /**
  * RT_34: retour visuel d'un glisser en cours — token provisoire suivant le
@@ -86,6 +97,10 @@ interface DragGhostView {
   readonly withToken: boolean;
   /** RT_34: faux dès que relâcher ici ne créerait aucun placement (RT_04). */
   readonly droppable: boolean;
+  /** RG_32/RT_41: socles de la grappe, au lieu du token seul. */
+  readonly members?: readonly GhostMember[];
+  /** RT_41: rayon du cercle englobant la grappe, en pixels CSS. */
+  readonly envelope?: number;
 }
 
 /** Ce qui, du retour visuel, est figé à la saisie et ne suit pas le doigt. */
@@ -146,6 +161,11 @@ interface DragState {
     readonly ids: ReadonlySet<string>;
     readonly coherentUnits: ReadonlySet<string>;
   };
+  /**
+   * RG_32/RT_41: modèles du bandeau posés ensemble, avec leur décalage au
+   * centre de la grappe en pixels d'asset — figé à la saisie.
+   */
+  readonly cluster?: readonly { readonly idModele: string; readonly dx: number; readonly dy: number }[];
 }
 
 /** RG_30/RT_40: tracé en cours du rectangle de sélection. */
@@ -207,6 +227,8 @@ export class PlacementPage implements OnInit {
   private marqueeState: MarqueeState | null = null;
   /** RT_40: dernier appui sur un token, pour reconnaître un double clic (RG_31). */
   private lastTap: { id: string; time: number; x: number; y: number } | null = null;
+  /** RT_41: dernier appui dans le bandeau, pour reconnaître un double appui (RG_32). */
+  private lastBandTap: { id: string; time: number; x: number; y: number } | null = null;
 
   readonly board = signal<Board | undefined>(undefined);
   readonly deployment = signal<Deployment | undefined>(undefined);
@@ -221,6 +243,13 @@ export class PlacementPage implements OnInit {
     const ids = this.selection();
     return ids.size === 1 ? [...ids][0] : null;
   });
+  /**
+   * RG_32/RT_41: modèles du bandeau sélectionnés par double appui, distincts
+   * des tokens posés de `selection`. Purement local à l'écran.
+   */
+  readonly bandSelection = signal<ReadonlySet<string>>(new Set());
+  /** RT_41: la grappe de la sélection du bandeau est en cours de glisser. */
+  readonly clusterGrabbed = signal(false);
   /** RG_30/RT_40: tracé du rectangle de sélection, en coordonnées d'asset. */
   readonly marquee = signal<SelectionRect | null>(null);
   /** RG_30/RT_40: déplacement provisoire du groupe, rendu seul jusqu'au relâchement. */
@@ -325,6 +354,15 @@ export class PlacementPage implements OnInit {
     // `app-base-token` rend un carré de `plus grande dimension × échelle + 4`
     // pixels — les 4 px laissent la rotation (RG_20) ne jamais rogner.
     return Math.min(BAND_PIXELS_PER_MM, (BAND_TOKEN_BOX_PX - 4) / largestMm);
+  });
+
+  /**
+   * RG_32/RG_24: nombre de modèles sélectionnés dans le bandeau — seuls ceux
+   * qui y figurent encore comptent, un modèle posé en étant sorti (RT_41).
+   */
+  readonly bandSelectedCount = computed(() => {
+    const selected = this.bandSelection();
+    return this.bandModels().filter((model) => selected.has(model.idModele)).length;
   });
 
   readonly remainingInUnit = computed(() => {
@@ -560,7 +598,7 @@ export class PlacementPage implements OnInit {
     for (let offset = 1; offset <= count; offset += 1) {
       const candidate = (((current + direction * offset) % count) + count) % count;
       if (pending.includes(candidate)) {
-        this.selectedUnitIndex.set(candidate);
+        this.selectUnitIndex(candidate);
         return;
       }
     }
@@ -572,8 +610,33 @@ export class PlacementPage implements OnInit {
    */
   selectUnitFromMenu(view: UnitMenuView): void {
     const index = this.list()?.units.findIndex((unit) => unit.id === view.unit.id) ?? -1;
-    if (index >= 0) this.selectedUnitIndex.set(index);
+    if (index >= 0) this.selectUnitIndex(index);
     this.menuOpen.set(false);
+  }
+
+  /**
+   * RG_15: bascule le bandeau sur une unité. RG_32/RT_41: la sélection du
+   * bandeau ne survit pas au changement d'unité.
+   */
+  private selectUnitIndex(index: number): void {
+    if (index !== this.selectedUnitIndex()) this.bandSelection.set(new Set());
+    this.selectedUnitIndex.set(index);
+  }
+
+  /**
+   * RG_30/RT_40: fixe la sélection depuis un geste sur le plateau.
+   * RG_15/RT_40: si tous les tokens sélectionnés sont d'une même unité, le
+   * bandeau bascule sur elle. Appelé aux seuls gestes du plateau, jamais par
+   * un effet : un dépôt depuis le bandeau ne doit pas défaire l'avance
+   * automatique vers l'unité suivante.
+   */
+  private selectOnBoard(ids: Iterable<string>): void {
+    const selection = new Set(ids);
+    this.selection.set(selection);
+    const unitId = soleSelectedUnit(this.placements(), selection);
+    if (unitId === null) return;
+    const index = this.list()?.units.findIndex((unit) => unit.id === unitId) ?? -1;
+    if (index >= 0) this.selectUnitIndex(index);
   }
 
   // -------------------------------------------------------------------------
@@ -637,6 +700,8 @@ export class PlacementPage implements OnInit {
     const ids = new Set(deployment.reservedUnitIds ?? []);
     if (reserved) ids.add(unit.id);
     else ids.delete(unit.id);
+    // RG_32: la mise en réserve vide le bandeau, et sa sélection avec lui.
+    this.bandSelection.set(new Set());
 
     const placements = reserved
       ? deployment.placements.filter((placement) => placement.idUnite !== unit.id)
@@ -800,6 +865,7 @@ export class PlacementPage implements OnInit {
       return this.keepsCoherency(drag, { idUnite: drag.idUnite, idModele: drag.idModele, x, y, rotation: 0 });
     }
     if (drag.kind === 'group') return this.groupMoveAllowed(drag, point, board);
+    if (drag.kind === 'cluster') return this.clusterAllowed(drag, point, board);
     const placement = this.placements().find((p) => p.idModele === drag.idModele);
     if (!placement) return true;
     const moved = this.clamp(point.x + drag.grabOffset.x, point.y + drag.grabOffset.y);
@@ -873,6 +939,8 @@ export class PlacementPage implements OnInit {
     if (!point) return;
     event.preventDefault();
     this.capturePointer(event);
+    // RG_32: un appui sur le plateau annule la sélection du bandeau.
+    this.bandSelection.set(new Set());
     const additive = event.shiftKey || event.ctrlKey || event.metaKey;
     this.marqueeState = { pointerId: event.pointerId, start: point, additive, previous: this.selection() };
     if (!additive) this.selection.set(new Set());
@@ -895,7 +963,7 @@ export class PlacementPage implements OnInit {
       return shape ? [{ id: placement.idModele, base: visibilityBase(placement, shape, perMm) }] : [];
     });
     const touched = idsTouchedByRect(items, rect);
-    this.selection.set(new Set(state.additive ? [...state.previous, ...touched] : touched));
+    this.selectOnBoard(state.additive ? [...state.previous, ...touched] : touched);
   }
 
   /**
@@ -906,7 +974,17 @@ export class PlacementPage implements OnInit {
     const unit = this.selectedUnit();
     if (!model.shape || !unit) return;
     event.preventDefault();
+    // RT_41: l'appui est compté ici, pas une seconde fois par le corps du bandeau.
+    event.stopPropagation();
     this.capturePointer(event);
+    // RG_32/RT_41: le second appui d'un double appui sélectionne tout le
+    // bandeau ; saisir un modèle de cette sélection emporte la grappe.
+    if (this.registerBandTap(event)) this.selectWholeBand();
+    if (this.bandSelection().has(model.idModele) && this.bandSelectedCount() > 1) {
+      this.startClusterDrag(event, unit);
+      return;
+    }
+    this.bandSelection.set(new Set());
     const size = tokenSize(model.shape, this.pixelsPerMm());
     this.drag = {
       kind: 'new',
@@ -937,11 +1015,138 @@ export class PlacementPage implements OnInit {
     this.trackGhost(this.drag, event);
   }
 
+  /**
+   * RG_32/RT_41: appui sur le bandeau hors de sa rangée de modèles. Un double
+   * appui sélectionne tous les modèles restant à poser ; un appui simple
+   * annule cette sélection. La case « en réserve » n'y participe pas.
+   */
+  onBandBodyPointerDown(event: PointerEvent): void {
+    if ((event.target as Element | null)?.closest?.('ion-checkbox')) return;
+    if (this.registerBandTap(event)) this.selectWholeBand();
+    else this.bandSelection.set(new Set());
+  }
+
+  /** RT_41: même critère de double appui que RT_40, sur toute la zone du bandeau. */
+  private registerBandTap(event: PointerEvent): boolean {
+    const tap = { id: 'band', time: event.timeStamp, x: event.clientX, y: event.clientY };
+    const double = isDoubleTap(this.lastBandTap, tap);
+    this.lastBandTap = double ? null : tap;
+    return double;
+  }
+
+  /** RG_32: tous les modèles restant à poser de l'unité courante. */
+  private selectWholeBand(): void {
+    this.bandSelection.set(new Set(this.bandModels().filter((model) => model.shape).map((model) => model.idModele)));
+  }
+
+  /**
+   * RG_32/RT_41: saisie de la grappe. La formation est calculée une fois, en
+   * pouces réels, puis figée en décalages d'asset : le geste ne fait que la
+   * translater sous le point de contact.
+   */
+  private startClusterDrag(event: PointerEvent, unit: ArmyUnit): void {
+    const selected = this.bandSelection();
+    const models = this.bandModels().filter(
+      (model): model is BandModel & { shape: BaseShape } => !!model.shape && selected.has(model.idModele),
+    );
+    const layout = clusterLayout(
+      models.map((model) => ({
+        id: model.idModele,
+        shape: model.shape.shape,
+        width: model.shape.widthMm / MM_PER_INCH,
+        length: model.shape.lengthMm / MM_PER_INCH,
+      })),
+    );
+    const perMm = this.pixelsPerMm();
+    const cluster = models.map((model) => {
+      const offset = layout.get(model.idModele)!;
+      return { idModele: model.idModele, dx: offset.x * MM_PER_INCH * perMm, dy: offset.y * MM_PER_INCH * perMm };
+    });
+
+    // RT_41: chaque socle provisoire à sa taille exacte (RT_05), et un cercle
+    // englobant qui matérialise l'emprise de la grappe.
+    const scale = this.scale();
+    const members: GhostMember[] = models.map((model, index) => {
+      const size = tokenSize(model.shape, perMm);
+      return {
+        x: cluster[index].dx * scale,
+        y: cluster[index].dy * scale,
+        width: size.width * scale,
+        height: size.height * scale,
+        shapeKind: model.shape.shape,
+      };
+    });
+    const envelope =
+      Math.max(
+        ...members.map(
+          (member) =>
+            Math.hypot(member.x, member.y) +
+            (member.shapeKind === 'rectangle'
+              ? Math.hypot(member.width, member.height) / 2
+              : Math.max(member.width, member.height) / 2),
+        ),
+      ) + 4;
+
+    this.drag = {
+      kind: 'cluster',
+      idModele: models[0].idModele,
+      pointerId: event.pointerId,
+      grabOffset: { x: 0, y: 0 },
+      startRotation: 0,
+      startAngle: 0,
+      idUnite: unit.id,
+      startPosition: { x: 0, y: 0 },
+      // RG_26: une unité déjà hors cohésion n'est pas contrôlée.
+      wasCoherent: this.unitCoherent(unit.id, this.placements()),
+      ghost: {
+        box: Math.max(DRAG_AIM_RADIUS_PX, envelope) * 2 + 8,
+        width: 0,
+        height: 0,
+        rotation: 0,
+        shapeKind: 'round',
+        color: unit.color ?? UNIT_COLOR_FALLBACK,
+        withToken: false,
+        members,
+        envelope,
+      },
+      cluster,
+    };
+    this.selection.set(new Set());
+    this.gestureActive.set(true);
+    this.clusterGrabbed.set(true);
+    this.trackGhost(this.drag, event);
+  }
+
+  /** RG_32/RT_41: placements candidats de la grappe centrée sur ce point. */
+  private clusterPlacements(drag: DragState, point: { x: number; y: number }): Placement[] {
+    // RG_32: rotation par défaut pour tous les modèles de la grappe.
+    return (drag.cluster ?? []).map((member) => ({
+      idUnite: drag.idUnite,
+      idModele: member.idModele,
+      x: point.x + member.dx,
+      y: point.y + member.dy,
+      rotation: 0,
+    }));
+  }
+
+  /**
+   * RG_32/RT_41: tout ou rien — chaque centre dans le rectangle de jeu, et
+   * l'unité, modèles déjà posés compris, en cohésion (RG_26) si elle l'était.
+   */
+  private clusterAllowed(drag: DragState, point: { x: number; y: number }, board: Board): boolean {
+    const candidates = this.clusterPlacements(drag, point);
+    if (candidates.some((placement) => !this.isInsideBoard(placement, board))) return false;
+    if (!drag.wasCoherent) return true;
+    return this.unitCoherent(drag.idUnite, [...this.placements(), ...candidates]);
+  }
+
   /** Déplacement d'un token déjà posé (RG_04 : « déplacer rapidement »). */
   onTokenPointerDown(event: PointerEvent, token: TokenView): void {
     event.preventDefault();
     event.stopPropagation();
     this.capturePointer(event);
+    // RG_32: un appui sur le plateau annule la sélection du bandeau.
+    this.bandSelection.set(new Set());
     const point = this.toAssetCoords(event);
 
     // RG_31/RT_40: le second appui d'un double clic étend la sélection à tous
@@ -952,13 +1157,13 @@ export class PlacementPage implements OnInit {
       const unitIds = this.placements()
         .filter((p) => p.idUnite === token.placement.idUnite)
         .map((p) => p.idModele);
-      this.selection.set(new Set(unitIds));
+      this.selectOnBoard(unitIds);
     } else {
       this.lastTap = tap;
       // RG_30: saisir un token de la sélection la déplace en bloc ; saisir un
       // autre token la remplace par lui seul (RG_04).
       if (!this.selection().has(token.placement.idModele)) {
-        this.selection.set(new Set([token.placement.idModele]));
+        this.selectOnBoard([token.placement.idModele]);
       }
     }
     if (this.selectedCount() > 1) {
@@ -1036,6 +1241,11 @@ export class PlacementPage implements OnInit {
       if (point) this.marquee.set({ x1: marquee.start.x, y1: marquee.start.y, x2: point.x, y2: point.y });
       return;
     }
+    // RT_41: un glissé de plus de 10 px — défilement de la rangée compris —
+    // n'est plus l'un des deux appuis d'un double appui sur le bandeau.
+    if (this.lastBandTap && Math.hypot(event.clientX - this.lastBandTap.x, event.clientY - this.lastBandTap.y) > 10) {
+      this.lastBandTap = null;
+    }
     const drag = this.drag;
     if (!drag || drag.pointerId !== event.pointerId) return;
     const point = this.toAssetCoords(event);
@@ -1089,6 +1299,7 @@ export class PlacementPage implements OnInit {
     // qu'ait été son issue (placement créé, déplacement, dépôt refusé).
     this.dragGhost.set(null);
     this.grabbedModelId.set(null);
+    this.clusterGrabbed.set(false);
     this.refusedModelId.set(null);
     // RG_29: la zone visible sera recalculée sur la position finale — celle
     // d'avant le geste si la cohésion l'a fait refuser (RT_36), ce qui se
@@ -1105,13 +1316,18 @@ export class PlacementPage implements OnInit {
       if (Math.hypot(dx, dy) * this.scale() < 3) {
         // Simple appui sur un token de la sélection : elle se réduit à lui,
         // sauf s'il s'agit du second appui d'un double clic (RG_31).
-        if (this.lastTap?.id === drag.idModele) this.selection.set(new Set([drag.idModele]));
+        if (this.lastTap?.id === drag.idModele) this.selectOnBoard([drag.idModele]);
         return;
       }
       const ids = drag.group.ids;
       this.mutatePlacements((placements) =>
         placements.map((p) => (ids.has(p.idModele) ? { ...p, x: p.x + dx, y: p.y + dy } : p)),
       );
+      return;
+    }
+
+    if (drag.kind === 'cluster') {
+      this.dropCluster(drag, event);
       return;
     }
 
@@ -1155,6 +1371,30 @@ export class PlacementPage implements OnInit {
     // RG_15: l'unité qui vient d'être complétée n'est plus proposée par le
     // bandeau — on enchaîne sur la suivante encore en attente plutôt que
     // d'afficher une liste vide. S'il n'en reste aucune, stepUnit ne bouge pas.
+    if (isUnitDeployed(unit, this.placements(), this.reservedUnits())) this.stepUnit(1);
+  }
+
+  /**
+   * RG_32/RT_41: dépôt de la grappe — tous les placements en une seule
+   * écriture (RG_07), ou aucun. Un refus conserve la sélection du bandeau.
+   */
+  private dropCluster(drag: DragState, event: PointerEvent): void {
+    const point = this.toAssetCoords(event);
+    const board = this.board();
+    const unit = this.selectedUnit();
+    if (!point || !board || !unit || !this.clusterAllowed(drag, point, board)) return;
+
+    // RT_04: un enregistrement par modèle, jamais dupliqué (voir le dépôt simple).
+    const placed = new Set(this.placements().map((p) => p.idModele));
+    const created = this.clusterPlacements(drag, point).filter((p) => !placed.has(p.idModele));
+    if (created.length === 0) return;
+    this.mutatePlacements((placements) => [...placements, ...created]);
+
+    // RG_32/RT_41: les tokens créés deviennent la sélection du plateau (RG_30).
+    this.bandSelection.set(new Set());
+    this.selection.set(new Set(created.map((p) => p.idModele)));
+
+    // RG_15: avance automatique, comme après la pose du dernier modèle.
     if (isUnitDeployed(unit, this.placements(), this.reservedUnits())) this.stepUnit(1);
   }
 

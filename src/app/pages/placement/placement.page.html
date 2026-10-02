@@ -194,7 +194,9 @@
         <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
       </ion-button>
 
-      <div class="band-body">
+      <!-- RG_32/RT_41: un double appui sur le bandeau (en-tête ou rangée)
+           sélectionne tous les modèles restant à poser. -->
+      <div class="band-body" (pointerdown)="onBandBodyPointerDown($event)">
         <div class="band-header">
           <!-- RT_30/RT_33: nom et état empilés plutôt que côte à côte — sur la
                largeur restante d'un écran de 375 px, la case de RG_25 et le
@@ -208,6 +210,9 @@
             <small>
               @if (selectedUnitReserved()) {
                 en réserve
+              } @else if (bandSelectedCount() > 1) {
+                <!-- RG_32/RG_24: la sélection du bandeau est énoncée en toutes lettres. -->
+                {{ bandSelectedCount() }} modèles sélectionnés
               } @else if (remainingInUnit() > 0) {
                 {{ remainingInUnit() }} modèle{{ remainingInUnit() > 1 ? 's' : '' }} à placer
               } @else {
@@ -240,7 +245,11 @@
             <button
               type="button"
               class="model"
-              [class.grabbed]="model.idModele === grabbedModelId()"
+              [class.grabbed]="
+                model.idModele === grabbedModelId() || (clusterGrabbed() && bandSelection().has(model.idModele))
+              "
+              [class.selected]="bandSelection().has(model.idModele)"
+              [attr.aria-pressed]="bandSelection().has(model.idModele)"
               [disabled]="!model.shape"
               [attr.aria-label]="model.group.name + ' — glisser sur le plateau'"
               (pointerdown)="onBandPointerDown($event, model)"
@@ -313,6 +322,35 @@
                 />
               }
             </g>
+          }
+
+          <!-- RG_32/RT_41: grappe des modèles sélectionnés dans le bandeau, chaque
+               socle à sa taille exacte, rotation par défaut, et cercle
+               englobant qui matérialise l'emprise du groupe. -->
+          @if (ghost.members; as members) {
+            @for (member of members; track $index) {
+              @if (member.shapeKind === 'rectangle') {
+                <rect
+                  class="ghost-token"
+                  [attr.x]="member.x - member.width / 2"
+                  [attr.y]="member.y - member.height / 2"
+                  [attr.width]="member.width"
+                  [attr.height]="member.height"
+                  [attr.fill]="ghost.color"
+                />
+              } @else {
+                <ellipse
+                  class="ghost-token"
+                  [attr.cx]="member.x"
+                  [attr.cy]="member.y"
+                  [attr.rx]="member.width / 2"
+                  [attr.ry]="member.height / 2"
+                  [attr.fill]="ghost.color"
+                />
+              }
+            }
+            <circle class="aim-halo" [attr.r]="ghost.envelope" />
+            <circle class="aim envelope" [attr.r]="ghost.envelope" />
           }
 
           <!-- RT_34: cercle de visée, centré sur le point exact où le centre du
