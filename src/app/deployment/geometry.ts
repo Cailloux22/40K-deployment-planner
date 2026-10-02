@@ -137,3 +137,24 @@ export function offsetPolygon(points: readonly Point[], distance: number): Point
     return [point[0] + mx * length, point[1] + my * length] as Point;
   });
 }
+
+/** Nombre de millimètres dans un pouce (RT_05). */
+const MILLIMETRES_PER_INCH = 25.4;
+
+/**
+ * RG_33/RT_42: longueur en pouces du segment de la règle. Les deux points sont
+ * en pixels d'asset (RT_04) ; l'échelle de RT_05 les convertit en millimètres
+ * réels. Vue de dessus, sans relief (comme RG_26) : distance en ligne droite.
+ */
+export function measureInches(
+  from: { readonly x: number; readonly y: number },
+  to: { readonly x: number; readonly y: number },
+  pixelsPerMm: number,
+): number {
+  return Math.hypot(to.x - from.x, to.y - from.y) / pixelsPerMm / MILLIMETRES_PER_INCH;
+}
+
+/** RG_33: mesure énoncée au dixième de pouce, virgule décimale (« 6,3" »). */
+export function formatInches(inches: number): string {
+  return `${(Math.round(inches * 10) / 10).toFixed(1).replace('.', ',')}"`;
+}

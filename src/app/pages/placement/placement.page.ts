@@ -30,7 +30,7 @@ import {
   tokenSize,
 } from '../../deployment/token-geometry';
 import { clusterLayout } from '../../deployment/cluster';
-import { BaseFootprint } from '../../deployment/geometry';
+import { BaseFootprint, formatInches, measureInches } from '../../deployment/geometry';
 import { SelectionRect, idsTouchedByRect, isDoubleTap, soleSelectedUnit } from '../../deployment/selection';
 import { CoherencyBase, coherencyBase, detachedAfterRemoval, isCoherent } from '../../deployment/unit-coherency';
 import { prepareTerrain, visibilityBase, visibleZone, visibleZonePath } from '../../deployment/visibility';
@@ -166,7 +166,38 @@ interface DragState {
    * centre de la grappe en pixels d'asset — figé à la saisie.
    */
   readonly cluster?: readonly { readonly idModele: string; readonly dx: number; readonly dy: number }[];
+  /**
+   * RG_34/RG_35: déplacement saisi en mode « Règle » — tracé de la mesure, et
+   * contrôle de cohésion suspendu. Relevé à la saisie : il vaut pour tout le geste.
+   */
+  readonly ruler?: boolean;
 }
+
+/** RG_33/RT_42: tracé de la règle, en coordonnées d'asset (RT_04). */
+interface RulerMeasure {
+  readonly from: { readonly x: number; readonly y: number };
+  readonly to: { readonly x: number; readonly y: number };
+  /** RG_34: déplacement refusé — le segment garde la distance tentée. */
+  readonly refused: boolean;
+}
+
+/** RG_33/RT_43: mesure prête à être rendue, étiquette en pixels CSS du plateau. */
+interface RulerView extends RulerMeasure {
+  readonly label: string;
+  readonly labelLeft: number;
+  readonly labelTop: number;
+  /** RT_43: rayon des extrémités, en unités du viewBox (pixels d'asset). */
+  readonly endRadius: number;
+}
+
+/**
+ * RT_43: écart, en pixels CSS, entre le second point du segment et le centre
+ * de l'étiquette — au-delà du cercle de visée (RT_34), donc hors du doigt.
+ */
+const RULER_LABEL_OFFSET_PX = DRAG_AIM_RADIUS_PX + 22;
+/** RT_43: demi-étendue réservée à l'étiquette pour la garder dans le plateau. */
+const RULER_LABEL_HALF_WIDTH_PX = 34;
+const RULER_LABEL_HALF_HEIGHT_PX = 16;
 
 /** RG_30/RT_40: tracé en cours du rectangle de sélection. */
 interface MarqueeState {
@@ -229,6 +260,24 @@ export class PlacementPage implements OnInit {
   private lastTap: { id: string; time: number; x: number; y: number } | null = null;
   /** RT_41: dernier appui dans le bandeau, pour reconnaître un double appui (RG_32). */
   private lastBandTap: { id: string; time: number; x: number; y: number } | null = null;
+  /** RG_33/RT_42: mesure libre en cours de tracé sur le fond du plateau. */
+  private rulerDrag: { pointerId: number } | null = null;
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /**
+   * RG_33/RT_42: mode « Règle ». Local à l'écran, ni persisté ni synchronisé :
+   * l'écran s'ouvre toujours mode désactivé.
+   */
+  readonly rulerMode = signal(false);
+  /** RG_33/RG_34: le tracé affiché — au plus un à la fois. */
+  readonly measure = signal<RulerMeasure | null>(null);
+  /** RT_43: mesure annoncée aux technologies d'assistance, au relâchement seulement. */
+  readonly measureAnnouncement = signal('');
+  /**
+   * RG_35/RT_44: unités en cohésion à l'activation du mode — les seules qui
+   * seront retaillées à sa sortie.
+   */
+  private readonly rulerCoherentUnits = signal<ReadonlySet<string>>(new Set());
 
   readonly board = signal<Board | undefined>(undefined);
   readonly deployment = signal<Deployment | undefined>(undefined);
@@ -478,6 +527,59 @@ export class PlacementPage implements OnInit {
   readonly visibleZoneUnavailable = computed(() => this.terrain() === null);
 
   /**
+   * RG_35/RG_24: unités qu'un déplacement libre a sorties de leur cohésion
+   * depuis l'activation du mode « Règle » — retaillées à sa sortie.
+   */
+  readonly rulerBrokenUnits = computed<ReadonlySet<string>>(() => {
+    if (!this.rulerMode()) return new Set();
+    const placements = this.placements();
+    return new Set([...this.rulerCoherentUnits()].filter((idUnite) => !this.unitCoherent(idUnite, placements)));
+  });
+
+  /** RG_35/RG_24: l'unité du bandeau est-elle à retailler à la sortie du mode ? */
+  readonly selectedUnitBroken = computed(() => {
+    const unit = this.selectedUnit();
+    return !!unit && this.rulerBrokenUnits().has(unit.id);
+  });
+
+  /**
+   * RG_33/RT_43: tracé de la règle et position de son étiquette. L'étiquette
+   * est posée à côté du second point, du côté opposé au premier — hors du doigt
+   * qui le désigne —, puis ramenée dans le plateau si elle en sortirait.
+   */
+  readonly rulerView = computed<RulerView | null>(() => {
+    const measure = this.measure();
+    const board = this.board();
+    const scale = this.scale();
+    if (!measure || !board || scale <= 0) return null;
+    const dx = measure.to.x - measure.from.x;
+    const dy = measure.to.y - measure.from.y;
+    const length = Math.hypot(dx, dy);
+    // Segment nul : l'étiquette part vers le haut, à l'opposé de la main.
+    const ux = length > 0 ? dx / length : 0;
+    const uy = length > 0 ? dy / length : -1;
+    const width = board.playArea.width * scale;
+    const height = board.playArea.height * scale;
+    const clampTo = (value: number, half: number, max: number) =>
+      Math.min(Math.max(value, half), Math.max(half, max - half));
+    return {
+      ...measure,
+      label: formatInches(measureInches(measure.from, measure.to, this.pixelsPerMm())),
+      labelLeft: clampTo(
+        (measure.to.x - board.playArea.left) * scale + ux * RULER_LABEL_OFFSET_PX,
+        RULER_LABEL_HALF_WIDTH_PX,
+        width,
+      ),
+      labelTop: clampTo(
+        (measure.to.y - board.playArea.top) * scale + uy * RULER_LABEL_OFFSET_PX,
+        RULER_LABEL_HALF_HEIGHT_PX,
+        height,
+      ),
+      endRadius: 8 / scale,
+    };
+  });
+
+  /**
    * RG_05/RG_15: rangs, dans la liste, des unités ayant encore au moins un
    * modèle à poser — les seules que les flèches du bandeau parcourent.
    */
@@ -496,6 +598,14 @@ export class PlacementPage implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
+    // RG_33/RT_42: le premier appui suivant, où qu'il porte, efface le tracé.
+    // En capture, avant sa cible, sans en bloquer l'effet ordinaire : le geste
+    // qui commence une nouvelle mesure la crée ensuite dans son gestionnaire.
+    const clearMeasure = () => this.measure.set(null);
+    const hostElement = this.host.nativeElement;
+    hostElement.addEventListener('pointerdown', clearMeasure, true);
+    this.destroyRef.onDestroy(() => hostElement.removeEventListener('pointerdown', clearMeasure, true));
+
     this.listId.set(this.route.snapshot.paramMap.get('listId') ?? '');
     this.opponentId.set(this.route.snapshot.paramMap.get('opponentId') ?? '');
     this.boardId.set(this.route.snapshot.paramMap.get('boardId') ?? '');
@@ -761,6 +871,106 @@ export class PlacementPage implements OnInit {
   }
 
   // -------------------------------------------------------------------------
+  // RG_33/RG_35 — mode « Règle »
+  // -------------------------------------------------------------------------
+
+  /** RG_33: le bouton règle active le mode, ou le désactive (RG_35). */
+  async toggleRuler(): Promise<void> {
+    if (this.rulerMode()) {
+      await this.leaveRulerMode();
+      return;
+    }
+    // RT_44: instantané des unités en cohésion à l'activation — seules
+    // candidates au rétablissement de la sortie du mode.
+    const placements = this.placements();
+    const coherent = (this.list()?.units ?? [])
+      .map((unit) => unit.id)
+      .filter((idUnite) => this.unitCoherent(idUnite, placements));
+    this.rulerCoherentUnits.set(new Set(coherent));
+    this.rulerMode.set(true);
+  }
+
+  /**
+   * RG_35/RT_44: sortie du mode « Règle ». Chaque unité en cohésion à
+   * l'activation et qui ne l'est plus est retaillée comme au retrait d'un
+   * token (RG_26) : le groupe contigu le plus nombreux reste, les autres
+   * retournent au bandeau. Retirant des tokens, l'opération est confirmée ;
+   * l'annuler laisse le mode actif. Rend vrai si le mode est désactivé.
+   */
+  private async leaveRulerMode(): Promise<boolean> {
+    if (!this.rulerMode()) return true;
+    const placements = this.placements();
+    const units = this.list()?.units ?? [];
+    const removed = new Set<string>();
+    const trimmed: string[] = [];
+    const stretched: string[] = [];
+    for (const idUnite of this.rulerBrokenUnits()) {
+      const name = units.find((unit) => unit.id === idUnite)?.name ?? idUnite;
+      // RT_44: même algorithme que le retrait (RT_36), sur l'unité entière.
+      const detached = new Set(detachedAfterRemoval(this.unitBases(idUnite, placements)));
+      if (detached.size > 0) {
+        detached.forEach((id) => removed.add(id));
+        trimmed.push(`« ${name} » : ${detached.size} token(s)`);
+      }
+      // RG_35: l'étendue de 9" n'est pas retaillée — l'unité est seulement
+      // signalée, et traitée ensuite comme déjà hors cohésion (RG_26).
+      const kept = placements.filter((p) => p.idUnite === idUnite && !detached.has(p.idModele));
+      if (!this.unitCoherent(idUnite, kept)) stretched.push(`« ${name} »`);
+    }
+
+    const stretchedNote =
+      stretched.length > 0
+        ? `${stretched.join(', ')} dépasse(nt) l'étendue de 9" et reste(nt) hors cohésion, à corriger à la main.`
+        : '';
+
+    if (removed.size > 0) {
+      const alert = await this.alerts.create({
+        header: 'Quitter le mode Règle ?',
+        message:
+          `Des déplacements ont rompu la cohésion d'unités. Pour la rétablir, le groupe le plus ` +
+          `nombreux de chacune est conservé et ces tokens retournent au bandeau — ` +
+          `${trimmed.join(' ; ')}. ${stretchedNote}`.trim(),
+        buttons: [
+          { text: 'Annuler', role: 'cancel' },
+          { text: 'Retirer et quitter', role: 'destructive' },
+        ],
+      });
+      await alert.present();
+      const { role } = await alert.onDidDismiss();
+      if (role !== 'destructive') return false;
+      // RT_44: une seule écriture pour toutes les unités concernées (RG_07).
+      this.mutatePlacements((current) => current.filter((p) => !removed.has(p.idModele)));
+      this.selection.set(new Set([...this.selection()].filter((id) => !removed.has(id))));
+    } else if (stretchedNote) {
+      void this.announceRefusal(stretchedNote);
+    }
+
+    this.rulerMode.set(false);
+    this.rulerCoherentUnits.set(new Set());
+    this.measure.set(null);
+    return true;
+  }
+
+  /**
+   * RG_35/RT_44: garde de sortie de l'écran — quitter mode « Règle » actif
+   * équivaut à le désactiver, et une annulation laisse le joueur sur l'écran.
+   */
+  async canLeave(): Promise<boolean> {
+    if (!this.rulerMode()) return true;
+    const left = await this.leaveRulerMode();
+    if (left) {
+      if (this.saveTimer) clearTimeout(this.saveTimer);
+      await this.save();
+    }
+    return left;
+  }
+
+  /** RG_34/RT_42: met à jour le segment du déplacement en cours. */
+  private trackMoveMeasure(drag: DragState, to: { x: number; y: number }, refused: boolean): void {
+    if (drag.ruler) this.measure.set({ from: drag.startPosition, to, refused });
+  }
+
+  // -------------------------------------------------------------------------
   // RT_03 — drag & drop des tokens
   // -------------------------------------------------------------------------
 
@@ -842,6 +1052,14 @@ export class PlacementPage implements OnInit {
     // RT_36: un token posé dont le déplacement serait refusé le montre aussi.
     if (drag.kind === 'move') this.refusedModelId.set(droppable ? null : drag.idModele);
     if (drag.kind === 'group') this.groupRefused.set(!droppable);
+    // RG_34: en mode « Règle », le segment suit le centre du token saisi.
+    if (point && drag.kind === 'move') {
+      this.trackMoveMeasure(drag, this.clamp(point.x + drag.grabOffset.x, point.y + drag.grabOffset.y), !droppable);
+    }
+    if (point && drag.kind === 'group') {
+      const { dx, dy } = this.groupDelta(drag, point);
+      this.trackMoveMeasure(drag, { x: drag.startPosition.x + dx, y: drag.startPosition.y + dy }, !droppable);
+    }
     this.dragGhost.set({
       ...drag.ghost,
       left: event.clientX - rect.left + drag.grabOffset.x * scale,
@@ -866,6 +1084,9 @@ export class PlacementPage implements OnInit {
     }
     if (drag.kind === 'group') return this.groupMoveAllowed(drag, point, board);
     if (drag.kind === 'cluster') return this.clusterAllowed(drag, point, board);
+    // RG_35/RT_44: en mode « Règle », un déplacement n'est pas refusé pour
+    // perte de cohésion — et, borné au rectangle de jeu, jamais refusé du tout.
+    if (drag.ruler) return true;
     const placement = this.placements().find((p) => p.idModele === drag.idModele);
     if (!placement) return true;
     const moved = this.clamp(point.x + drag.grabOffset.x, point.y + drag.grabOffset.y);
@@ -894,6 +1115,8 @@ export class PlacementPage implements OnInit {
     );
     // RG_30: un token qui sortirait du rectangle de jeu refuse le groupe.
     if (moved.some((p) => group.ids.has(p.idModele) && !this.isInsideBoard(p, board))) return false;
+    // RG_35/RT_44: en mode « Règle », seule la sortie du rectangle refuse le groupe.
+    if (drag.ruler) return true;
     // RG_26: seules les unités en cohésion à la saisie sont contrôlées.
     return [...group.coherentUnits].every((idUnite) => this.unitCoherent(idUnite, moved));
   }
@@ -922,6 +1145,7 @@ export class PlacementPage implements OnInit {
       wasCoherent: true,
       ghost: this.ghostMetrics(token.rx * 2, token.ry * 2, token.shapeKind, token.color, token.placement.rotation, false),
       group: { ids, coherentUnits },
+      ruler: this.rulerMode(),
     };
     this.grabbedModelId.set(token.placement.idModele);
     this.gestureActive.set(true);
@@ -941,6 +1165,15 @@ export class PlacementPage implements OnInit {
     this.capturePointer(event);
     // RG_32: un appui sur le plateau annule la sélection du bandeau.
     this.bandSelection.set(new Set());
+    if (this.rulerMode()) {
+      // RG_33/RT_42: en mode « Règle », le même geste trace une mesure au lieu
+      // du rectangle de sélection ; l'appui désélectionne toujours tout.
+      this.selection.set(new Set());
+      const start = this.clamp(point.x, point.y);
+      this.rulerDrag = { pointerId: event.pointerId };
+      this.measure.set({ from: start, to: start, refused: false });
+      return;
+    }
     const additive = event.shiftKey || event.ctrlKey || event.metaKey;
     this.marqueeState = { pointerId: event.pointerId, start: point, additive, previous: this.selection() };
     if (!additive) this.selection.set(new Set());
@@ -1192,6 +1425,7 @@ export class PlacementPage implements OnInit {
         token.placement.rotation,
         false,
       ),
+      ruler: this.rulerMode(),
     };
     this.grabbedModelId.set(token.placement.idModele);
     // RG_29: la zone visible est masquée tant que le token suit le doigt.
@@ -1235,6 +1469,14 @@ export class PlacementPage implements OnInit {
   }
 
   onPointerMove(event: PointerEvent): void {
+    // RG_33/RT_42: le second point suit le doigt, borné au rectangle de jeu.
+    const ruler = this.rulerDrag;
+    if (ruler && ruler.pointerId === event.pointerId) {
+      const point = this.toAssetCoords(event);
+      const measure = this.measure();
+      if (point && measure) this.measure.set({ ...measure, to: this.clamp(point.x, point.y) });
+      return;
+    }
     const marquee = this.marqueeState;
     if (marquee && marquee.pointerId === event.pointerId) {
       const point = this.toAssetCoords(event);
@@ -1285,6 +1527,16 @@ export class PlacementPage implements OnInit {
   }
 
   onPointerUp(event: PointerEvent): void {
+    const ruler = this.rulerDrag;
+    if (ruler && ruler.pointerId === event.pointerId) {
+      this.rulerDrag = null;
+      // RG_33: le second point est fixé au relâchement, et le tracé reste.
+      const point = this.toAssetCoords(event);
+      const measure = this.measure();
+      if (point && measure) this.measure.set({ ...measure, to: this.clamp(point.x, point.y) });
+      this.settleMeasure();
+      return;
+    }
     const marquee = this.marqueeState;
     if (marquee && marquee.pointerId === event.pointerId) {
       this.marqueeState = null;
@@ -1306,6 +1558,8 @@ export class PlacementPage implements OnInit {
     // règle plus bas, avant tout rendu.
     this.gestureActive.set(false);
     if (!drag || drag.pointerId !== event.pointerId) return;
+    // RG_34: le segment reste affiché à la position finale, jusqu'au prochain appui.
+    if (drag.ruler) this.settleMeasure();
 
     if (drag.kind === 'group' && drag.group) {
       // RG_30/RT_40: tout ou rien, en une seule écriture pour tout le groupe.
@@ -1335,7 +1589,10 @@ export class PlacementPage implements OnInit {
       // RT_36: un déplacement ou une rotation qui romprait la cohésion est
       // refusé — le token reprend sa position et son orientation d'avant.
       const placement = this.placements().find((p) => p.idModele === drag.idModele);
-      if (placement && !this.keepsCoherency(drag, placement)) {
+      // RG_35/RT_44: un déplacement en mode « Règle » n'est jamais rétabli
+      // pour perte de cohésion ; la rotation, elle, garde son contrôle.
+      const freeMove = drag.kind === 'move' && drag.ruler;
+      if (placement && !freeMove && !this.keepsCoherency(drag, placement)) {
         this.updatePlacement(drag.idModele, { ...drag.startPosition, rotation: drag.startRotation });
       }
       return;
@@ -1372,6 +1629,23 @@ export class PlacementPage implements OnInit {
     // bandeau — on enchaîne sur la suivante encore en attente plutôt que
     // d'afficher une liste vide. S'il n'en reste aucune, stepUnit ne bouge pas.
     if (isUnitDeployed(unit, this.placements(), this.reservedUnits())) this.stepUnit(1);
+  }
+
+  /**
+   * RG_33/RG_34: fin d'un tracé. Un simple appui (moins de 3 px à l'écran)
+   * ne mesure rien et n'en laisse aucun ; sinon la mesure est annoncée aux
+   * technologies d'assistance (RT_43), une fois, au relâchement.
+   */
+  private settleMeasure(): void {
+    const measure = this.measure();
+    if (!measure) return;
+    const moved = Math.hypot(measure.to.x - measure.from.x, measure.to.y - measure.from.y) * this.scale();
+    if (moved < 3) {
+      this.measure.set(null);
+      return;
+    }
+    const label = formatInches(measureInches(measure.from, measure.to, this.pixelsPerMm()));
+    this.measureAnnouncement.set(measure.refused ? `Déplacement refusé, distance tentée ${label}` : `Mesure ${label}`);
   }
 
   /**
@@ -1535,6 +1809,9 @@ export class PlacementPage implements OnInit {
   }
 
   async back(): Promise<void> {
+    // RG_35: quitter mode « Règle » actif équivaut à le désactiver ; la garde
+    // de route (RT_44) couvre aussi le retour système.
+    if (!(await this.canLeave())) return;
     if (this.saveTimer) clearTimeout(this.saveTimer);
     await this.save();
     await this.router.navigate([

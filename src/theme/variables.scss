@@ -132,6 +132,13 @@ $ramp-green-on-dark: #8fe3a0;
   // d'unités de RG_06, dont l'or est bien plus sombre. L'opacité est posée par
   // la feuille de style de l'écran.
   --app-visibility-fill: #ffd60a;
+  // RT_43 — segment de la règle (RG_33/RG_34), posé sur l'image du plateau : il
+  // ne suit pas le thème. Un cyan clair, absent de l'image comme de la palette
+  // d'unités de RG_06 (dont le « bleu ciel » est bien plus sombre), distinct du
+  // blanc de la sélection et du jaune du voile. Étiquette sur pastille opaque.
+  --app-ruler-stroke: #5ce1ff;
+  --app-ruler-label-bg: #0b2530;
+  --app-ruler-label-on: #e6fbff;
 }
 
 // ---------------------------------------------------------------------------
@@ -211,6 +218,10 @@ $ramp-green-on-dark: #8fe3a0;
   --app-token-drag-refused: #ff8a8a;
   // RT_39 — voile de la zone visible, indépendant du thème (voir thème clair).
   --app-visibility-fill: #ffd60a;
+  // RT_43 — règle, indépendante du thème (voir thème clair).
+  --app-ruler-stroke: #5ce1ff;
+  --app-ruler-label-bg: #0b2530;
+  --app-ruler-label-on: #e6fbff;
 }
 
 // ---------------------------------------------------------------------------
@@ -294,6 +305,11 @@ $ramp-green-on-dark: #8fe3a0;
 // RG_29/RT_39 — la zone visible se détache de la scène du plateau (couleur
 // contrôlée opaque : le script ne tient pas compte de l'opacité du voile).
 // @contrast --app-visibility-fill on --app-surface-stage >= 3
+// RG_33/RT_43 — segment de la règle sur la scène du plateau, et texte de sa
+// mesure sur sa pastille opaque.
+// @contrast --app-ruler-stroke on --app-surface-stage >= 3
+// @contrast --app-ruler-label-on on --app-ruler-label-bg >= 4.5
+// @contrast --app-ruler-stroke on --app-ruler-label-bg >= 3
 
 // Alerte et erreur.
 // @contrast --app-warn-on on --app-warn-surface >= 4.5

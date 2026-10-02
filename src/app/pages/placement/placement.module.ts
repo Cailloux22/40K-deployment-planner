@@ -4,7 +4,15 @@ import { RouterModule, Routes } from '@angular/router';
 import { SharedModule } from '../../shared/shared.module';
 import { PlacementPage } from './placement.page';
 
-const routes: Routes = [{ path: '', component: PlacementPage }];
+const routes: Routes = [
+  {
+    path: '',
+    component: PlacementPage,
+    // RG_35/RT_44: quitter l'écran mode « Règle » actif passe par la même
+    // sortie du mode que son bouton — retour système compris.
+    canDeactivate: [(page: PlacementPage) => page.canLeave()],
+  },
+];
 
 /** Écran 6 — Écran de placement (RG_03 étape 3, RG_15/RG_16/RG_17/RG_20). */
 @NgModule({

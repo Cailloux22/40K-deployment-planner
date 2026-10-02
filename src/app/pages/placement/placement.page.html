@@ -143,11 +143,64 @@
                 [attr.height]="rect.y1 < rect.y2 ? rect.y2 - rect.y1 : rect.y1 - rect.y2"
               />
             }
+
+            <!-- RG_33/RG_34/RT_43: segment de la règle, au-dessus des tokens et de
+                 la zone visible ; trait épaissi d'un halo, à épaisseur d'écran. -->
+            @if (rulerView(); as ruler) {
+              <g class="ruler" [class.refused]="ruler.refused" aria-hidden="true">
+                <line
+                  class="ruler-halo"
+                  [attr.x1]="ruler.from.x"
+                  [attr.y1]="ruler.from.y"
+                  [attr.x2]="ruler.to.x"
+                  [attr.y2]="ruler.to.y"
+                />
+                <line
+                  class="ruler-line"
+                  [attr.x1]="ruler.from.x"
+                  [attr.y1]="ruler.from.y"
+                  [attr.x2]="ruler.to.x"
+                  [attr.y2]="ruler.to.y"
+                />
+                <circle class="ruler-end" [attr.cx]="ruler.from.x" [attr.cy]="ruler.from.y" [attr.r]="ruler.endRadius" />
+                <circle class="ruler-end" [attr.cx]="ruler.to.x" [attr.cy]="ruler.to.y" [attr.r]="ruler.endRadius" />
+              </g>
+            }
           </svg>
+
+          <!-- RT_43: la mesure est un texte, sur une pastille opaque, à côté du
+               second point et hors du doigt, gardée dans le plateau. -->
+          @if (rulerView(); as ruler) {
+            <span
+              class="ruler-label"
+              [class.refused]="ruler.refused"
+              [style.left.px]="ruler.labelLeft"
+              [style.top.px]="ruler.labelTop"
+              aria-hidden="true"
+              >{{ ruler.label }}</span
+            >
+          }
         </div>
       } @else {
         <ion-spinner></ion-spinner>
       }
+
+      <!-- RG_33/RT_43: bouton du mode « Règle », superposé à l'angle haut-gauche
+           du plateau (RT_33) — il ne consomme aucune hauteur. RG_24: son état
+           est porté par le rendu (plein/contour) et par son nom accessible. -->
+      <!-- Bouton natif : un aria-* lié dynamiquement sur ion-button est relu
+           par le composant avant son initialisation. -->
+      <button
+        type="button"
+        class="ruler-toggle"
+        [class.active]="rulerMode()"
+        [attr.aria-pressed]="rulerMode()"
+        [attr.aria-label]="rulerMode() ? 'Règle activée' : 'Règle désactivée'"
+        (click)="toggleRuler()"
+      >
+        <ion-icon src="assets/icons/ruler.svg" aria-hidden="true"></ion-icon>
+      </button>
+      <span class="visually-hidden" aria-live="polite">{{ measureAnnouncement() }}</span>
 
       <!-- RG_20: rotation également accessible au pas fixe, et retrait du token.
            RT_33: superposée à la zone du plateau et non insérée dans le flux —
@@ -208,6 +261,10 @@
                  RG_24/RG_25: l'état de réserve y est énoncé en toutes lettres —
                  une unité en réserve n'a pas de « modèles à placer ». -->
             <small>
+              <!-- RG_35/RG_24: unité à retailler à la sortie du mode « Règle ». -->
+              @if (selectedUnitBroken()) {
+                <em class="cohesion-tag">hors cohésion</em> ·
+              }
               @if (selectedUnitReserved()) {
                 en réserve
               } @else if (bandSelectedCount() > 1) {
@@ -392,6 +449,10 @@
                  entièrement en réserve contredirait le fond vert de l'entrée. -->
             @if (view.reserved) {
               <em class="reserve-tag">en réserve</em>
+            }
+            <!-- RG_35/RG_24: unité à retailler à la sortie du mode « Règle ». -->
+            @if (rulerBrokenUnits().has(view.unit.id)) {
+              <em class="reserve-tag">hors cohésion</em>
             }
             <small>{{ view.placedCount }}/{{ view.unit.modelCount }}</small>
           </div>

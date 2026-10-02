@@ -157,6 +157,120 @@
   pointer-events: none;
 }
 
+/* RG_33/RG_34/RT_43: segment de la règle. Épaisseur d'écran et non d'asset
+   (non-scaling-stroke), doublée d'un halo sombre comme le cercle de visée de
+   RT_34 ; jamais cible d'un évènement de pointeur. */
+.ruler {
+  pointer-events: none;
+
+  .ruler-halo {
+    stroke: var(--app-token-drag-halo);
+    stroke-width: 7;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .ruler-line {
+    stroke: var(--app-ruler-stroke);
+    stroke-width: 3;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* Anneaux et non disques : un petit socle (25 mm ≈ 10 px CSS au zoom de
+     RT_19) reste visible au centre de l'extrémité qui le marque (RG_34). */
+  .ruler-end {
+    fill: none;
+    stroke: var(--app-ruler-stroke);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* RG_34: déplacement refusé — même couleur que le dépôt refusé de RT_34. */
+  &.refused {
+    .ruler-line {
+      stroke: var(--app-token-drag-refused);
+      stroke-dasharray: 6 5;
+    }
+
+    .ruler-end {
+      stroke: var(--app-token-drag-refused);
+    }
+  }
+}
+
+/* RT_43: étiquette de la mesure, à taille d'écran (RT_30), sur pastille opaque. */
+.ruler-label {
+  position: absolute;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  padding: 2px 8px;
+  border-radius: var(--app-radius-pill);
+  border: 1px solid var(--app-ruler-stroke);
+  background: var(--app-ruler-label-bg);
+  color: var(--app-ruler-label-on);
+  font-size: var(--app-font-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+
+  &.refused {
+    border-color: var(--app-token-drag-refused);
+  }
+}
+
+/* RG_33/RT_43: bouton du mode « Règle », ancré dans l'angle haut-gauche de la
+   zone du plateau — superposé (RT_33), à l'opposé de la barre d'actions de
+   token (angle bas-droit). RT_31: 44 px au moins ; RT_29: bordure contrastée
+   face à la scène sombre, seul délimiteur en thème sombre. */
+.ruler-toggle {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  width: var(--app-touch-min);
+  height: var(--app-touch-min);
+  border-radius: var(--app-radius-pill);
+  border: 1px solid var(--app-border-interactive);
+  background: var(--app-surface-raised);
+  color: var(--app-text);
+  font-size: 22px;
+  cursor: pointer;
+
+  /* RG_24: actif = plein, inactif = contour ; le nom accessible l'énonce aussi. */
+  &.active {
+    background: var(--app-ruler-stroke);
+    border-color: var(--app-ruler-stroke);
+    color: var(--app-ruler-label-bg);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--app-token-selected-stroke);
+    outline-offset: 2px;
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* RG_35/RG_24: unité qu'un déplacement libre a sortie de sa cohésion. */
+.cohesion-tag {
+  font-style: normal;
+  font-weight: 600;
+}
+
 .rotate-arm {
   stroke: var(--app-token-selected-stroke);
   stroke-width: 3;
