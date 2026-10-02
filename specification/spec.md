@@ -20,7 +20,7 @@ Chaque exigence renvoie aux règles de gestion et/ou techniques qui la satisfont
 
 Le joueur doit pouvoir importer sa liste d'armée dans l'application pour que celle-ci connaisse les unités à déployer (nombre de modèles, forme et taille de socle par unité).
 
-Satisfait par : [[RG_01]], [[RG_02]], [[RG_13]], [[RG_22]], [[RT_01]], [[RT_02]], [[RT_13]], [[RT_26]], [[RT_28]].
+Satisfait par : [[RG_01]], [[RG_02]], [[RG_13]], [[RG_22]], [[RG_36]], [[RT_01]], [[RT_02]], [[RT_13]], [[RT_26]], [[RT_28]], [[RT_45]].
 
 ### RG_01 — Formats d'import acceptés
 
@@ -47,7 +47,7 @@ Ce choix, quelle que soit la façon dont il a été fait, n'est mémorisé nulle
 
 ### RG_22 — Récapitulatif et confirmation avant enregistrement d'un import
 
-Une fois le fichier importé interprété avec succès ([[RG_01]]) et chaque unité résolue vers un socle ([[RG_02]]), l'application affiche un récapitulatif — nombre d'unités, nombre de modèles et socles associés par unité — avant d'enregistrer la liste. Le nom de la liste, pré-rempli à partir de la donnée source (`roster.name`, [[RT_13]]), reste modifiable par le joueur sur cet écran. La liste n'est persistée qu'après validation explicite de ce récapitulatif ; le joueur peut aussi l'annuler, auquel cas rien n'est enregistré.
+Une fois le fichier importé interprété avec succès ([[RG_01]]) et chaque unité résolue vers un socle ([[RG_02]]), l'application affiche un récapitulatif — nombre d'unités, nombre de modèles et socles associés par unité — avant d'enregistrer la liste. Le nom de la liste, pré-rempli à partir de la donnée source (`roster.name`, [[RT_13]]), reste modifiable par le joueur sur cet écran. La liste n'est persistée qu'après validation explicite de ce récapitulatif ; le joueur peut aussi l'annuler, auquel cas rien n'est enregistré. Le récapitulatif présente aussi les unités attachées lues dans la source, que le joueur peut défaire ou constituer avant de valider ([[RG_36]]).
 
 ### RT_01 — Parsing d'import
 
@@ -81,7 +81,9 @@ Un des formats supportés par [[RT_01]] est le roster JSON exporté par les list
 
 - **Équipement de chaque profil de modèle** : les sélections de `type = "upgrade"` situées sous une entrée de `type = "model"`, à tout niveau (certains list-builders les regroupent sous un nœud intermédiaire), ainsi que le nom du ou des nœuds `upgrade` qui *encadrent* le modèle le cas échéant, puisqu'ils décrivent eux aussi son armement (« 8 chainblades »). Leur `name` sert exclusivement aux socles conditionnels de [[RG_02]] (« 60 x 35mm if equipped with transuranic arquebus », [[RT_02]]), que le nom du profil ne suffit pas toujours à décider ; il n'est ni affiché ni persisté avec la liste.
 
-Lorsque le roster déclare plusieurs `forces`, les sélections de toutes les forces contribuent à la liste déployée, la disposition de force n'étant elle déclarée qu'une seule fois. Le reste de l'arborescence (`rules`, `profiles`, `categories`, coûts en points, mots-clés d'armes...) est ignoré par ce parseur : seuls `roster.name`, le nœud `"Force Disposition"`, les champs `name`/`number`/`type` des sélections de premier niveau et de leurs enfants directs de `type = "model"`, et le `name` des `type = "upgrade"` portés par ces modèles sont consommés. Ce format ne fournit pas la forme/taille de socle : celle-ci reste résolue séparément via [[RG_02]]/[[RT_02]] à partir du nom d'unité extrait ci-dessus.
+Lorsque le roster déclare plusieurs `forces`, les sélections de toutes les forces contribuent à la liste déployée, la disposition de force n'étant elle déclarée qu'une seule fois. - **Unités attachées** : les champs `associations` / `incomingAssociations` des sélections de premier niveau, qui relient un personnage à l'unité qu'il mène ou soutient ([[RG_36]]). Leur lecture est décrite par [[RT_45]].
+
+Le reste de l'arborescence (`rules`, `profiles`, `categories`, coûts en points, mots-clés d'armes...) est ignoré par ce parseur : seuls `roster.name`, le nœud `"Force Disposition"`, les champs `name`/`number`/`type` des sélections de premier niveau et de leurs enfants directs de `type = "model"`, le `name` des `type = "upgrade"` portés par ces modèles, et les associations de [[RT_45]] sont consommés. En particulier, le texte des capacités « Leader » (« This model can be attached to the following units: … ») n'est pas lu : il décrit les attachements **permis**, pas ceux que le joueur a choisis. Ce format ne fournit pas la forme/taille de socle : celle-ci reste résolue séparément via [[RG_02]]/[[RT_02]] à partir du nom d'unité extrait ci-dessus.
 
 ### RT_26 — Référentiel complémentaire des gabarits « Use model »
 
@@ -112,13 +114,55 @@ Le second niveau est un compromis assumé : un gabarit approché à quelques mil
 
 **Modèle de données.** Contrairement à [[RT_26]] (référentiel partagé, indexé par profil), un socle sur mesure n'est pas une entrée de référentiel : c'est une donnée propre au groupe de modèles de cette unité, dans cette liste. `UnitModelGroup` porte un champ optionnel `customRectangleMm: { widthMm, lengthMm }`, mutuellement exclusif avec `baseShapeId` (l'un des deux est renseigné, jamais les deux) ; quand il est renseigné, le rendu du token ([[RT_03]]) et le calcul d'échelle ([[RT_05]]) l'utilisent directement en forme `rectangle` (introduite par [[RT_26]] dans `BaseShapeKind`), sans passer par la résolution du référentiel (`ReferentialService.baseShape`). Ce champ suit le cycle de vie normal de la liste : synchronisé avec elle comme n'importe quel autre champ d'`ArmyUnit.modelGroups` ([openapi.yml](openapi.yml)) — visible sur tous les appareils du joueur une fois synchronisé — mais, conformément à [[RG_02]], jamais réappliqué automatiquement à un import ultérieur du même profil, faute de mémorisation inter-imports.
 
+### RG_36 — Unités attachées : lecture à l'import et modification au récapitulatif
+
+Avant la bataille, le joueur peut attacher une unité de **personnage** à une unité **escortée** (*bodyguard*) que ce personnage peut mener. Les deux forment alors, pour toute la bataille, une seule **unité attachée**. Un personnage s'attache selon l'un de deux **rôles** : **meneur** (*leader*) ou **soutien** (*support*). La liste d'armée doit connaître ces attachements, parce qu'une unité attachée se déploie comme une seule unité ([[RG_37]]).
+
+**Lecture à l'import.** Les attachements choisis par le joueur dans son list-builder sont lus dans la source ([[RT_13]], [[RT_45]]). Ils ne sont pas devinés à partir des capacités des personnages : qu'un personnage *puisse* mener une unité ne dit pas qu'il la mène.
+
+**Composition.** Une unité attachée comprend une unité escortée et un ou plusieurs personnages, chacun avec son rôle. Les contraintes appliquées sont seulement structurelles :
+
+- un personnage est attaché à **une seule** unité escortée ;
+- une unité qui a un personnage attaché ne peut pas être elle-même attachée à une autre unité : les attachements ne s'enchaînent pas ;
+- une unité ne peut pas être attachée à elle-même.
+
+L'application **ne vérifie pas** les règles du jeu sur qui peut mener quoi, ni le nombre de meneurs et de soutiens par unité escortée. La règle générale est d'un de chaque, mais les exceptions (« sauf mention contraire ») sont propres à chaque datasheet. Le joueur, qui connaît sa liste, fait autorité. Un roster qui attache deux meneurs à la même unité est donc importé tel quel.
+
+**Récapitulatif d'import ([[RG_22]]).** Le récapitulatif montre chaque unité attachée : la composition, les personnages avec leur rôle (« meneur », « soutien »), puis l'unité escortée. Avant de valider, le joueur peut :
+
+- **défaire** un attachement : le personnage redevient une unité indépendante ;
+- **constituer** un attachement : il choisit un personnage, une unité escortée et un rôle. Seuls les choix qui respectent les contraintes structurelles ci-dessus lui sont proposés.
+
+Ces modifications ne valent que pour cet import. Comme les choix de socle de [[RG_02]], elles ne sont mémorisées nulle part ailleurs et ne se réappliquent pas à un import ultérieur.
+
+**Attachement illisible.** Il arrive que la source déclare un attachement inexploitable. Par exemple, il vise une unité qui n'est pas retenue comme unité ([[RT_13]]), ou il enfreint une contrainte structurelle. L'attachement n'est alors **pas** créé, et le récapitulatif le signale en toutes lettres en nommant les unités concernées. Le joueur peut le recréer à la main s'il le souhaite. Le reste de la liste est importé normalement : un attachement est une information de déploiement, pas une condition pour interpréter la liste ([[RG_01]]).
+
+**Après l'enregistrement.** Les attachements appartiennent à la liste d'armée, et donc à tous ses déploiements. Une fois la liste enregistrée, ils ne sont plus modifiables : pour en changer, le joueur ré-importe sa liste. Une liste importée avant cette règle n'a aucun attachement : ses unités se déploient comme avant, chacune indépendamment.
+
+### RT_45 — Lecture des associations du roster JSON et modèle de données des attachements
+
+**Source.** Dans le roster JSON de [[RT_13]], un attachement est décrit des deux côtés :
+
+- la sélection de premier niveau du personnage porte une entrée `associations[]` de `type = "outgoing"`, dont `to` est l'`id` de la sélection de l'unité escortée ;
+- l'unité escortée porte une entrée `incomingAssociations[]` symétrique, dont `from` est l'`id` du personnage.
+
+Le `name` de l'association donne le rôle : `"Leading"` pour un meneur, `"Supporting"` pour un soutien. Les deux entrées portent le même `associationId`. Seule l'entrée `outgoing` fait foi. L'entrée `incoming` n'est consultée que pour le contrôle : une entrée `outgoing` sans contrepartie `incoming` reste lue. Un `name` autre que ces deux valeurs rend l'attachement illisible au sens de [[RG_36]] : le rôle n'est pas deviné. Dans le jeu de référence [list_import.example.json](../src/assets/list_import.example.json), le Tech-Priest Manipulus mène les Kataphron Breachers, et le Cybernetica Datasmith soutient les Kastelan Robots.
+
+**Résolution des identifiants.** Les `id` de sélection du roster ne sont pas conservés : chaque unité reçoit à l'import son propre identifiant stable ([[RT_07]]). Le parseur produit donc les attachements en **identifiants de sélection** ; la construction de la liste les convertit en identifiants d'unité de l'application, puis les contraintes structurelles de [[RG_36]] sont appliquées. Un `to` qui ne correspond à aucune unité retenue par [[RT_13]] produit un attachement illisible.
+
+**Modèle de données.** Un personnage attaché porte sur son unité un champ optionnel `ArmyUnit.attachment: { bodyguardUnitId, role: 'leader' | 'support' }`. L'unité escortée ne porte rien : sa composition se dérive des unités qui la désignent, ce qui exclut deux descriptions divergentes du même lien. Le champ est absent pour une unité indépendante. Une liste enregistrée avant cette règle n'en a sur aucune unité et ne demande aucune migration ([[RT_08]]). Le champ fait partie du contrat de synchronisation (`ArmyUnit.attachment`, [openapi.yml](openapi.yml), [[RT_09]]), comme `modelGroups`.
+
+**Duplication ([[RG_21]]).** La copie d'une liste attribue de nouveaux identifiants à ses unités. Les `bodyguardUnitId` sont convertis dans la même opération vers les identifiants de la copie, pour que la copie ne pointe jamais sur les unités de l'original.
+
+**Lecture tolérante.** À la lecture d'une liste, une valeur qui ne respecte plus les contraintes de [[RG_36]] est ignorée sans erreur : le personnage est alors traité comme une unité indépendante. C'est le cas d'un `bodyguardUnitId` qui ne désigne aucune unité de la liste, d'une unité escortée elle-même attachée, ou d'un personnage attaché à lui-même. Cette lecture suit le même principe que les identifiants orphelins de [[RT_35]].
+
 ---
 
 ## EX_02 — Planification du déploiement sur plateau
 
 Le joueur doit pouvoir positionner ses unités sur une représentation du plateau de jeu, en tenant compte de la disposition de force qu'il a choisie pour la partie.
 
-Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_23]], [[RT_24]], [[RT_27]], [[RT_34]], [[RG_25]], [[RT_35]], [[RG_26]], [[RT_36]], [[RG_30]], [[RG_31]], [[RT_40]], [[RG_32]], [[RT_41]].
+Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_23]], [[RT_24]], [[RT_27]], [[RT_34]], [[RG_25]], [[RT_35]], [[RG_26]], [[RT_36]], [[RG_30]], [[RG_31]], [[RT_40]], [[RG_32]], [[RT_41]], [[RG_37]], [[RT_46]].
 
 ### RG_03 — Parcours de sélection : liste → disposition adverse → plateau → placement
 
@@ -192,6 +236,8 @@ Toutes les unités d'une liste ne commencent pas la partie sur la table : certai
 - **Une unité en réserve n'a aucun token sur le plateau.** Mettre en réserve une unité dont des modèles sont déjà posés retire ces placements ([[RT_04]]) : l'opération étant destructrice, elle est confirmée explicitement par le joueur avant d'être appliquée, sur le même principe que [[RG_08]]. Le bandeau de [[RG_15]] ne propose alors plus aucun modèle pour cette unité.
 - **Le retrait de la réserve est toujours possible.** Décocher la case remet l'unité en attente de déploiement, tous ses modèles à poser. Comme les flèches du bandeau ne s'arrêtent plus sur une unité en réserve, celle-ci reste atteignable par le menu de [[RG_16]], qui liste **toutes** les unités : l'y choisir positionne le bandeau dessus, case cochée, prête à être décochée.
 
+**Unités attachées.** Une unité attachée ([[RG_36]]) entre en réserve et en sort tout entière, par une seule case ([[RG_37]]).
+
 **Second canal ([[RG_24]]).** L'état de réserve est énoncé en toutes lettres partout où il change une lecture : le bandeau de [[RG_15]] remplace son compte de modèles restants par la mention « en réserve », et l'entrée du menu de [[RG_16]] porte cette même mention à côté de son compte `placés/total` — sans quoi le `0/10` d'une unité entièrement en réserve contredirait le fond vert de son entrée.
 
 ### RG_26 — Cohésion d'unité au placement
@@ -212,6 +258,8 @@ Une unité de plus d'un modèle doit être déployée **en cohésion**, conform�
 **Exemptions.** Une unité d'un seul modèle n'est pas concernée. Une unité en réserve ([[RG_25]]) n'a aucun token sur le plateau et n'est donc pas concernée non plus.
 
 **Mode « Règle ».** En mode « Règle » ([[RG_33]]), le déplacement d'un token posé n'est pas refusé pour perte de cohésion ; la cohésion est rétablie à la sortie du mode, selon la règle du retrait ci-dessus ([[RG_35]]).
+
+**Unités attachées.** La cohésion d'une unité attachée ([[RG_36]]) porte sur l'ensemble de ses composantes, personnages compris ([[RG_37]]).
 
 ### RG_30 — Sélection multiple par zone de sélection et déplacement groupé
 
@@ -239,6 +287,7 @@ Un **double clic** (double appui, sur écran tactile) sur un token posé sélect
 - Seuls les modèles **déjà posés** de l'unité sont sélectionnés : ceux qui restent dans le bandeau ([[RG_15]]) ne le sont pas, et une unité en réserve ([[RG_25]]) n'a aucun token à sélectionner.
 - Sur une unité d'un seul modèle, le double clic équivaut à la sélection simple du token.
 - Le premier clic du double clic sélectionne le token comme d'ordinaire ([[RG_29]], [[RG_20]]) ; le second étend la sélection à l'unité, ce qui masque la zone visible et la poignée de rotation ([[RG_30]]).
+- Pour un token d'une unité attachée ([[RG_36]]), l'unité sélectionnée est l'unité attachée entière ([[RG_37]]).
 
 ### RG_32 — Double appui sur le bandeau : saisie groupée des modèles restant à poser
 
@@ -250,6 +299,7 @@ Sur l'écran de placement ([[RG_03]] étape 3), un **double appui sur le bandeau
 - **Tout ou rien.** Comme pour [[RG_30]], le dépôt groupé est refusé **dans son ensemble** si le centre de l'un des socles tombe hors du rectangle de jeu ([[RT_19]]), ou si l'unité — ses modèles déjà posés compris — ne serait pas en cohésion ([[RG_26]]). Pour une unité déjà partiellement posée, la grappe doit donc rejoindre la chaîne existante. Les exemptions de [[RG_26]] s'appliquent (unité déjà hors cohésion avant le geste). L'issue est annoncée au joueur **avant** le relâchement, et un dépôt refusé ne pose rien : la sélection du bandeau est conservée pour une nouvelle tentative.
 - **Après le dépôt.** Les tokens créés deviennent la sélection courante du plateau ([[RG_30]]) : le joueur peut aussitôt repositionner le groupe d'un bloc. Le bandeau se vide de ces modèles et l'avance automatique de [[RG_15]] s'applique.
 - **Désélection.** Un appui sur le bandeau hors de sa rangée de modèles, un changement d'unité (flèches de [[RG_15]], menu de [[RG_16]], mise en réserve de [[RG_25]]), ou un appui sur le plateau (fond ou token) annule la sélection du bandeau.
+- **Unités attachées.** Pour une unité attachée ([[RG_36]]), les modèles restant à poser sont ceux de toutes ses composantes, réunis en une seule grappe ([[RG_37]]).
 - **Second canal ([[RG_24]]).** Les modèles sélectionnés dans le bandeau portent un contour distinct de leur état non sélectionné, et le bandeau énonce « N modèles sélectionnés » à la place de son compte de modèles restants tant que la sélection en contient plusieurs.
 
 ### RG_15 — Sélecteur d'unité à placer (bandeau bas d'écran)
@@ -269,6 +319,8 @@ Le **repositionnement** d'un modèle déjà posé se fait alors sur le plateau l
 
 **Le bandeau suit la sélection du plateau.** Lorsque le joueur sélectionne sur le plateau un ou plusieurs tokens posés ([[RG_29]], [[RG_30]], [[RG_31]]) et que **tous** appartiennent à **une seule et même unité**, le bandeau bascule sur cette unité — y compris si elle est complète, auquel cas il affiche, comme depuis le menu de [[RG_16]], qu'elle n'a plus rien à poser. Le joueur retrouve ainsi sous le doigt les modèles restant à poser de l'unité qu'il est en train d'ajuster, sans passer par les flèches ni par le menu. Une sélection vide, ou mêlant des tokens de plusieurs unités, laisse le bandeau sur l'unité courante. Seule une sélection faite **sur le plateau** déclenche cette bascule : les tokens que crée un dépôt depuis le bandeau ([[RG_04]], [[RG_32]]) appartiennent déjà à l'unité courante, et l'avance automatique à l'unité suivante qui suit la pose du dernier modèle n'est pas annulée par eux.
 
+**Unités attachées.** Une unité attachée ([[RG_36]]) est une seule entrée du bandeau, dont la rangée réunit les modèles de toutes ses composantes ([[RG_37]]).
+
 ### RG_16 — Menu unités (burger) : vue d'ensemble, regroupement par socle et statut
 
 En haut à droite de l'écran de placement, une icône de menu (burger) ouvre une liste, **défilable verticalement**, de toutes les unités de la liste d'armée en cours de déploiement, rendue comme un panneau latéral coulissant depuis le bord droit de l'écran (le plateau reste partiellement visible sur sa gauche pendant que le panneau est ouvert — voir [[RT_24]]) :
@@ -283,6 +335,8 @@ En haut à droite de l'écran de placement, une icône de menu (burger) ouvre un
   Ce code couleur est propre à l'échelle de l'unité, dans ce menu ; il est distinct de ceux définis pour le statut d'un plateau ([[RG_14]]) et pour l'indicateur agrégé par disposition adverse ([[RG_12]]), qui portent sur un périmètre différent (tout le déploiement, pas une unité isolée).
 
 **Second canal ([[RG_24]]).** Le compte `placés/total` de l'unité est le second canal de ce code couleur ; il est affiché pour toutes les unités, y compris à `0/10` et à `10/10`, et jamais seulement pour les unités partiellement placées. Le compte propre à chaque groupe de socle suit la même forme — `placés/total` — plutôt qu'une multiplication suivie d'un compte séparé : deux nombres consécutifs séparés par un simple espace (« × 1 0 posé ») se lisent comme un seul nombre et rendent le groupe inintelligible.
+
+**Unités attachées.** Une unité attachée ([[RG_36]]) est une seule entrée du menu, à laquelle s'appliquent les comptes et le statut ci-dessus ([[RG_37]]).
 
 ### RG_17 — Affichage du plateau à taille maximale, zoom fixe non pilotable par le joueur
 
@@ -360,6 +414,50 @@ Les seuils de 2" et 9" sont comparés avec une tolérance de 0,01", pour qu'un t
 **Rendu pendant le geste.** Ce que [[RT_34]] prévoit pour un token seul s'applique à toute la grappe : chaque socle provisoire à sa taille exacte, dans la couleur de l'unité ([[RG_06]]), rendu hors du conteneur rogné du plateau, et les modèles d'origine affichés comme « saisis » dans le bandeau. S'y ajoutent un **cercle de visée** sur le centre de la grappe — le point qui suit le doigt — et un **cercle englobant** tracé autour de tous les socles, qui matérialise l'emprise du groupe ; tous deux portent l'état de dépôt refusé.
 
 **Écriture.** Au relâchement validé, tous les placements ([[RT_04]]) sont créés **en une seule écriture** (une seule sauvegarde, [[RG_07]]), avec la rotation 0, puis deviennent la sélection de [[RT_40]]. En cas de refus, rien n'est écrit.
+
+### RG_37 — Déploiement d'une unité attachée comme une seule unité
+
+Selon les règles du jeu, une unité attachée ([[RG_36]]) est **une seule unité** pendant toute la bataille. L'écran de placement ([[RG_03]] étape 3) la traite donc comme une unité **unique** dans toutes les règles de déploiement. Ses composantes (personnages et unité escortée) restent cependant distinctes par leurs socles et leurs couleurs.
+
+**Ce qui porte sur l'unité attachée entière.** Dans les règles suivantes, une unité attachée tient lieu d'« unité » :
+
+- **Bandeau ([[RG_15]]).** L'unité attachée est **une seule entrée**, et les flèches s'y arrêtent une seule fois. Son nom énonce sa composition : les personnages d'abord, puis l'unité escortée (« Tech-Priest Manipulus + Kataphron Breachers »). Sa rangée réunit les modèles restant à poser de toutes ses composantes, dans le même ordre. L'avance automatique à l'unité suivante a lieu quand le dernier modèle de **toute** l'unité attachée est posé. Le bandeau bascule sur l'unité attachée quand la sélection du plateau ne contient que des tokens de cette unité attachée, quelles que soient leurs composantes.
+- **Menu unités ([[RG_16]]).** L'unité attachée est **une seule entrée**, sous le même nom composé. Ses groupes de socle sont ceux de toutes ses composantes. Son compte `placés/total` et son fond blanc / orange / vert portent sur l'ensemble de ses modèles. Choisir l'entrée positionne le bandeau sur l'unité attachée.
+- **Réserve ([[RG_25]]).** La case « en réserve » porte sur l'unité attachée entière : la cocher met toutes ses composantes en réserve, et la décocher les en retire toutes. La confirmation de retrait des tokens déjà posés compte les tokens de toutes les composantes.
+- **Cohésion ([[RG_26]]).** La contiguïté à 2" et l'étendue de 9" sont évaluées sur **tous** les modèles posés de l'unité attachée, toutes composantes confondues. Un personnage doit donc être en cohésion avec son unité escortée. Une unité escortée sans son meneur doit être en cohésion avec elle-même, et le meneur doit ensuite la rejoindre. Le retrait d'un token qui coupe la chaîne conserve le plus grand groupe de **l'unité attachée**. Les exemptions de [[RG_26]] s'appliquent à l'unité attachée : elle est exemptée si elle n'a qu'un seul modèle posé, mais pas parce qu'une de ses composantes n'en a qu'un. Le mode « Règle » ([[RG_35]]) retaille de même l'unité attachée entière à sa sortie.
+- **Sélection de toute l'unité ([[RG_31]]).** Un double clic sur un token sélectionne les tokens posés de **toute** l'unité attachée.
+- **Saisie groupée ([[RG_32]]).** Un double appui sur le bandeau sélectionne les modèles restant à poser de **toute** l'unité attachée. La grappe les réunit tous, les plus grands socles au centre, sans distinction de composante.
+- **Statuts ([[RG_05]], [[RG_12]], [[RG_14]]).** Ces statuts ne changent pas. Ils comptent les modèles posés de chaque composante, et le total de l'unité attachée est la somme de ces comptes.
+
+**Ce qui reste propre à chaque composante.**
+
+- **Couleur ([[RG_06]]).** Chaque composante garde sa propre couleur, dans le bandeau comme sur le plateau. Le personnage reste ainsi repérable au milieu de son unité escortée. Le joueur réassigne la couleur d'une composante comme celle de toute unité.
+- **Socles ([[RG_02]]).** Chaque modèle garde le socle de sa composante. Le regroupement par socle du menu peut donc réunir des modèles de composantes différentes qui partagent un même socle ; il ne se fait pas par composante.
+- **Zone visible ([[RG_29]]) et rotation ([[RG_20]]).** Elles portent toujours sur un token seul et ne sont pas concernées.
+
+**Second canal ([[RG_24]]).** L'appartenance d'un token à une composante ne repose jamais sur sa seule couleur. Le nom composé de l'entrée, dans le bandeau et dans le menu, énonce la composition. Chaque modèle du bandeau et chaque token du plateau énonce aussi, dans son nom accessible, sa composante et, pour un personnage, son rôle (« meneur », « soutien »).
+
+**Listes sans attachement.** Une liste sans unité attachée, dont toutes les listes importées avant [[RG_36]], se déploie exactement comme avant cette règle : chaque unité y est sa propre unité de déploiement.
+
+### RT_46 — Groupe de déploiement : dérivation et propagation aux calculs du placement
+
+**Groupe de déploiement.** Les règles de placement ne reçoivent plus directement des unités de la liste, mais des **groupes de déploiement**. Un groupe réunit soit une unité attachée ([[RG_36]]), soit une unité indépendante seule. Les groupes sont dérivés de la liste par une fonction pure (`src/app/deployment/`), indépendante de l'affichage et couverte par des tests unitaires. Cette fonction lit `ArmyUnit.attachment` ([[RT_45]]) avec la lecture tolérante de [[RT_45]]. Un groupe porte :
+
+- un identifiant, celui de l'unité escortée (ou de l'unité indépendante) ;
+- un nom composé ;
+- la liste ordonnée de ses unités : meneurs, puis soutiens, puis unité escortée, dans l'ordre de la liste à rôle égal.
+
+Les groupes ne sont **ni persistés ni synchronisés** : ils se recalculent à chaque chargement de la liste.
+
+**Les enregistrements ne changent pas.** Un placement ([[RT_04]]) porte toujours l'`idUnite` de sa **composante** et non celui du groupe. La couleur et le socle de chaque token se résolvent donc comme avant. Les unités réservées ([[RT_35]]) restent une liste d'`idUnite` de composantes : mettre un groupe en réserve y inscrit toutes ses unités, et l'en retirer les en retire toutes, en une seule écriture. À la lecture, un groupe est en réserve dès que l'une de ses unités y figure, et la liste est complétée à la prochaine écriture. Ce cas se présente pour un déploiement synchronisé depuis une liste dont les attachements diffèrent. Les calculs de [[RT_11]], qui comparent les placements et la réserve unité par unité, restent donc exacts sans modification.
+
+**Propagation.** Les calculs suivants sont menés par groupe et non plus par unité :
+
+- **Bandeau ([[RT_17]]).** Le bandeau parcourt les groupes. Sa rangée est la différence entre les identifiants de modèle de toutes les unités du groupe et les placements. Un modèle y est identifié par le couple `{ idUnite, idModele }`, puisque deux composantes peuvent avoir des `idModele` de même forme.
+- **Menu unités ([[RT_18]]).** Le regroupement par socle et le statut portent sur les modèles de toutes les unités du groupe.
+- **Cohésion ([[RT_36]]).** Le graphe de contiguïté et le contrôle d'étendue sont construits sur les placements de toutes les unités du groupe. Le contrôle pendant le geste, le retrait et l'instantané du mode « Règle » ([[RT_44]]) prennent un groupe là où ils prenaient une unité. Le « placement le plus ancien » se lit dans l'ordre des enregistrements, toutes composantes confondues.
+- **Sélection ([[RT_40]]).** Le double clic sélectionne les placements de toutes les unités du groupe du token. La bascule du bandeau compte les identifiants de **groupe** distincts parmi les placements sélectionnés, et non plus les `idUnite`.
+- **Grappe ([[RT_41]]).** La sélection du bandeau devient un ensemble de couples `{ idUnite, idModele }`. La formation trie les socles de toutes les composantes ensemble. Chaque socle provisoire, puis chaque placement créé, garde l'`idUnite` et la couleur de sa composante.
 
 ### RT_11 — Calcul des indicateurs de déploiement existant
 
@@ -442,7 +540,7 @@ La suppression d'un déploiement sauvegardé est une action confirmée explicite
 Le joueur peut supprimer ou dupliquer une liste d'armée importée directement depuis l'accueil ([[RG_18]]), indépendamment de la suppression d'un déploiement sauvegardé ([[RG_08]]) :
 
 - **Suppression** : action confirmée explicitement par le joueur (sur le même principe que [[RG_08]]). Si des déploiements sauvegardés référencent cette liste ([[RT_07]]), le joueur en est informé avant confirmation, et ces déploiements sont supprimés avec elle (suppression en cascade) plutôt que laissés en entrées orphelines.
-- **Duplication** : crée une copie indépendante de la liste, avec son propre identifiant stable ([[RT_07]]) et son propre nom (par défaut « nom d'origine (copie) », modifiable) ; la copie démarre sans aucun déploiement associé, au même titre qu'une liste nouvellement importée.
+- **Duplication** : crée une copie indépendante de la liste, avec son propre identifiant stable ([[RT_07]]) et son propre nom (par défaut « nom d'origine (copie) », modifiable) ; la copie démarre sans aucun déploiement associé, au même titre qu'une liste nouvellement importée. La copie reprend les unités attachées de la liste d'origine ([[RG_36]], [[RT_45]]).
 
 ### RT_06 — Persistance locale des déploiements sauvegardés
 
@@ -821,3 +919,5 @@ Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_16]] (
 - **[[EX_09]] / [[RG_33]] / [[RG_34]] / [[RG_35]] / [[RT_42]] / [[RT_43]] / [[RT_44]] — implémentées, vérifiées en navigateur par évènements de pointeur simulés.** Le calcul de la mesure (`measureInches`/`formatInches` de `src/app/deployment/geometry.ts`) est couvert par des tests unitaires. La mesure libre, la mesure d'un déplacement seul et groupé, l'effacement au premier appui, le déplacement libéré de la cohésion, la confirmation de sortie (annulation comprise), la garde du bouton retour et le maintien du contrôle hors mode ont été contrôlés dans le navigateur, en 1024 × 768 et en 375 × 812, mais pas par un parcours manuel sur appareil tactile.
 - **[[RT_43]] — icône de règle hors du jeu d'icônes.** Le jeu d'icônes de l'application (Ionicons) ne contient pas de règle ; l'icône est un SVG propre au projet, `src/assets/icons/ruler.svg`, dessiné dans le même style au trait et rendu par le même composant d'icône. Le bouton est un bouton natif et non un bouton du cadre d'interface : ce dernier relit ses attributs `aria-*` liés dynamiquement avant d'être initialisé et lève alors une erreur.
 - **[[RG_35]] — fermeture de l'application en mode « Règle ».** Le mode n'étant pas persisté et les déplacements libres étant écrits au relâchement, une application fermée mode actif laisse un déploiement dont des unités sont hors cohésion sans que le rétablissement de [[RG_35]] ait eu lieu. Au rechargement, ces unités sont traitées comme des unités déjà hors cohésion ([[RG_26]]) et ne sont pas retaillées. Écart assumé : le rendre impossible demanderait de différer l'écriture des déplacements jusqu'à la sortie du mode.
+- **[[RG_36]] / [[RG_37]] / [[RT_45]] / [[RT_46]] — spécifiées, non implémentées.** Le parseur de [[RT_13]] ne lit pas encore les associations du roster, et `ArmyUnit.attachment` n'existe ni dans le modèle de données ni dans [openapi.yml](openapi.yml). Aujourd'hui, un personnage et son unité escortée sont donc importés et déployés comme deux unités indépendantes, avec deux cohésions séparées.
+- **[[RG_36]] — règles « peut mener » non contrôlées.** L'application ne vérifie ni qu'un personnage peut mener l'unité à laquelle il est attaché, ni le nombre de meneurs et de soutiens par unité escortée. Ces règles dépendent de chaque datasheet, et aucun référentiel embarqué ne les décrit. Écart assumé : le joueur fait autorité sur sa liste.
