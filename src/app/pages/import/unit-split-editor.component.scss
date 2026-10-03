@@ -1,0 +1,113 @@
+:host {
+  display: block;
+  padding: 8px 12px 12px;
+}
+
+// RT_51: côte à côte, l'une sous l'autre en largeur mobile.
+.halves {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--app-touch-gap);
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.half {
+  min-height: 72px;
+  padding: 8px;
+  border: 2px dashed var(--app-border);
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface-sunken);
+  color: var(--app-text);
+
+  &.drop-hover {
+    border-color: var(--app-border-interactive);
+    border-style: solid;
+  }
+
+  // RG_40/RG_24: la moitié en erreur est encadrée, avec icône et texte.
+  &.in-error {
+    border-color: var(--app-danger-border);
+    border-style: solid;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  h4 {
+    flex: 1;
+    margin: 0;
+    font-size: var(--app-font-sm);
+    font-weight: 600;
+  }
+
+  .count {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--app-font-sm);
+    color: var(--app-text-secondary);
+  }
+
+  &.in-error .count {
+    color: var(--app-text);
+    font-weight: 600;
+  }
+}
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--app-border);
+}
+
+.models {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+// RT_31: cible de 44 × 44 même quand le dessin du socle est plus petit.
+// `touch-action: none` laisse le geste à l'application plutôt qu'au défilement.
+.model {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--app-touch-min);
+  min-height: var(--app-touch-min);
+  padding: 0;
+  border: 0;
+  border-radius: var(--app-radius-sm);
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+
+  &:focus-visible {
+    outline: 2px solid var(--app-border-interactive);
+  }
+
+  &.dragging {
+    position: relative;
+    z-index: 10;
+    cursor: grabbing;
+  }
+}
+
+.split-error p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: var(--app-radius-md);
+  background: var(--app-danger-surface);
+  color: var(--app-danger-on);
+  font-size: var(--app-font-sm);
+}

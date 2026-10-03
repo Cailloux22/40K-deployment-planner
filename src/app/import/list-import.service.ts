@@ -7,6 +7,7 @@ import { newId } from '../data/library.service';
 import { autoUnitColor } from './unit-colors';
 import { ParsedRoster, RosterParseError, parseRosterJsonText } from './roster-json.parser';
 import { attachUnit, attachmentBlocker } from '../deployment/attachments';
+import { UnitSplitDraft, applySplits, splitErrors } from './unit-split';
 
 /**
  * RT_01 — couche de parsing des formats d'import, isolée de l'UI.
@@ -49,6 +50,8 @@ export interface ImportDraft {
    * en toutes lettres au récapitulatif, unités concernées nommées.
    */
   readonly attachmentIssues: readonly string[];
+  /** RG_40/RT_50: scissions en cours, une par unité scindée. */
+  readonly splits: readonly UnitSplitDraft[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -170,6 +173,7 @@ export class ListImportService {
       units,
       sourceFileName: fileName,
       attachmentIssues,
+      splits: [],
     };
   }
 
@@ -218,9 +222,21 @@ export class ListImportService {
     );
   }
 
-  /** RG_22: la liste ne peut être validée qu'une fois tous les socles connus. */
+  /** RG_40/RT_50: scissions dont une moitié compte moins de 5 modèles. */
+  invalidSplits(draft: ImportDraft): UnitSplitDraft[] {
+    return draft.splits.filter((split) => splitErrors(split).length > 0);
+  }
+
+  /**
+   * RG_22: la liste ne peut être validée qu'une fois tous les socles connus,
+   * et (RG_40) tant qu'aucune scission n'a de moitié sous le minimum.
+   */
   isDraftComplete(draft: ImportDraft): boolean {
-    return draft.name.trim().length > 0 && this.unresolvedGroups(draft).length === 0;
+    return (
+      draft.name.trim().length > 0 &&
+      this.unresolvedGroups(draft).length === 0 &&
+      this.invalidSplits(draft).length === 0
+    );
   }
 
   /** Transforme le brouillon validé en liste persistable (RT_07). */
@@ -230,7 +246,8 @@ export class ListImportService {
       id: newId('list'),
       name: draft.name.trim(),
       forceDispositionId: draft.forceDisposition.id,
-      units: draft.units,
+      // RT_52: chaque scission devient deux unités ordinaires.
+      units: applySplits(draft.units, draft.splits, () => newId('unit')),
       importedAt: now,
       updatedAt: now,
       versionToken: null,

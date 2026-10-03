@@ -30,7 +30,7 @@ Layout of the app-specific code:
 - `src/app/models/` — domain, referential and sync types.
 - `src/app/referentials/` — access to the embedded referentials, the `RG_02` name/base matching, and `board-image.service.ts` (`RT_12`/`RT_27`/`RG_23`: which board image to display — network, cache or bundled).
 - `src/app/data/` — IndexedDB store (`RT_08`) and the library of lists/deployments (`RT_06`).
-- `src/app/import/` — `RT_01` format layer, `RT_13` roster JSON parser, `RG_06` colours.
+- `src/app/import/` — `RT_01` format layer, `RT_13` roster JSON parser, `RG_06` colours, splitting a unit of 10+ models in two at the import summary (`RG_40`/`RT_50`/`RT_52`, `unit-split.ts`; its drag-and-drop editor is `src/app/pages/import/unit-split-editor.component.ts`, `RT_51`).
 - `src/app/deployment/` — pure status/grouping logic (`RT_11`, `RT_18`), token geometry (`RT_05`, `RT_19`), shared plane geometry and the ruler measure (`geometry.ts`, `RG_33`/`RT_42`), unit coherency (`RG_26`/`RT_36`), multi-token selection (`RG_30`/`RG_31`/`RT_40`, `selection.ts`), the compact cluster for a grouped drop from the band (`RG_32`/`RT_41`, `cluster.ts`), attached units and the deployment groups the placement rules operate on (`RG_36`/`RG_37`/`RT_45`/`RT_46`, `attachments.ts` — a leader/support and its bodyguard form one group; placements still carry the component's `idUnite`) and the zone visible from a model (`RG_27`/`RG_28`/`RT_38`).
 - `src/app/net/` — connectivity (`RT_14`), auth (`RT_21`), delta sync (`RT_09`/`RT_10`/`RT_15`).
 - `src/app/pages/` + `src/app/home/` — the screens; `src/app/shared/` — cross-screen components.

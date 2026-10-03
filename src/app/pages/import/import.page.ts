@@ -15,6 +15,14 @@ import {
 import { ImportDraft, ListImportService } from '../../import/list-import.service';
 import { RosterParseError } from '../../import/roster-json.parser';
 import { selectableUnitColors } from '../../import/unit-colors';
+import {
+  SplitHalf,
+  UnitSplitDraft,
+  canSplit,
+  defaultSplit,
+  halfName,
+  secondHalfColors,
+} from '../../import/unit-split';
 import { ArmyUnit, AttachmentRole, UnitModelGroup } from '../../models/domain.models';
 import { BaseShape } from '../../models/referential.models';
 import { ConnectivityService } from '../../net/connectivity.service';
@@ -30,6 +38,10 @@ interface UnitRow {
   readonly characters: readonly { readonly name: string; readonly role: string }[];
   /** RG_36: attachements qu'il est permis de constituer depuis cette unité. */
   readonly attachOptions: readonly { readonly value: string; readonly label: string }[];
+  /** RG_40: l'unité peut être scindée en deux. */
+  readonly canSplit: boolean;
+  /** RG_40/RT_50: scission en cours, et couleur de chaque moitié (RT_52). */
+  readonly split?: { readonly draft: UnitSplitDraft; readonly colors: readonly [string, string] };
 }
 
 /** RG_36: ordre de présentation des rôles proposés à l'attachement. */
@@ -62,7 +74,7 @@ export class ImportPage implements OnInit {
   private readonly router = inject(Router);
   private readonly alerts = inject(AlertController);
 
-  private readonly shapesById = signal<ReadonlyMap<string, BaseShape>>(new Map());
+  readonly shapesById = signal<ReadonlyMap<string, BaseShape>>(new Map());
 
   readonly online = this.connectivity.online;
   readonly accept = this.imports.acceptAttribute();
@@ -81,8 +93,11 @@ export class ImportPage implements OnInit {
     const shapes = this.shapesById();
     const attachments = validAttachments(draft.units);
     const nameOf = new Map(draft.units.map((unit) => [unit.id, unit.name]));
+    const splitOf = new Map(draft.splits.map((split) => [split.unitId, split]));
+    const secondColors = secondHalfColors(draft.units, draft.splits);
     return draft.units.map((unit) => {
       const attachment = attachments.get(unit.id);
+      const split = splitOf.get(unit.id);
       return {
         unit,
         groups: unit.modelGroups.map((group) => ({
@@ -105,8 +120,11 @@ export class ImportPage implements OnInit {
             : [];
         }),
         // RG_36: seuls les choix qui respectent les contraintes structurelles
-        // sont proposés — aucun contrôle des règles « peut mener ».
-        attachOptions: draft.units
+        // sont proposés — aucun contrôle des règles « peut mener ». RG_40: une
+        // unité scindée n'est pas un personnage, elle ne s'attache à rien.
+        attachOptions: split
+          ? []
+          : draft.units
           .filter((bodyguard) => attachmentBlocker(draft.units, unit.id, bodyguard.id) === null)
           .flatMap((bodyguard) =>
             ROLES.map((role) => ({
@@ -114,6 +132,10 @@ export class ImportPage implements OnInit {
               label: `${role === 'leader' ? 'Meneur' : 'Soutien'} de « ${bodyguard.name} »`,
             })),
           ),
+        canSplit: !split && canSplit(unit),
+        split: split
+          ? { draft: split, colors: [unit.color, secondColors.get(unit.id) ?? unit.color] }
+          : undefined,
       };
     });
   });
@@ -126,6 +148,12 @@ export class ImportPage implements OnInit {
   readonly unresolvedCount = computed(() => {
     const draft = this.draft();
     return draft ? this.imports.unresolvedGroups(draft).length : 0;
+  });
+
+  /** RG_40/RT_50: nombre de scissions dont une moitié compte moins de 5 modèles. */
+  readonly invalidSplitCount = computed(() => {
+    const draft = this.draft();
+    return draft ? this.imports.invalidSplits(draft).length : 0;
   });
 
   /** RG_22: la validation n'est possible qu'une fois le récapitulatif complet. */
@@ -241,6 +269,38 @@ export class ImportPage implements OnInit {
   detach(unit: ArmyUnit): void {
     const draft = this.draft();
     if (draft) this.draft.set({ ...draft, units: detachUnit(draft.units, unit.id) });
+  }
+
+  /** RG_40: scinde l'unité, avec la répartition proposée par défaut (RT_50). */
+  split(unit: ArmyUnit): void {
+    const draft = this.draft();
+    if (!draft || !canSplit(unit) || draft.splits.some((s) => s.unitId === unit.id)) return;
+    this.draft.set({ ...draft, splits: [...draft.splits, defaultSplit(unit)] });
+  }
+
+  /** RG_40: nouvelle répartition, issue d'un glisser-déposer ou d'une action. */
+  updateSplit(split: UnitSplitDraft): void {
+    const draft = this.draft();
+    if (!draft) return;
+    this.draft.set({
+      ...draft,
+      splits: draft.splits.map((candidate) => (candidate.unitId === split.unitId ? split : candidate)),
+    });
+  }
+
+  /** RG_40: annule la scission — l'unité retrouve sa forme d'origine, attachements compris. */
+  cancelSplit(unit: ArmyUnit): void {
+    const draft = this.draft();
+    if (draft) this.draft.set({ ...draft, splits: draft.splits.filter((s) => s.unitId !== unit.id) });
+  }
+
+  /** RG_40/RG_36: moitié qui reçoit les personnages attachés. */
+  setBodyguardHalf(split: UnitSplitDraft, half: SplitHalf): void {
+    this.updateSplit({ ...split, bodyguardHalf: half });
+  }
+
+  halfName(unit: ArmyUnit, half: SplitHalf): string {
+    return halfName(unit.name, half);
   }
 
   /** RG_06: réassignation manuelle de la couleur d'une unité. */

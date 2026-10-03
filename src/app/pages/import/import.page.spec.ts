@@ -64,6 +64,7 @@ describe('ImportPage.assignShape — RG_02', () => {
       units: [unit()],
       sourceFileName: 'roster.json',
       attachmentIssues: [],
+      splits: [],
     };
     component.draft.set(draft);
   });
@@ -125,6 +126,7 @@ describe('ImportPage.assignCustomRectangle — RG_02/RT_28', () => {
       units: [unit()],
       sourceFileName: 'roster.json',
       attachmentIssues: [],
+      splits: [],
     };
     component.draft.set(draft);
   });

@@ -1,0 +1,55 @@
+<!-- RT_51: deux moitiés côte à côte (l'une sous l'autre en largeur mobile),
+     chacune zone de dépôt, une pastille par modèle à la forme de son socle. -->
+<div class="halves">
+  @for (half of halves(); track half.index) {
+    <section
+      class="half"
+      [class.in-error]="half.error"
+      [class.drop-hover]="hoverHalf() === half.index"
+      [attr.data-split-half]="half.index"
+      [attr.aria-label]="half.name"
+    >
+      <header>
+        <span class="swatch" [style.background]="half.color"></span>
+        <h4>{{ half.name }}</h4>
+        <!-- RG_24: l'erreur ne repose pas sur la seule couleur. -->
+        <span class="count">
+          @if (half.error) {
+            <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+          }
+          {{ half.count }} modèle{{ half.count > 1 ? 's' : '' }}
+        </span>
+      </header>
+
+      <div class="models">
+        @for (model of half.models; track model.key) {
+          <button
+            type="button"
+            class="model"
+            [attr.data-split-half]="half.index"
+            [attr.data-split-group]="model.groupId"
+            [attr.aria-label]="model.label + ' — déplacer ou échanger'"
+            (pointerdown)="onPointerDown($event, half.index, model.groupId)"
+            (pointermove)="onPointerMove($event)"
+            (pointerup)="onPointerUp($event)"
+            (pointercancel)="onPointerCancel()"
+            (click)="onModelClick(half.index, model.groupId)"
+          >
+            <app-base-token [shape]="model.shape" [color]="half.color" [pixelsPerMm]="0.55"></app-base-token>
+          </button>
+        }
+      </div>
+    </section>
+  }
+</div>
+
+<!-- RG_40/RT_51: erreur annoncée dès son apparition et visible jusqu'à sa
+     résolution ; la zone existe en permanence pour que l'annonce ait lieu. -->
+<div class="split-error" role="alert">
+  @for (message of errors(); track message) {
+    <p>
+      <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+      {{ message }}
+    </p>
+  }
+</div>

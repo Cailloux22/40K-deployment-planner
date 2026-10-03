@@ -124,6 +124,16 @@
         </ion-note>
       }
 
+      <!-- RG_40/RT_50: une scission dont une moitié compte moins de 5 modèles
+           bloque l'enregistrement ; le récapitulatif dit pourquoi. -->
+      @if (invalidSplitCount() > 0) {
+        <ion-note class="unresolved-note">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          Chaque moitié d'une unité scindée doit compter au moins 5 modèles. Rééquilibrez les
+          moitiés signalées ci-dessous, ou annulez leur scission, pour pouvoir enregistrer la liste.
+        </ion-note>
+      }
+
       <!-- RG_36: un attachement déclaré par la source mais inexploitable n'est
            pas créé ; il est énoncé ici, unités nommées, et le joueur peut le
            recréer à la main. Le reste de la liste est importé normalement. -->
@@ -188,6 +198,21 @@
                     }
                   </ion-label>
                 </ion-item>
+                <!-- RG_40: les personnages attachés suivent une seule moitié. -->
+                @if (row.split; as split) {
+                  <ion-item class="attachment">
+                    <ion-select
+                      label="Personnages attachés à"
+                      labelPlacement="stacked"
+                      interface="popover"
+                      [value]="split.draft.bodyguardHalf"
+                      (ionChange)="setBodyguardHalf(split.draft, $any($event.detail.value))"
+                    >
+                      <ion-select-option [value]="0">{{ halfName(row.unit, 0) }}</ion-select-option>
+                      <ion-select-option [value]="1">{{ halfName(row.unit, 1) }}</ion-select-option>
+                    </ion-select>
+                  </ion-item>
+                }
               } @else if (row.attachOptions.length > 0) {
                 <ion-item class="attachment">
                   <ion-select
@@ -204,6 +229,37 @@
                   </ion-select>
                 </ion-item>
               }
+            }
+
+            <!-- RG_40: scission d'une unité d'au moins 10 modèles en deux. -->
+            @if (row.split; as split) {
+              <ion-item lines="none" class="split-head">
+                <ion-icon name="git-branch-outline" slot="start" aria-hidden="true"></ion-icon>
+                <ion-label>
+                  <h3>Unité scindée en deux</h3>
+                  <p>Glissez un modèle vers l'autre moitié, ou sur un modèle pour les échanger.</p>
+                </ion-label>
+                <ion-button slot="end" fill="outline" size="small" (click)="cancelSplit(row.unit)">
+                  Annuler la scission
+                </ion-button>
+              </ion-item>
+              <app-unit-split-editor
+                [unit]="row.unit"
+                [split]="split.draft"
+                [colors]="split.colors"
+                [shapes]="shapesById()"
+                (splitChange)="updateSplit($event)"
+              ></app-unit-split-editor>
+            } @else if (row.canSplit) {
+              <ion-item lines="none" class="split-head">
+                <ion-icon name="git-branch-outline" slot="start" aria-hidden="true"></ion-icon>
+                <ion-label>
+                  <p>Cette unité peut être déployée en deux unités distinctes.</p>
+                </ion-label>
+                <ion-button slot="end" fill="outline" size="small" (click)="split(row.unit)">
+                  Scinder
+                </ion-button>
+              </ion-item>
             }
 
             <!-- RG_16/RG_22: socles regroupés par forme/taille avec compte. -->
