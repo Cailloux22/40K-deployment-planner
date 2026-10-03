@@ -47,7 +47,7 @@ Ce choix, quelle que soit la façon dont il a été fait, n'est mémorisé nulle
 
 ### RG_22 — Récapitulatif et confirmation avant enregistrement d'un import
 
-Une fois le fichier importé interprété avec succès ([[RG_01]]) et chaque unité résolue vers un socle ([[RG_02]]), l'application affiche un récapitulatif — nombre d'unités, nombre de modèles et socles associés par unité — avant d'enregistrer la liste. Le nom de la liste, pré-rempli à partir de la donnée source (`roster.name`, [[RT_13]]), reste modifiable par le joueur sur cet écran. La liste n'est persistée qu'après validation explicite de ce récapitulatif ; le joueur peut aussi l'annuler, auquel cas rien n'est enregistré. Le récapitulatif présente aussi les unités attachées lues dans la source, que le joueur peut défaire ou constituer avant de valider ([[RG_36]]). Il permet enfin de scinder en deux une unité d'au moins 10 modèles ([[RG_40]]).
+Une fois le fichier importé interprété avec succès ([[RG_01]]) et chaque unité résolue vers un socle ([[RG_02]]), l'application affiche un récapitulatif — nombre d'unités, nombre de modèles et socles associés par unité — avant d'enregistrer la liste. Le nom de la liste, pré-rempli à partir de la donnée source (`roster.name`, [[RT_13]]), reste modifiable par le joueur sur cet écran. La liste n'est persistée qu'après validation explicite de ce récapitulatif ; le joueur peut aussi l'annuler, auquel cas rien n'est enregistré. Le récapitulatif présente aussi les unités attachées lues dans la source, que le joueur peut défaire ou constituer avant de valider ([[RG_36]]). Il permet enfin de scinder en deux une unité d'au moins 10 modèles ([[RG_40]]) ; une scission dont une moitié compte moins de 5 modèles bloque la validation.
 
 ### RT_01 — Parsing d'import
 
@@ -967,7 +967,7 @@ Satisfait par : [[RG_40]], [[RT_50]], [[RT_51]], [[RT_52]]. La scission s'inscri
 
 **Principe.** Au récapitulatif d'import ([[RG_22]]), le joueur peut scinder en **deux unités** toute unité qui compte **au moins 10 modèles**, donc au moins 10 tokens ([[RG_04]]). Le seuil porte sur les modèles de l'unité elle-même : les personnages qui lui sont attachés ([[RG_36]]) n'entrent pas dans le compte. Une unité de moins de 10 modèles ne propose pas la scission. Un personnage attaché à une autre unité ne la propose pas non plus. Une unité ne se scinde qu'une fois, et toujours en deux exactement : une moitié issue d'une scission ne peut pas être scindée à nouveau.
 
-**Minimum de 5 modèles par moitié.** Chacune des deux moitiés compte **au moins 5 modèles** à tout moment. Une unité de 10 modèles se scinde donc toujours en 5 + 5, une unité de 13 modèles en 5 + 8, 6 + 7, 7 + 6 ou 8 + 5.
+**Minimum de 5 modèles par moitié.** Chacune des deux moitiés doit compter **au moins 5 modèles** pour que la liste puisse être enregistrée. Une unité de 10 modèles s'enregistre donc toujours en 5 + 5, une unité de 13 modèles en 5 + 8, 6 + 7, 7 + 6 ou 8 + 5. Ce minimum ne bloque pas la répartition en cours : il bloque l'enregistrement (voir « Moitié sous le minimum » ci-dessous).
 
 **Répartition proposée par défaut.** Quand le joueur demande la scission, l'application propose aussitôt une répartition, qu'il peut valider telle quelle :
 
@@ -978,8 +978,10 @@ La répartition par défaut respecte toujours le minimum de 5 par moitié.
 
 **Répartition libre par glisser-déposer.** La répartition par défaut n'est qu'une proposition. Le joueur ajuste la répartition par **glisser-déposer**, modèle par modèle :
 
-- **déposer un modèle dans l'autre moitié** l'y fait passer. Le dépôt est refusé s'il ferait tomber la moitié de départ sous 5 modèles, et le modèle revient à sa place ;
-- **déposer un modèle sur un modèle de l'autre moitié** échange les deux. Les effectifs ne changent pas, seule la composition change. C'est le seul moyen de modifier une unité de 10 modèles, dont les moitiés sont déjà au minimum.
+- **déposer un modèle dans l'autre moitié** l'y fait passer. Le dépôt est **toujours accepté**, même s'il fait tomber la moitié de départ sous 5 modèles, voire à 0 ;
+- **déposer un modèle sur un modèle de l'autre moitié** échange les deux. Les effectifs ne changent pas, seule la composition change. C'est le moyen le plus direct de changer la composition d'une unité de 10 modèles sans quitter le 5 + 5.
+
+**Moitié sous le minimum.** Tant qu'une moitié compte moins de 5 modèles, l'unité est signalée **en erreur** sur le récapitulatif : le message nomme la moitié concernée et le nombre de modèles qui lui manquent (« Moitié (2) : 3 modèles, il en faut au moins 5 »). L'erreur reste visible tant qu'elle n'est pas résolue, et **la liste ne peut pas être enregistrée** tant qu'une unité scindée est en erreur, sur le même principe qu'un socle non assigné ([[RG_02]], [[RG_22]]). Le joueur la résout en rééquilibrant les moitiés ou en annulant la scission. L'erreur disparaît dès que les deux moitiés comptent au moins 5 modèles.
 
 Chaque déplacement peut aussi se faire sans glisser, par une action explicite sur le modèle, pour le joueur qui ne peut pas ou ne veut pas faire le geste ([[EX_07]]). Le joueur peut **annuler la scission** tant que la liste n'est pas enregistrée : l'unité retrouve sa forme d'origine, attachements compris.
 
@@ -995,7 +997,8 @@ Chaque déplacement peut aussi se faire sans glisser, par une action explicite s
 
 - `canSplit(unit)` : vrai si l'unité compte au moins 10 modèles (`modelCount`, qui exclut les personnages attachés), ne porte pas elle-même d'`attachment` ([[RT_45]]) et n'est pas déjà une moitié ;
 - `defaultSplit(unit)` : la répartition par défaut de [[RG_40]] ;
-- `moveModel(split, groupId, from)` et `swapModels(split, groupIdA, groupIdB, from)` : le résultat d'un dépôt, ou `null` quand il est refusé.
+- `moveModel(split, groupId, from)` et `swapModels(split, groupIdA, groupIdB, from)` : la nouvelle répartition après un dépôt. Ces opérations ne refusent jamais un dépôt pour cause d'effectif : seul un dépôt incohérent (groupe absent de la moitié de départ) laisse la répartition inchangée ;
+- `splitErrors(split)` : la liste des moitiés sous le minimum de 5, avec leur effectif. Elle est vide quand la scission est valide.
 
 **Représentation.** Une scission en cours est un état du récapitulatif, jamais persisté ([[RG_40]], portée) :
 
@@ -1009,7 +1012,9 @@ interface UnitSplitDraft {
 }
 ```
 
-Un modèle n'a pas d'identité propre dans la liste ([[RT_13]] ne produit que des comptes par profil) : déplacer « un modèle », c'est retirer 1 au compte de son groupe dans une moitié et ajouter 1 dans l'autre. L'invariant vérifié après chaque opération est : pour chaque groupe, la somme des deux moitiés égale son `count` d'origine, et chaque moitié totalise au moins 5.
+Un modèle n'a pas d'identité propre dans la liste ([[RT_13]] ne produit que des comptes par profil) : déplacer « un modèle », c'est retirer 1 au compte de son groupe dans une moitié et ajouter 1 dans l'autre. L'invariant garanti après chaque opération est : pour chaque groupe, la somme des deux moitiés égale son `count` d'origine. Le minimum de 5 par moitié n'est pas un invariant : c'est une condition de validité, contrôlée par `splitErrors`.
+
+**Blocage de l'enregistrement.** La condition de validation du récapitulatif ([[RG_22]]), qui exige déjà que tous les socles soient assignés ([[RG_02]]), exige aussi que `splitErrors` soit vide pour chaque scission en cours. Le bouton de validation reste désactivé tant que ce n'est pas le cas, et le récapitulatif indique pourquoi.
 
 **Répartition par défaut.** Les groupes sont parcourus dans l'ordre de `modelGroups`. Pour chacun, la part arrondie au supérieur (`ceil(count / 2)`) va à la moitié la moins nombreuse à ce stade (la première en cas d'égalité), le reste à l'autre. L'écart entre les deux moitiés ne dépasse donc jamais 1, et comme l'unité compte au moins 10 modèles, chaque moitié en reçoit au moins 5. Exemple : `[sergent ×1, troupe ×9]` donne 1 + 4 pour la première moitié et 0 + 5 pour la seconde, soit 5 + 5.
 
@@ -1017,9 +1022,11 @@ Un modèle n'a pas d'identité propre dans la liste ([[RT_13]] ne produit que de
 
 **Rendu.** Sur le récapitulatif ([[RG_22]]), une unité scindée affiche ses deux moitiés côte à côte, ou l'une sous l'autre en largeur mobile. Chaque moitié est une zone de dépôt qui montre son effectif (« 6 modèles ») et une **pastille par modèle**, à la forme et aux proportions relatives de son socle, dans la couleur de la moitié ([[RT_52]]). Les pastilles d'un même groupe sont adjacentes et portent le nom de leur profil en libellé accessible.
 
-**Geste.** Le glisser-déposer repose sur les évènements `Pointer` avec capture du pointeur, comme les gestes de l'écran de placement ([[RT_34]], [[RT_40]]). L'API HTML de glisser-déposer n'est pas utilisée : elle ne réagit pas au toucher sur mobile. Pendant le geste, la pastille suit le doigt et la zone survolée est mise en évidence. Un dépôt dont la cible est une pastille de l'autre moitié appelle `swapModels`, un dépôt ailleurs dans l'autre moitié appelle `moveModel`. Quand l'opération renvoie `null`, la pastille revient à sa place avec une courte animation, et un message indique la raison (« Chaque moitié garde au moins 5 modèles »). Un dépôt dans la moitié d'origine ne fait rien.
+**Geste.** Le glisser-déposer repose sur les évènements `Pointer` avec capture du pointeur, comme les gestes de l'écran de placement ([[RT_34]], [[RT_40]]). L'API HTML de glisser-déposer n'est pas utilisée : elle ne réagit pas au toucher sur mobile. Pendant le geste, la pastille suit le doigt et la zone survolée est mise en évidence. Un dépôt dont la cible est une pastille de l'autre moitié appelle `swapModels`, un dépôt ailleurs dans l'autre moitié appelle `moveModel`. Un dépôt dans la moitié d'origine ou hors des deux moitiés ne fait rien : la pastille revient à sa place.
 
-**Alternative sans geste.** Chaque pastille est un bouton natif. Un appui l'ouvre sur deux actions : « Passer dans l'autre moitié » et « Échanger avec… », qui propose les profils présents dans l'autre moitié. Une action refusée par [[RT_50]] est présentée désactivée, avec sa raison. Les pastilles respectent la cible tactile de [[RT_31]] : la surface reste de 44 × 44 pixels CSS même quand le dessin du socle est plus petit.
+**Signalement de l'erreur.** Quand `splitErrors` n'est pas vide, la moitié concernée est encadrée et son effectif affiché comme une erreur. Le message de [[RG_40]] s'affiche sous l'unité, dans une zone `role="alert"` pour être annoncé par les technologies d'assistance dès son apparition. L'erreur ne repose pas sur la seule couleur : l'encadré s'accompagne d'une icône et du texte ([[RG_24]]). Ce message reste visible jusqu'à ce que l'erreur soit résolue.
+
+**Alternative sans geste.** Chaque pastille est un bouton natif. Un appui l'ouvre sur deux actions : « Passer dans l'autre moitié » et « Échanger avec… », qui propose les profils présents dans l'autre moitié. Comme le geste, ces actions restent disponibles même quand elles font passer une moitié sous le minimum. Les pastilles respectent la cible tactile de [[RT_31]] : la surface reste de 44 × 44 pixels CSS même quand le dessin du socle est plus petit.
 
 **Commandes de l'unité.** L'action « Scinder » n'est affichée que si `canSplit` est vrai. Une unité scindée affiche à la place « Annuler la scission » et, si elle escorte des personnages, le choix de la moitié qui les reçoit (`bodyguardHalf`).
 
