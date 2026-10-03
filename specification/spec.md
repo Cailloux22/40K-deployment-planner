@@ -20,7 +20,7 @@ Chaque exigence renvoie aux règles de gestion et/ou techniques qui la satisfont
 
 Le joueur doit pouvoir importer sa liste d'armée dans l'application pour que celle-ci connaisse les unités à déployer (nombre de modèles, forme et taille de socle par unité).
 
-Satisfait par : [[RG_01]], [[RG_02]], [[RG_13]], [[RG_22]], [[RG_36]], [[RT_01]], [[RT_02]], [[RT_13]], [[RT_26]], [[RT_28]], [[RT_45]].
+Satisfait par : [[RG_01]], [[RG_02]], [[RG_13]], [[RG_22]], [[RG_36]], [[RG_40]], [[RT_01]], [[RT_02]], [[RT_13]], [[RT_26]], [[RT_28]], [[RT_45]].
 
 ### RG_01 — Formats d'import acceptés
 
@@ -47,7 +47,7 @@ Ce choix, quelle que soit la façon dont il a été fait, n'est mémorisé nulle
 
 ### RG_22 — Récapitulatif et confirmation avant enregistrement d'un import
 
-Une fois le fichier importé interprété avec succès ([[RG_01]]) et chaque unité résolue vers un socle ([[RG_02]]), l'application affiche un récapitulatif — nombre d'unités, nombre de modèles et socles associés par unité — avant d'enregistrer la liste. Le nom de la liste, pré-rempli à partir de la donnée source (`roster.name`, [[RT_13]]), reste modifiable par le joueur sur cet écran. La liste n'est persistée qu'après validation explicite de ce récapitulatif ; le joueur peut aussi l'annuler, auquel cas rien n'est enregistré. Le récapitulatif présente aussi les unités attachées lues dans la source, que le joueur peut défaire ou constituer avant de valider ([[RG_36]]).
+Une fois le fichier importé interprété avec succès ([[RG_01]]) et chaque unité résolue vers un socle ([[RG_02]]), l'application affiche un récapitulatif — nombre d'unités, nombre de modèles et socles associés par unité — avant d'enregistrer la liste. Le nom de la liste, pré-rempli à partir de la donnée source (`roster.name`, [[RT_13]]), reste modifiable par le joueur sur cet écran. La liste n'est persistée qu'après validation explicite de ce récapitulatif ; le joueur peut aussi l'annuler, auquel cas rien n'est enregistré. Le récapitulatif présente aussi les unités attachées lues dans la source, que le joueur peut défaire ou constituer avant de valider ([[RG_36]]). Il permet enfin de scinder en deux une unité d'au moins 10 modèles ([[RG_40]]).
 
 ### RT_01 — Parsing d'import
 
@@ -155,6 +155,23 @@ Le `name` de l'association donne le rôle : `"Leading"` pour un meneur, `"Suppor
 **Duplication ([[RG_21]]).** La copie d'une liste attribue de nouveaux identifiants à ses unités. Les `bodyguardUnitId` sont convertis dans la même opération vers les identifiants de la copie, pour que la copie ne pointe jamais sur les unités de l'original.
 
 **Lecture tolérante.** À la lecture d'une liste, une valeur qui ne respecte plus les contraintes de [[RG_36]] est ignorée sans erreur : le personnage est alors traité comme une unité indépendante. C'est le cas d'un `bodyguardUnitId` qui ne désigne aucune unité de la liste, d'une unité escortée elle-même attachée, ou d'un personnage attaché à lui-même. Cette lecture suit le même principe que les identifiants orphelins de [[RT_35]].
+
+### RG_40 — Scission d'une unité en deux au récapitulatif d'import
+
+**Principe.** Au récapitulatif d'import ([[RG_22]]), le joueur peut scinder en **deux unités** toute unité qui compte **au moins 10 modèles**, donc au moins 10 tokens ([[RG_04]]). Le seuil porte sur les modèles de l'unité elle-même : les personnages qui lui sont attachés ([[RG_36]]) n'entrent pas dans le compte. Une unité de moins de 10 modèles ne propose pas la scission. Une unité ne se scinde qu'une fois, et toujours en deux exactement : une moitié issue d'une scission ne peut pas être scindée à nouveau.
+
+**Répartition proposée par défaut.** Quand le joueur demande la scission, l'application propose aussitôt une répartition, qu'il peut valider telle quelle :
+
+- les modèles sont répartis en deux moitiés aussi égales que possible (10 → 5 + 5, 11 → 6 + 5) ; la première moitié reçoit le modèle en plus quand le compte est impair ;
+- chaque groupe de modèles de [[RG_02]] (profil + socle) est réparti de la même façon entre les deux moitiés, pour que chacune conserve la composition de l'unité d'origine autant que possible. Un groupe d'un seul modèle (un sergent, un porteur d'arme spéciale) va dans la première moitié.
+
+**Répartition libre par glisser-déposer.** La répartition par défaut n'est qu'une proposition. Le joueur peut faire passer un modèle d'une moitié à l'autre par **glisser-déposer**, modèle par modèle, jusqu'à obtenir la répartition qu'il souhaite. Le seuil de 10 ne s'applique qu'à l'unité d'origine, pas aux moitiés : une répartition 7 + 3 est permise. Seule contrainte : **chaque moitié garde au moins un modèle**. Un dépôt qui viderait une moitié est refusé et le modèle revient à sa place. Le joueur peut aussi **annuler la scission** tant que la liste n'est pas enregistrée : l'unité retrouve alors sa forme d'origine.
+
+**Résultat.** À l'enregistrement de la liste, les deux moitiés deviennent **deux unités indépendantes** de la liste d'armée. Chacune a son propre nom, formé du nom d'origine suivi de « (1) » ou « (2) », sa propre couleur ([[RG_06]]), ses propres groupes de modèles et son propre statut de déploiement ([[RG_05]], [[RG_14]]). Elles se déploient séparément, et chacune est soumise à sa propre cohésion ([[RG_26]]).
+
+**Unité attachée.** Quand l'unité scindée est l'unité escortée d'un attachement ([[RG_36]]), le ou les personnages attachés restent attachés à **une seule** des deux moitiés, la première par défaut. Le joueur peut désigner l'autre moitié sur le récapitulatif. L'autre moitié est une unité indépendante. Un personnage attaché ne peut pas être scindé : il ne compte jamais 10 modèles et n'entre pas dans le compte de son unité escortée.
+
+**Portée.** Comme les choix de socle de [[RG_02]] et les attachements de [[RG_36]], une scission ne vaut que pour cet import. Elle n'est mémorisée nulle part ailleurs et ne se réapplique pas à un import ultérieur de la même liste. Une fois la liste enregistrée, la scission n'est plus modifiable : pour la changer, le joueur ré-importe sa liste.
 
 ---
 
@@ -994,5 +1011,6 @@ Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_12]] (
 
   La mise en réserve d'une unité attachée dont des tokens sont posés n'a été vérifiée que jusqu'à sa confirmation : le texte, qui compte les tokens de toutes les composantes, est conforme, mais l'alerte n'a pas pu être validée dans un navigateur sans rendu. Rien de tout cela n'a été vérifié par un parcours manuel sur appareil tactile.
 - **[[RG_36]] — règles « peut mener » non contrôlées.** L'application ne vérifie ni qu'un personnage peut mener l'unité à laquelle il est attaché, ni le nombre de meneurs et de soutiens par unité escortée. Ces règles dépendent de chaque datasheet, et aucun référentiel embarqué ne les décrit. Écart assumé : le joueur fait autorité sur sa liste.
+- **[[RG_40]] — non implémentée, sans règle technique.** La scission d'une unité au récapitulatif d'import n'existe pour l'instant que comme règle de gestion. Les règles techniques restent à écrire avant l'implémentation : le modèle de données des deux unités issues de la scission, l'interaction de glisser-déposer sur le récapitulatif et le report dans le contrat de synchronisation ([openapi.yml](openapi.yml)).
 - **[[EX_10]] / [[RG_38]] / [[RG_39]] / [[RT_47]] / [[RT_48]] / [[RT_49]] — implémentées, vérifiées en navigateur par évènements de pointeur simulés.** Le calcul des bornes du décalage (`clampViewOffset` de `src/app/deployment/geometry.ts`) est couvert par des tests unitaires. Dans le navigateur, en 1024 × 768, ont été contrôlés : la bascule ×1 / ×2 et son cadrage centré, le bouton « Déplacement » désactivé au zoom de base et son mode quitté au retour à ×1, le déplacement de vue en mode actif depuis un token (token inchangé) et au bouton du milieu hors mode, les bornes du décalage, la mesure de la règle conservée par le déplacement de vue et le bouton d'agrandissement puis effacée par un appui ordinaire, la justesse de la mesure et du dépôt depuis le bandeau après décalage, et le refus d'un dépôt sur la partie masquée. La rangée de boutons a été vue en 375 × 812. Le défilement automatique du clic molette, la forme effective du curseur et le geste au doigt n'ont pas été vérifiés par un parcours manuel.
 - **[[RT_49]] — loupes hors du jeu d'icônes.** Ionicons ne contient pas de loupe « + » / « − » ; les icônes sont des SVG propres au projet, `src/assets/icons/zoom-in.svg` et `zoom-out.svg`, dérivés de sa loupe et rendus par le même composant d'icône que la règle de [[RT_43]].
