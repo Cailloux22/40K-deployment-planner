@@ -60,6 +60,14 @@ ng lint
 
 To run a single test file/spec, pass it through the Angular CLI test builder, e.g. `ng test -- --project src/app/home/home.page.spec.ts` (this project uses Vitest under the hood — see Testing below — so Vitest's own filtering flags also apply once you're through the builder).
 
+End-to-end tests (Cypress, see Testing below):
+
+```bash
+npm run e2e                                    # starts ng serve, runs every spec headless, stops the server
+npm run e2e:open                               # same, with the interactive Cypress runner
+npm run cy:run -- --spec cypress/e2e/home.cy.ts # one spec, against an already-running ng serve
+```
+
 Android APK (needs a JDK and the Android SDK via `ANDROID_HOME`; output at `android/app/build/outputs/apk/debug/app-debug.apk`):
 
 ```bash
@@ -102,6 +110,10 @@ Lint conventions enforced (see [eslint.config.js](eslint.config.js)):
 ### Testing
 
 Despite the generic convention "Karma", this project actually runs on **Vitest**, wired through Angular's own test builder (`@angular/build:unit-test`, see `architect.test` in [angular.json](angular.json)) with a jsdom environment. [src/test-setup.ts](src/test-setup.ts) polyfills `window.matchMedia`, which Ionic components (`ion-menu`, `ion-split-pane`, etc.) query and jsdom doesn't implement — extend this file if new Ionic components hit similar jsdom gaps.
+
+End-to-end tests run on **Cypress** against the running dev server (phone-sized viewport): with no `baseUrl` given (`--config baseUrl=…` / `CYPRESS_BASE_URL`), it uses `http://localhost:8100` (`ionic serve`, with or without `--external`) if it answers, else `http://localhost:4200` (`ng serve`, used by `npm run e2e`), configured in [cypress.config.ts](cypress.config.ts); specs are `cypress/e2e/**/*.cy.ts`, with their own [cypress/tsconfig.json](cypress/tsconfig.json) (TypeScript 6 requires its explicit `rootDir`). Two Ionic-specific points:
+- `includeShadowDom: true` — Ionic moves `aria-label` and the native `<button>` into each component's shadow DOM, so query `button[aria-label="…"]`, not `ion-button[aria-label="…"]`.
+- Start a test with `cy.visitFresh(path)` ([cypress/support/commands.ts](cypress/support/commands.ts)) rather than `cy.visit`: it deletes the app's IndexedDB (which Cypress's test isolation does not clear) and waits for the Ionic page's entry transition, which otherwise re-renders and detaches elements mid-click.
 
 ### Styling
 
