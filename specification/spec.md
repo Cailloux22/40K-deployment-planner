@@ -1068,7 +1068,7 @@ L'invitation n'est jamais présentée sur l'écran de placement et ne bloque auc
 
 **Comment, selon le navigateur.**
 
-- **Le navigateur propose sa propre installation** (Chrome et Edge sur Android et sur ordinateur) : un bouton « Installer l'application » ouvre la demande d'installation du navigateur. Si le joueur refuse, rien ne change. S'il accepte, l'invitation disparaît.
+- **Le navigateur propose sa propre installation** (Chrome et Edge sur Android et sur ordinateur) : un bouton « Installer l'application » ouvre la demande d'installation du navigateur. S'il accepte, l'invitation disparaît. S'il refuse, le bouton disparaît aussi, jusqu'à ce que le navigateur propose de nouveau l'installation : une demande du navigateur ne peut servir qu'une fois, et c'est lui seul qui décide quand en émettre une autre. Le joueur garde l'installation par le menu du navigateur.
 - **Le navigateur ne permet qu'un ajout manuel** (tous les navigateurs sur iPhone et iPad) : l'invitation affiche la marche à suivre, « Partager » puis « Sur l'écran d'accueil », illustrée par l'icône Partager du système.
 - **Le navigateur ne permet pas l'installation** (Firefox sur ordinateur, par exemple) : aucune invitation. L'application reste utilisable dans l'onglet.
 
@@ -1091,12 +1091,12 @@ Le téléchargement reprend seul au retour du réseau ou au lancement suivant. S
 
 ### RG_43 — Mise à jour de l'application installée
 
-Une nouvelle version publiée est téléchargée en arrière-plan, référentiels compris : une mise à jour d'errata ([[RT_02]]) suit donc ce même chemin. Une fois la version prête, un message non bloquant annonce « Nouvelle version disponible », avec l'action « Recharger ».
+Une nouvelle version publiée est téléchargée en arrière-plan, référentiels compris : une mise à jour d'errata ([[RT_02]]) suit donc ce même chemin. Une fois la version prête, un message non bloquant annonce « Nouvelle version disponible », avec les actions « Recharger » et « Plus tard ».
 
 Le joueur n'est jamais interrompu :
 
 - le message n'est pas présenté sur l'écran de placement ; il attend que le joueur en sorte ;
-- sans action de sa part, la nouvelle version s'applique au lancement suivant ;
+- « Plus tard » ferme le message jusqu'au lancement suivant ; que le joueur réponde ainsi ou pas du tout, la nouvelle version s'applique d'elle-même au lancement suivant ;
 - recharger ne perd aucune donnée, listes et placements étant déjà enregistrés ([[RT_08]]).
 
 ### RG_44 — Conservation des données sur l'appareil
@@ -1143,7 +1143,7 @@ Les groupes `prefetch` assurent la partie « application » de [[RG_42]]. Le gro
 
 **Navigation.** Les `navigationUrls` par défaut servent `index.html` pour tout chemin de l'application : un lien profond (écran de placement) s'ouvre hors-ligne.
 
-**Ordre de [[RT_27]] inchangé.** La résolution réseau → cache IndexedDB → image embarquée reste celle de `BoardImageService`. Hors-ligne, l'étape « image embarquée » est servie par le cache du service worker si l'image s'y trouve. Sinon elle échoue, et le service rend l'état « indisponible » qui affiche le message de [[RG_42]].
+**Ordre de [[RT_27]] inchangé.** La résolution réseau → cache IndexedDB → image embarquée reste celle de `BoardImageService`. Hors-ligne, l'étape « image embarquée » est servie par le cache du service worker si l'image s'y trouve. Le service le vérifie par une requête qui passe par le service worker, comme [[RT_56]]. Si elle échoue, le service rend une image de remplacement aux dimensions de l'asset, portant le message de [[RG_42]]. Ce remplacement n'est pas retenu pour la session : le plateau est redemandé au prochain affichage.
 
 ### RT_55 — Détection du contexte et déclenchement de l'installation
 
@@ -1163,10 +1163,13 @@ Les groupes `prefetch` assurent la partie « application » de [[RG_42]]. Le gro
 
 **Conditions.** Le téléchargement n'a lieu que si un service worker contrôle la page (`navigator.serviceWorker.controller`, [[RT_54]]) : il est sans objet dans l'APK, qui embarque les images. Il démarre une fois l'application stable, après le premier affichage. Si `navigator.connection?.saveData` est vrai, il ne démarre que sur l'action des Réglages ([[RG_42]]).
 
-**Déroulement.** Pour chaque plateau et chaque variante de `boards.json`, l'URL de l'image embarquée (`assets[variante]`) est examinée :
+**Déroulement.** Pour chaque plateau et chaque variante de `boards.json`, l'image embarquée (`assets[variante]`) est demandée par `fetch(url)`, **en passant par le service worker** :
 
-- si `caches.match(url)` la trouve, elle est comptée comme présente ;
-- sinon, elle est demandée par `fetch(url)`, et le service worker la range dans le groupe `boards`.
+- si elle est dans le cache de sa version active, il la sert sans requête réseau ;
+- sinon, il la télécharge et la range dans le groupe `boards` avant de répondre ;
+- hors-ligne, une image absente rend une erreur 504.
+
+Une réponse en succès compte l'image comme présente ; son corps n'est pas lu. Ce contrôle remplace `caches.match`, qui parcourt aussi les caches d'une version précédente que le service worker ne sert plus, et peut donc déclarer présente une image qu'il ne servira pas. `caches.match` ne sert qu'en attente de l'accord du joueur (économie de données), pour compter les images sans rien télécharger.
 
 Les images sont demandées une à une, jamais en parallèle, pour ne pas concurrencer l'usage. Le compteur `présentes / total` alimente l'état de [[RG_42]].
 
@@ -1176,7 +1179,7 @@ Les images sont demandées une à une, jamais en parallèle, pour ne pas concurr
 
 ### RT_57 — Détection et application des mises à jour
 
-- **Version prête.** `SwUpdate.versionUpdates`, filtré sur `VERSION_READY`, déclenche un toast avec l'action « Recharger » (cibles tactiles de [[RT_31]]). L'action appelle `activateUpdate()` puis recharge le document.
+- **Version prête.** `SwUpdate.versionUpdates`, filtré sur `VERSION_READY`, déclenche un toast avec les actions « Recharger » et « Plus tard » (cibles tactiles de [[RT_31]]). « Recharger » appelle `activateUpdate()` puis recharge le document. « Plus tard » ferme le toast, qui n'est plus présenté avant le lancement suivant.
 - **Report sur l'écran de placement.** Tant que la route active est celle de l'écran de placement, l'annonce est mise en attente. Elle est présentée au premier changement de route qui en sort.
 - **Vérification.** `checkForUpdate()` est appelé au retour au premier plan (`visibilitychange`), en plus de la vérification que fait le service worker à chaque ouverture.
 - **Échecs.** `VERSION_INSTALLATION_FAILED` est ignoré silencieusement ([[RG_09]]). Un état `unrecoverable` (cache du service worker incohérent) recharge le document après un message, aucune donnée n'étant en jeu.
@@ -1276,7 +1279,17 @@ Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_12]] (
 
 - **[[EX_13]] / [[RG_45]] / [[RG_46]] / [[RT_60]] / [[RT_61]] / [[RT_62]] — spécifiées, non implémentées.** Le modèle `Deployment` (`src/app/models/domain.models.ts`) n'a pas encore de champ `note`, et le schéma `Deployment` du contrat de synchronisation ([openapi.yml](openapi.yml)) doit recevoir la propriété `note` (chaîne, requise, `maxLength: 4000`) décrite par [[RT_60]].
 
-- **[[EX_12]] / [[RG_41]] à [[RG_44]] / [[RT_53]] à [[RT_59]] — spécifiées, non implémentées.** Le dépôt ne contient ni manifeste, ni service worker, ni hébergement. `index.html` porte encore le titre, la langue et l'icône du starter Ionic. Il faut aussi produire les icônes de l'application (192, 512, 512 maskable, 180 px pour iOS), qui n'existent pas. Tant que la synchronisation de compte ([[RT_09]]) n'est pas servie, rien ne permet de transférer ses données d'un onglet Safari vers l'application installée sur iPhone ([[RG_41]]), ni d'un appareil à l'autre.
+- **[[EX_12]] / [[RG_41]] à [[RG_44]] / [[RT_53]] à [[RT_58]] — implémentées, vérifiées en navigateur sur le build de production servi en local ; installation réelle non vérifiée.** Le code est dans `src/app/pwa/`, avec `ngsw-config.json`, `src/manifest.webmanifest` et les icônes produites par `scripts/generate-icons.mjs`. `scripts/serve-www.mjs` (`npm run serve:pwa`) sert `www/` comme le demande [[RT_59]]. Les tests unitaires couvrent la détection du contexte d'installation, le téléchargement des plateaux (pause, reprise, échec, économie de données) et le plateau indisponible hors-ligne.
+
+  Contrôlé dans le navigateur intégré de l'environnement de développement :
+  - l'installation du service worker et le téléchargement des 90 plateaux ;
+  - le rechargement complet de l'application serveur coupé, lien profond compris, icônes affichées ;
+  - le message « Plateau non disponible hors-ligne » pour les plateaux retirés du cache ;
+  - l'annonce d'une nouvelle version, puis le passage à celle-ci par « Recharger » ;
+  - le bloc « Application » des Réglages.
+
+  Ce navigateur n'émet pas `beforeinstallprompt` : le bouton d'installation et la fermeture du bandeau ont été vérifiés avec un évènement simulé. Le mode `ios-instructions` et la demande de stockage persistant n'ont été vérifiés que par les tests unitaires. **Aucune installation n'a été faite sur un iPhone ou un téléphone Android**, faute d'hébergement HTTPS ([[RT_59]], non tranché) ; la mention « en pause » n'a été vue qu'en test unitaire, l'état hors-ligne du navigateur n'ayant pu être que simulé.
+- **[[RT_59]] — hébergement non réalisé.** Aucun hébergeur ni domaine n'est choisi (voir « Suivi des décisions non tranchées ») : la version web installable n'est publiée nulle part. Tant que la synchronisation de compte ([[RT_09]]) n'est pas servie, rien ne permet de transférer ses données d'un onglet Safari vers l'application installée sur iPhone ([[RG_41]]), ni d'un appareil à l'autre.
 
 - **[[RT_09]] — backend de synchronisation non réalisé.** Le contrat d'API est spécifié ([openapi.yml](openapi.yml)) et le **client** est implémenté au complet contre ce contrat : authentification ([[RT_21]]), déclenchement ([[RT_10]]), pull/push delta, détection de conflit ([[RT_15]]) et écran d'arbitrage ([[RG_11]]). Aucun serveur ne l'expose en revanche : tant qu'un backend n'est pas déployé à l'URL configurée, [[EX_06]] reste non satisfaite de bout en bout. Conformément à [[RG_09]] et [[RG_10]], cette absence est non bloquante — l'application fonctionne intégralement en local, l'état affiché étant « Usage local uniquement » ([[RG_19]]) tant qu'aucun compte n'est connecté.
 - **[[RG_01]] — un seul format d'import.** Seul le roster JSON de [[RT_13]] est branché derrière [[RT_01]], ce qui satisfait le « à minima un export texte/JSON d'un list-builder tiers » de la règle. L'ajout d'un second format ne demande qu'une entrée supplémentaire dans la table des formats, sans toucher aux écrans.
