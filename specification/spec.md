@@ -201,7 +201,7 @@ La légende des quatre couleurs, désormais redondante avec ce second canal, n'o
 - **Orange** : déploiement non fini — au moins un placement enregistré ou une unité en réserve, mais toutes les unités de la liste n'ont pas tous leurs modèles placés et ne sont pas non plus en réserve (au sens de [[RG_05]]).
 - **Vert** : déploiement fait — toutes les unités de la liste ont tous leurs modèles placés ou sont en réserve.
 
-**Présentation à l'écran.** Les 3 plateaux sont présentés un par un, dans un pager glissable horizontalement (un seul plateau visible à la fois) plutôt que juxtaposés côte à côte. Dans cette présentation, un unique bloc « Statut » et un unique jeu d'actions contextuelles sont affichés — en haut à droite du layout, immédiatement à droite du libellé « Statut » — et ne reflètent jamais que le plateau actuellement affiché par le pager ; ce statut individuel par plateau reste distinct de l'indicateur agrégé sur les 3 plateaux calculé à l'étape 1 ([[RG_12]]).
+**Présentation à l'écran.** Les 3 plateaux sont présentés un par un, dans un pager glissable horizontalement (un seul plateau visible à la fois) plutôt que juxtaposés côte à côte. Dans cette présentation, un unique bloc « Statut » et un unique jeu d'actions contextuelles sont affichés — en haut à droite du layout, immédiatement à droite du libellé « Statut » — et ne reflètent jamais que le plateau actuellement affiché par le pager ; ce statut individuel par plateau reste distinct de l'indicateur agrégé sur les 3 plateaux calculé à l'étape 1 ([[RG_12]]). Le bandeau des deux dispositions porte en outre le bouton « Missions », qui donne à lire la mission primaire du joueur et celle de l'adversaire pour ce couple ([[RG_48]]) ; il ne dépend pas du plateau affiché.
 
 **Second canal et identification du plateau ([[RG_24]]).** Le libellé de statut affiché dans le bloc « Statut » — « Déploiement manquant », « Déploiement non fini », « Déploiement fait » — est le second canal de ce code couleur, et l'application ne présente jamais le statut du plateau affiché sans lui. Les pastilles de navigation du pager, trop petites pour porter ce libellé, ne sont pas les porteuses du statut : elles reprennent sa couleur en rappel, exposent le libellé complet par leur nom accessible, et le numéro qu'elles portent désigne le plateau, pas son état.
 
@@ -560,7 +560,7 @@ La liaison entre un déploiement et sa liste d'armée d'origine utilise un ident
 
 L'application doit rester pleinement utilisable sans connexion réseau pour la planification et la consultation des déploiements sauvegardés, qui ne dépendent pas d'un accès serveur. L'import d'une nouvelle liste fait exception à ce principe (voir [[RG_13]]) ; un plateau s'affiche hors-ligne dans la dernière version obtenue en ligne, à défaut dans celle livrée avec l'application (voir [[RG_23]]). Lorsque l'application ressort du mode hors-ligne, une éventuelle divergence entre les données locales et celles du serveur doit être arbitrée par le joueur, jamais résolue silencieusement (voir [[RG_11]]).
 
-Satisfait par : [[RG_09]], [[RG_11]], [[RG_13]], [[RG_23]], [[RT_08]], [[RT_14]], [[RT_15]], [[RT_27]]. Dans le navigateur, ou une fois installée depuis celui-ci ([[EX_12]]), ce fonctionnement hors-ligne repose en plus sur [[RG_42]] et [[RT_54]].
+Satisfait par : [[RG_09]], [[RG_11]], [[RG_13]], [[RG_23]], [[RT_08]], [[RT_14]], [[RT_15]], [[RT_27]]. Dans le navigateur, ou une fois installée depuis celui-ci ([[EX_12]]), ce fonctionnement hors-ligne repose en plus sur [[RG_42]] et [[RT_54]]. Les cartes de mission primaire suivent la même politique que les plateaux ([[RG_49]], [[RT_65]]).
 
 ### RG_09 — Dégradation gracieuse du réseau
 
@@ -1098,7 +1098,7 @@ Tant que ce téléchargement n'est pas terminé, un plateau **jamais affiché** 
 **État visible.** Le bloc « Application » des Réglages ([[RG_18]]) indique :
 
 - « Prêt pour le hors-ligne » une fois tous les plateaux téléchargés ;
-- sinon « Téléchargement des plateaux : n / 90 », avec la mention « en pause » hors-ligne.
+- sinon « Téléchargement des plateaux et missions : n / 115 » (90 images de plateau et les 25 cartes de mission de [[RG_49]]), avec la mention « en pause » hors-ligne.
 
 Le téléchargement reprend seul au retour du réseau ou au lancement suivant. Si l'appareil signale une connexion en mode économie de données, il n'est pas lancé automatiquement : le bloc propose alors « Télécharger les plateaux maintenant ».
 
@@ -1280,15 +1280,98 @@ Satisfait par : [[RG_45]], [[RG_46]], [[RT_60]], [[RT_61]], [[RT_62]].
 
 ---
 
+## EX_14 — Consultation des missions primaires du couple de dispositions
+
+Au moment de choisir un plateau ([[RG_03]] étape 2), le joueur doit pouvoir **lire la carte de mission primaire qu'il jouera et celle que jouera son adversaire**, telles que les fixe le couple (sa disposition de force, la disposition adverse). Ces deux cartes conditionnent la façon de déployer : sans elles, le joueur planifie son déploiement sans connaître ce qui rapportera des points, à lui comme à l'adversaire. Les cartes sont consultables hors-ligne ([[EX_05]]), au même titre que les plateaux.
+
+Satisfait par : [[RG_48]], [[RG_49]], [[RT_64]], [[RT_65]], [[RT_66]].
+
+### RG_48 — Bouton « Missions » et fenêtre des deux missions primaires
+
+**Ce qu'est une mission primaire.** Chaque disposition de force ([[RT_23]]) possède un jeu de **5 cartes de mission primaire**, une par disposition adverse possible. Le couple (disposition du joueur, disposition adverse) désigne donc exactement :
+
+- **la mission du joueur** : la carte du jeu de **sa** disposition prévue contre la disposition adverse ;
+- **la mission de l'adversaire** : la carte du jeu de la disposition **adverse** prévue contre celle du joueur.
+
+Contrairement aux plateaux ([[RT_12]]), le couple est ici **ordonné** : « Purge the Foe contre Priority Assets » donne au joueur *Destroyer's Wrath* et à l'adversaire *Vital Link*, l'inverse donnerait les deux cartes inversées. Lorsque les deux dispositions sont identiques (couple **miroir**), les deux joueurs jouent **la même carte** (par exemple *Meatgrinder* pour Purge the Foe contre Purge the Foe).
+
+**Accès.** L'écran de choix du plateau ([[RG_03]] étape 2, [[RG_14]]) porte un bouton **« Missions »** (icône de carte + libellé) attaché au **bandeau des deux dispositions** qui surmonte le pager — et non au bloc « Statut » ni au plateau affiché : la mission dépend du couple, elle est la même pour les 3 plateaux proposés. Le bouton est toujours disponible, quel que soit le plateau affiché par le pager et son statut ([[RG_14]]), y compris hors-ligne (voir [[RG_49]]).
+
+**Fenêtre.** Un appui ouvre une **fenêtre modale plein écran** titrée « Missions primaires », par-dessus l'écran de choix du plateau, qui comporte :
+
+- un **sélecteur à deux onglets**, dans le même sens de lecture que le bandeau des dispositions ([[RG_14]], « identification du plateau ») : **« Ma mission »** d'abord, **« Mission adverse »** ensuite. La fenêtre s'ouvre sur « Ma mission ». Chaque onglet porte, sous son libellé, le **nom de la carte** et l'icône de la disposition à laquelle elle appartient ([[RT_23]]), pour que le joueur sache sans ambiguïté laquelle des deux cartes il lit — l'onglet actif n'est jamais signalé par la seule couleur ([[RG_24]]) ;
+- l'**image de la carte** de l'onglet actif, affichée en entier à l'ouverture (ajustée à la zone disponible, sans rognage — la carte n'a ni bandeau ni légende à masquer, contrairement au plateau de [[RG_17]]), **agrandissable par pincement** (molette sur poste de travail) et déplaçable une fois agrandie, sur le même principe que les visualiseurs de [[RG_14]]. Le passage d'un onglet à l'autre se fait par appui sur l'onglet ou par **balayage horizontal** de la carte lorsqu'elle est à son zoom d'ouverture ; changer d'onglet remet l'autre carte à son zoom d'ouverture ;
+- une action **« Fermer »** (croix en haut à gauche, comme [[RT_16]]), le bouton/geste retour du système fermant aussi la fenêtre. La fermeture ramène à l'écran de choix du plateau **dans l'état exact où le joueur l'avait laissé** : même plateau affiché par le pager, aucun statut recalculé.
+
+**Couple miroir.** Les deux cartes étant identiques, la fenêtre n'affiche **pas de sélecteur** : une seule carte, titrée de son nom, accompagnée de la mention « Mission miroir : les deux joueurs jouent cette même carte ».
+
+**Lecture seule.** La fenêtre ne permet ni de choisir, ni de changer, ni d'annoter une mission : elle n'écrit rien dans le déploiement ([[RT_04]], [[RT_60]]) et n'entre dans aucun statut ni compte ([[RG_12]], [[RG_14]]). La mission découle entièrement du couple de dispositions déjà retenu ; pour en lire une autre, le joueur revient à l'étape 1 et change de disposition adverse.
+
+**Couple sans carte connue.** Si le référentiel ne contient pas de carte pour l'un des deux sens du couple (référentiel incomplet après un changement côté source, voir [[RT_64]]), l'onglet correspondant reste présent et affiche « Mission non disponible pour ce couple » à la place de l'image ; le bouton « Missions » n'est masqué que si **aucune** des deux cartes n'est connue.
+
+### RG_49 — Disponibilité hors-ligne et version des cartes de mission
+
+Les cartes de mission suivent la même politique que les images de plateau ([[RG_23]]) : la version affichée est **la plus récente obtenue en ligne** sur cet appareil, conservée pour le hors-ligne, et à défaut la version **livrée avec l'application**. Aucune carte n'est jamais bloquée faute de réseau dans l'application empaquetée.
+
+Dans le navigateur ([[EX_12]]), les cartes rejoignent le **téléchargement en arrière-plan** de [[RG_42]] : elles n'y sont pas exigées à la première ouverture, et tant que ce téléchargement n'est pas terminé, une carte jamais affichée sur cet appareil peut être indisponible hors-ligne. Son image est alors remplacée par le message « Mission non disponible hors-ligne », jamais par une image cassée, et l'onglet reste consultable (nom de la carte et disposition affichés). L'état visible du bloc « Application » des Réglages compte les cartes avec les plateaux (« Téléchargement des plateaux et missions : n / 115 », 90 images de plateau et 25 cartes).
+
+**Attribution.** Les cartes proviennent, comme les plateaux, de gdmissions.app : leur source et le texte d'attribution requis apparaissent dans le bloc « Mentions des sources tierces » des Réglages ([[RG_18]], [[RT_20]]), quelle que soit la provenance de l'image affichée (réseau, cache, embarquée). Le texte exact de cette mention est une décision encore ouverte (voir « Suivi des décisions non tranchées »).
+
+### RT_64 — Référentiel des missions primaires (gdmissions.app)
+
+**Source.** Les cartes sont les images statiques publiées par [gdmissions.app](https://gdmissions.app/11th/primary-missions) (pack de missions « GDM 2026 », 11ᵉ édition), sous `/assets/11th/primary-missions/{disposition}/{carte}.png`. La page de chaque carte, `/11th/primary-missions/{disposition}/{carte}`, indique la disposition adverse à laquelle elle s'applique (« Opponent · {disposition} ») ou la mention « Mirror · {disposition} » pour la carte miroir. Le segment `{disposition}` reprend **exactement** les 5 identifiants de [[RT_23]] (`take-and-hold`, `purge-the-foe`, `reconnaissance`, `priority-assets`, `disruption`), qui servent donc de clé de rapprochement sans table de correspondance. Constaté au 2026-10-05 : 25 cartes, 5 par disposition, toutes en PNG 1653 × 2833 (environ 200 ko l'une, 5 Mo au total), servies avec `Access-Control-Allow-Origin: *`.
+
+**Matrice constatée au 2026-10-05** (ligne : disposition du joueur, donc jeu de la carte ; colonne : disposition adverse) :
+
+| Joueur ↓ / Adversaire → | Take and Hold | Purge the Foe | Reconnaissance | Priority Assets | Disruption |
+| --- | --- | --- | --- | --- | --- |
+| **Take and Hold** | Battlefield Dominance *(miroir)* | Immovable Object | Purge and Secure | Inescapable Dominion | Determined Acquisition |
+| **Purge the Foe** | Unstoppable Force | Meatgrinder *(miroir)* | Consecrate | Destroyer's Wrath | Punishment |
+| **Reconnaissance** | Reconnaissance Sweep | Triangulation | Gather Intel *(miroir)* | Search and Scour | Surveil the Foe |
+| **Priority Assets** | Secure Asset | Vital Link | Vanguard Operation | Sabotage *(miroir)* | Extract Relic |
+| **Disruption** | Death Trap | Delaying Action | Smoke and Mirrors | Locate and Deny | Outmanoeuvre *(miroir)* |
+
+La mission du joueur est la case (sa disposition, disposition adverse) ; celle de l'adversaire, la case transposée (disposition adverse, sa disposition) ; sur la diagonale, les deux coïncident ([[RG_48]]).
+
+**Ingestion hors-ligne.** Le référentiel est généré par un script `scripts/ingest-missions.mjs`, exécuté hors de l'application comme ceux de [[RT_02]] et [[RT_12]] ([[EX_05]] : jamais à l'exécution). Pour chaque disposition de [[RT_23]], le script lit la page du jeu `/11th/primary-missions/{disposition}`, en énumère les cartes, lit sur la page de chaque carte son nom et sa disposition adverse (ou la mention miroir), télécharge l'image et en relève les dimensions. Il écrit `src/assets/referentials/missions.json` et les images sous `src/assets/referentials/missions/` :
+
+- un bloc `source` (nom de la source, URL, texte d'attribution, date d'ingestion), lu par l'énumération des mentions de [[RT_20]] — le référentiel est ajouté à cette énumération dans `src/app/referentials/referential.service.ts` ;
+- une entrée par carte : `id` (`{disposition}/{carte}`), `name` (nom affiché, tel que publié par la source), `disposition` (jeu de la carte), `opponent` (disposition adverse, égale à `disposition` pour la carte miroir), `width`/`height` (dimensions mesurées), `asset` (chemin de l'image embarquée), `remoteAsset` (URL distante).
+
+Le script **échoue explicitement**, sans écrire de référentiel partiel, si une disposition de [[RT_23]] n'a pas exactement 5 cartes, si une carte n'indique pas sa disposition adverse, si deux cartes d'un même jeu visent la même disposition adverse, ou si une image n'est pas un PNG. La matrice étant complète par construction, l'état « Mission non disponible pour ce couple » de [[RG_48]] ne survient que si un référentiel produit par une version antérieure du script est embarqué avec un référentiel de dispositions plus récent.
+
+**Lecture par le client.** La résolution des deux cartes d'un couple est une fonction pure du référentiel (aucun appel réseau, aucun accès au stockage), testable unitairement : `missionFor(joueur, adversaire)` rend l'entrée dont `disposition = joueur` et `opponent = adversaire`, et la fenêtre de [[RT_66]] l'appelle dans les deux sens. Un changement de pack de missions côté source (nouvelle saison) se traite par une nouvelle exécution du script, comme un changement de plateaux ([[RT_12]]) : les cartes ne sont rattachées à aucun déploiement sauvegardé, si bien que remplacer le référentiel n'invalide aucune donnée du joueur.
+
+### RT_65 — Résolution des images de cartes : réseau, cache, embarquée
+
+**Même chaîne que les plateaux.** L'image de chaque carte est résolue comme celle d'un plateau ([[RT_27]]) : en ligne, appel direct de `remoteAsset` borné à 8 secondes avec `cache: 'no-cache'` ; sinon, ou en cas d'échec, l'entrée du cache local ; sinon, l'image embarquée `asset`. Une image distante n'est acceptée (affichée et mise en cache) que si c'est un PNG **aux dimensions `width`/`height` de l'entrée du référentiel** ; toute autre réponse est écartée sans message ([[RG_09]]). Un appel réseau au plus par carte et par session d'application, l'image résolue étant conservée en mémoire (URL d'objet) pour les affichages suivants.
+
+**Mise en œuvre.** La logique de résolution de `BoardImageService` (`src/app/referentials/board-image.service.ts`) est factorisée pour être paramétrée par le type d'image, plutôt que dupliquée : les cartes sont stockées dans un store IndexedDB `missionImages`, distinct de `boardImages` ([[RT_27]]) et de ceux de [[RT_08]], indexé par l'`id` de la carte. Les templates passent par un pipe `missionImage` (déclaré dans `SharedModule`, à l'image de `boardImage`), jamais par `asset` directement.
+
+**Version web.** Dans `ngsw-config.json` ([[RT_54]]), un groupe `missions` (`assets/referentials/missions/**`, `installMode: lazy`, `updateMode: lazy`) s'ajoute au groupe `boards` ; `missions.json` est couvert par le groupe `referentials` existant (`prefetch`). Le téléchargement en arrière-plan de [[RT_56]] parcourt les cartes **après** les plateaux, dans la même boucle séquentielle et avec les mêmes conditions (service worker actif, économie de données, pause hors-ligne), et le compteur `présentes / total` les inclut. Hors-ligne, l'étape « embarquée » vérifie que le service worker sait servir la carte, comme pour les plateaux ; sinon elle rend un SVG « Mission non disponible hors-ligne » ([[RG_49]]).
+
+### RT_66 — Bouton « Missions » et fenêtre de consultation
+
+**Bouton.** Le bouton est placé dans le bandeau « VS » de l'écran de choix du plateau (`src/app/pages/board-choice/`), sous les deux dispositions, centré : un `ion-button` `fill="outline"` `size="small"` à icône et libellé « Missions », avec la cible tactile de [[RT_31]] (le libellé visible fait office de nom accessible, complété en « Voir les missions primaires du couple »). L'icône est `document-text-outline` d'Ionicons, enregistrée dans `src/app/icons.ts` faute de quoi elle manquerait hors-ligne ([[RT_54]]). Le bouton n'est rendu qu'une fois les deux dispositions du couple connues.
+
+**Fenêtre.** La fenêtre est un `ion-modal` plein écran ouvert par le contrôleur de modales, qui reçoit en entrée les deux entrées de [[RT_64]] (ou une seule pour le couple miroir) et ne rend rien en sortie. Le sélecteur est un `ion-segment` à deux `ion-segment-button` ; leur texte (libellé, nom de la carte) porte l'information d'onglet actif, l'état sélectionné étant exposé par `aria-selected` et non par la seule couleur ([[RG_24]]). L'image est rendue par le pan/zoom de [[RT_16]] — extrait du visualiseur `src/app/shared/board-viewer.component.ts` en un composant ou une directive réutilisable, plutôt que réécrit — avec un ajustement initial *contain* sur la zone sous le sélecteur. Le balayage horizontal ne change d'onglet qu'au zoom d'ouverture, pour ne pas entrer en conflit avec le déplacement d'une carte agrandie. L'image porte un texte alternatif « Carte de mission primaire {nom} — {disposition de la carte} contre {disposition adverse} ».
+
+**État préservé.** L'ouverture et la fermeture de la modale ne touchent ni à l'index du pager, ni aux statuts calculés par [[RT_11]] (aucun recalcul au retour), ni aux paramètres de navigation de l'écran. Tant que la modale est ouverte, les gestes du pager ne reçoivent aucun évènement.
+
+---
+
 ## Suivi des décisions non tranchées
 
 Les règles techniques suivantes contiennent un choix encore ouvert et doivent être mises à jour dès que la décision est prise :
 
 - **[[RT_59]] — hébergeur et domaine de la version web.** Toute offre d'hébergement statique en HTTPS convient, à condition de permettre la réécriture des chemins vers `index.html` et des en-têtes de cache par fichier (Netlify, Cloudflare Pages… ; GitHub Pages ne permet pas ces en-têtes). Le domaine fixe l'origine, donc le stockage des données du joueur : en changer après publication revient à repartir d'une application vide sur chaque appareil.
+- **[[RG_49]] / [[RT_64]] — texte d'attribution des cartes de mission.** Les plateaux sont crédités à Battlemaster, source déclarée par gdmissions.app ([[RT_12]]) ; pour les cartes de mission primaire, gdmissions.app ne nomme pas d'autre source que le pack « GDM 2026 » lui-même. Reste à fixer, avant implémentation, le nom de source et le texte que le script d'ingestion écrira dans le bloc `source` de `missions.json` (au minimum « gdmissions.app », éventuellement complété de l'éditeur du pack de missions).
 
 Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_12]] (appel direct du client vers gdmissions.app, sans relais serveur, version embarquée en dernier recours), [[RT_05]] (`playArea` mesuré à l'ingestion, image distante acceptée seulement à dimensions identiques), [[RT_27]] (store IndexedDB dédié aux blobs), [[RT_16]] (pan/zoom implémenté sans librairie tierce, sur les évènements `Pointer` et une transformation CSS), [[RT_06]]/[[RT_08]] (IndexedDB pour les enregistrements métier, stockage de configuration léger séparé) [[RT_26]] (fichier JSON versionné avec l'application, alimenté entrée par entrée par l'assistant IA du projet) et [[RT_37]] (terrain extrait des images de plateau par un script hors-ligne plutôt que saisi à la main).
 
 ## Suivi des écarts entre spécification et implémentation
+
+- **[[EX_14]] / [[RG_48]] / [[RG_49]] / [[RT_64]] / [[RT_65]] / [[RT_66]] — spécifiées, non implémentées.** Ni le script `ingest-missions.mjs`, ni le référentiel `missions.json`, ni le bouton et la fenêtre n'existent. Le texte d'attribution reste à fixer (voir « Suivi des décisions non tranchées »).
 
 - **[[RG_47]] / [[RT_63]] — implémentées.** Le numéro est exposé par `src/app/app-version.ts` et affiché en bas des Réglages ; `android/app/build.gradle` lit `package.json` pour `versionName`/`versionCode`. Le build Android n'a pas été relancé pour le vérifier.
 
