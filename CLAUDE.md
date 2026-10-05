@@ -21,6 +21,8 @@ Mobile-first app for Warhammer 40k players to plan deployment on the tabletop. C
 
 **Mandatory pre-modification commit rule:** before making any change to [specification/spec.md](specification/spec.md), first commit the file's current state on its own, with a commit message that details its content (e.g. the `EX_XX`/`RG_XX`/`RT_XX` entries present, and which decisions are still marked as unmade) — so the prior version of the spec is always recoverable independently of the change about to be made to it.
 
+**Mandatory version bump rule (`RG_47`/`RT_63`):** every commit that changes code — anything under `src/`, `scripts/`, `android/`, `cypress/`, build/tooling config (`package.json` dependencies, `angular.json`, `tsconfig*.json`, `ngsw-config.json`, …) or a generated referential — MUST increment the patch version in that same commit: run `npm run version:patch` (= `npm version patch --no-git-tag-version`, updates `package.json` and `package-lock.json`, creates no tag) and stage both files with the change. A commit that only touches `specification/` or documentation (`CLAUDE.md`, `*.md`) does NOT bump the version — so the pre-modification spec commits above never bump it. Minor/major bumps are the product owner's call; never make them unprompted. The `version` field of `package.json` is the single source of truth: the app imports it (`src/app/app-version.ts`, shown at the bottom of the Settings screen) and `android/app/build.gradle` derives `versionName`/`versionCode` from it — never hard-code a version anywhere else.
+
 ## Current state
 
 The client application is implemented against [specification/spec.md](specification/spec.md): all 9 screens of [specification/sitemap.md](specification/sitemap.md) except the two full-screen viewers, which share one component (`src/app/shared/board-viewer.component.ts`), and the conflict screen, which is a component surfaced on the home and settings screens rather than a route.
@@ -57,6 +59,7 @@ ng build          # production build, outputs to www/ (see angular.json outputPa
 ng build --watch --configuration development
 ng test           # runs the unit tests
 ng lint
+npm run version:patch  # RT_63 — bump the patch version; required in every code commit (see Specification)
 ```
 
 To run a single test file/spec, pass it through the Angular CLI test builder, e.g. `ng test -- --project src/app/home/home.page.spec.ts` (this project uses Vitest under the hood — see Testing below — so Vitest's own filtering flags also apply once you're through the builder).

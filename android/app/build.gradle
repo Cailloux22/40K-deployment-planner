@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+// RT_63: package.json est l'unique source du numéro de version (RG_47).
+def appVersion = new groovy.json.JsonSlurper().parse(file('../../package.json')).version
+def appVersionParts = appVersion.tokenize('.').collect { it.toInteger() }
+
 android {
     namespace = "fr.rocher.deploymentplanner"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +11,8 @@ android {
         applicationId "fr.rocher.deploymentplanner"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionParts[0] * 1000000 + appVersionParts[1] * 1000 + appVersionParts[2]
+        versionName appVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

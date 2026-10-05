@@ -1,6 +1,6 @@
 {
   "name": "40K-deployment-planner",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Ionic Framework",
   "homepage": "https://ionicframework.com/",
   "scripts": {
@@ -15,7 +15,8 @@
     "cy:run": "cypress run --e2e",
     "e2e": "start-server-and-test start http://localhost:4200 cy:run",
     "e2e:open": "start-server-and-test start http://localhost:4200 cy:open",
-    "serve:pwa": "node scripts/serve-www.mjs"
+    "serve:pwa": "node scripts/serve-www.mjs",
+    "version:patch": "npm version patch --no-git-tag-version"
   },
   "private": true,
   "dependencies": {

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { APP_VERSION } from '../../app-version';
 import { ReferentialSource } from '../../models/referential.models';
 import { AuthError, AuthService } from '../../net/auth.service';
 import { ConnectivityService } from '../../net/connectivity.service';
@@ -66,6 +67,9 @@ export class SettingsPage implements OnInit {
         return progress;
     }
   });
+
+  /** RG_47: bloc « Version », affiché dans tous les contextes, y compris hors-ligne. */
+  readonly appVersion = APP_VERSION;
 
   readonly online = this.connectivity.online;
   readonly signedIn = this.auth.signedIn;
