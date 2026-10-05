@@ -22,6 +22,14 @@ flowchart TD
     Board -->|Éditer, statut orange/vert| Placement
     Board -->|Consulter, statut orange/vert\ntap → plein écran| DeployViewer["Visualiseur plein écran — déploiement\nsans mesures + placements (no-measurements)\nRG_14 · RT_16"]
 
+    Board -->|Missions| Missions["Fenêtre « Missions primaires »
+ma mission · mission adverse
+côte à côte avec le plateau sur écran large
+EX_14 · RG_48 · RG_49 · RT_64 · RT_65 · RT_66"]
+    Placement -->|Missions| Missions
+    DeployViewer -->|Missions| Missions
+    Missions -->|Fermer| Board
+
     Placement -->|enregistrer| Board
     Placement -->|conflit de sync détecté| Conflict["Résolution de conflit\nRG_11 · RT_15"]
     Conflict --> Placement
@@ -45,20 +53,24 @@ Sélection de la disposition adverse parmi les 5 proposées (référentiel stati
 Traçabilité : [[RG_03]] (étape 1), [[RG_12]], [[RT_11]], [[RT_23]].
 
 ### 4. Choix du plateau (parcours étape 2)
-Les 3 plateaux associés au couple (disposition du joueur, disposition adverse) sont présentés un par un dans un pager glissable horizontalement. Un unique bloc « Statut » et un unique jeu d'actions contextuelles (Nouveau / Éditer / Consulter), affichés en haut à droite du layout à droite du libellé « Statut », reflètent le statut individuel (rouge/orange/vert) du seul plateau actuellement affiché par le pager. L'aperçu du plateau est cliquable (tap) vers le visualiseur plein écran, quel que soit son statut.
-Traçabilité : [[RG_03]] (étape 2), [[RG_12]], [[RG_14]], [[RT_11]], [[RT_12]].
+Les 3 plateaux associés au couple (disposition du joueur, disposition adverse) sont présentés un par un dans un pager glissable horizontalement. Un unique bloc « Statut » et un unique jeu d'actions contextuelles (Nouveau / Éditer / Consulter), affichés en haut à droite du layout à droite du libellé « Statut », reflètent le statut individuel (rouge/orange/vert) du seul plateau actuellement affiché par le pager. L'aperçu du plateau est cliquable (tap) vers le visualiseur plein écran, quel que soit son statut. Le bandeau des deux dispositions porte le bouton « Missions », qui ouvre la fenêtre des missions primaires du couple (voir « Fenêtre des missions primaires » ci-dessous).
+Traçabilité : [[RG_03]] (étape 2), [[RG_12]], [[RG_14]], [[RT_11]], [[RT_12]], [[RG_48]].
 
 ### 5. Visualiseur plein écran — plateau seul (with-measurements)
 Ouvert par un tap sur l'aperçu du plateau depuis l'écran 4, quel que soit son statut. Vue plateau vierge avec repères de mesure, pinch-to-zoom, avec une croix en haut à gauche pour sortir de ce mode ; ne montre jamais les placements du joueur.
 Traçabilité : [[RG_14]], [[RT_16]], [[RT_12]].
 
 ### 6. Écran de placement (parcours étape 3)
-Éditeur interactif : plateau SVG affiché au plus grand format possible à un zoom fixe non pilotable par le joueur, tokens de socles dimensionnés/colorés par unité, placés modèle par modèle par drag-and-drop tactile et rotables individuellement. Un bandeau ancré en bas de l'écran permet de sélectionner l'unité en cours et ses modèles restants ; un menu burger en haut à droite ouvre un panneau latéral (glissant depuis la droite, plateau partiellement visible) listant toutes les unités regroupées par forme/taille de socle avec leur statut de placement. Aucune zone de déploiement n'est matérialisée ni validée automatiquement — le placement reste libre sur l'ensemble du plateau affiché.
-Traçabilité : [[RG_03]] (étape 3), [[RG_04]], [[RG_05]], [[RG_06]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_24]].
+Éditeur interactif : plateau SVG affiché au plus grand format possible à un zoom fixe non pilotable par le joueur, tokens de socles dimensionnés/colorés par unité, placés modèle par modèle par drag-and-drop tactile et rotables individuellement. Un bandeau ancré en bas de l'écran permet de sélectionner l'unité en cours et ses modèles restants ; un menu burger en haut à droite ouvre un panneau latéral (glissant depuis la droite, plateau partiellement visible) listant toutes les unités regroupées par forme/taille de socle avec leur statut de placement. Aucune zone de déploiement n'est matérialisée ni validée automatiquement — le placement reste libre sur l'ensemble du plateau affiché. L'en-tête porte, à gauche du bouton du plan de jeu, le bouton des missions primaires du couple.
+Traçabilité : [[RG_48]], [[RG_03]] (étape 3), [[RG_04]], [[RG_05]], [[RG_06]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_24]].
 
 ### 7. Visualiseur plein écran — déploiement (no-measurements + placements)
-Ouvert par un tap depuis l'action « Consulter » de l'écran 4 (statut orange/vert), ou depuis une entrée de la bibliothèque intégrée à l'accueil (écran 1). Vue plateau (variante sans mesures) avec les placements existants superposés en lecture seule, pinch-to-zoom, croix en haut à gauche pour sortir.
-Traçabilité : [[RG_14]], [[RT_16]].
+Ouvert par un tap depuis l'action « Consulter » de l'écran 4 (statut orange/vert), ou depuis une entrée de la bibliothèque intégrée à l'accueil (écran 1). Vue plateau (variante sans mesures) avec les placements existants superposés en lecture seule, pinch-to-zoom, croix en haut à gauche pour sortir. En haut à droite, le bouton des missions primaires du couple, à gauche de celui du plan de jeu.
+Traçabilité : [[RG_14]], [[RT_16]], [[RG_48]].
+
+### Fenêtre des missions primaires (modale, pas un écran)
+Fenêtre plein écran ouverte depuis les écrans 4, 6 et 7, qu'elle recouvre sans les quitter : la fermer ramène à l'écran d'origine dans l'état où le joueur l'avait laissé. Elle présente la carte de mission primaire du joueur et celle de l'adversaire pour le couple de dispositions en cours (une seule carte pour un couple miroir), chacune sur la couleur de sa disposition. Sur un écran étroit, les deux cartes sont dans deux onglets « Ma mission » / « Mission adverse » ; sur un écran d'au moins 720 px de large (tablette, téléphone en paysage), le plateau avec mesures, la mission du joueur et la mission adverse sont affichés côte à côte, chacun zoomable. Ce n'est pas une route : comme la fenêtre « Plan de jeu », elle ne figure pas dans la numérotation des écrans.
+Traçabilité : [[EX_14]], [[RG_48]], [[RG_49]], [[RT_64]], [[RT_65]], [[RT_66]].
 
 ### 8. Résolution de conflit de synchronisation
 Écran/modale présentant les deux versions (locale et serveur, horodatées) d'un déploiement modifié sur deux appareils avant resync ; le choix du joueur écrase l'autre version. Les enregistrements non conflictuels continuent de se synchroniser sans attendre cet écran.
