@@ -7,8 +7,12 @@ import {
   Output,
   ViewChild,
   computed,
+  inject,
   signal,
 } from '@angular/core';
+
+import { normalizeGameplanNote } from '../deployment/gameplan-note';
+import { GameplanNoteService } from './gameplan-note.service';
 
 import { ArmyList, Placement } from '../models/domain.models';
 import { BaseShape, BaseShapeKind, Board, BoardVariant } from '../models/referential.models';
@@ -57,6 +61,21 @@ interface PlacementView {
       >
         <ion-icon name="close" slot="icon-only"></ion-icon>
       </ion-button>
+
+      <!-- RG_46/RT_62: note de plan de jeu en lecture seule, en haut à droite,
+           hors de la surface zoomée ; absente quand il n'y a pas de note. -->
+      @if (hasNote()) {
+        <ion-button
+          class="note"
+          fill="solid"
+          color="dark"
+          shape="round"
+          aria-label="Lire le plan de jeu"
+          (click)="openNote()"
+        >
+          <ion-icon name="clipboard" slot="icon-only"></ion-icon>
+        </ion-button>
+      }
 
       @if (title) {
         <div class="title">{{ title }}</div>
@@ -196,6 +215,13 @@ interface PlacementView {
         z-index: 2;
         margin: 0;
       }
+      .note {
+        position: absolute;
+        top: max(12px, env(safe-area-inset-top));
+        right: 12px;
+        z-index: 2;
+        margin: 0;
+      }
       .title {
         position: absolute;
         top: max(20px, calc(env(safe-area-inset-top) + 8px));
@@ -235,7 +261,24 @@ export class BoardViewerComponent {
   @Input() list?: ArmyList;
   @Input() shapes: ReadonlyMap<string, BaseShape> = new Map();
 
+  /**
+   * RG_46/RT_62: note de plan de jeu du déploiement consulté. Le visualiseur
+   * « plateau seul » n'en reçoit jamais.
+   */
+  @Input() set note(value: string | null | undefined) {
+    this.noteText.set(normalizeGameplanNote(value));
+  }
+
   @Output() readonly closed = new EventEmitter<void>();
+
+  private readonly notes = inject(GameplanNoteService);
+  private readonly noteText = signal('');
+  readonly hasNote = computed(() => this.noteText() !== '');
+
+  /** RG_46: ouvre la note en lecture seule ; zoom et cadrage restent intacts. */
+  openNote(): void {
+    void this.notes.view(this.noteText());
+  }
 
   private readonly scale = signal(1);
   private readonly offset = signal({ x: 0, y: 0 });

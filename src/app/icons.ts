@@ -5,6 +5,8 @@ import {
   arrowBack,
   chevronBack,
   chevronForward,
+  clipboard,
+  clipboardOutline,
   close,
   cloudOfflineOutline,
   cloudUploadOutline,
@@ -42,6 +44,9 @@ export function registerIcons(): void {
     'arrow-back': arrowBack,
     'chevron-back': chevronBack,
     'chevron-forward': chevronForward,
+    // RT_61/RT_62: note de plan de jeu — contour sans note, plein avec note.
+    clipboard,
+    'clipboard-outline': clipboardOutline,
     close,
     'cloud-offline-outline': cloudOfflineOutline,
     'cloud-upload-outline': cloudUploadOutline,

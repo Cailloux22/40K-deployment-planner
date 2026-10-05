@@ -13,6 +13,7 @@ import { AlertController } from '@ionic/angular/lazy';
 
 import { LibraryService } from '../../data/library.service';
 import { boardStatus } from '../../deployment/deployment-status';
+import { hasGameplanNote } from '../../deployment/gameplan-note';
 import { ArmyList, BoardDeploymentStatus, Deployment } from '../../models/domain.models';
 import { BaseShape, Board, ForceDisposition } from '../../models/referential.models';
 import { ReferentialService } from '../../referentials/referential.service';
@@ -115,6 +116,13 @@ export class BoardChoicePage implements OnInit {
     return this.activeSlide()?.deployment?.placements ?? [];
   });
 
+  /** RG_46: la note n'est transmise qu'à la vue « Consulter », jamais au plateau seul. */
+  readonly viewerNote = computed(() => {
+    const viewer = this.viewer();
+    if (!viewer || viewer.variant !== 'no-measurements') return '';
+    return this.activeSlide()?.deployment?.note ?? '';
+  });
+
   async ngOnInit(): Promise<void> {
     this.listId.set(this.route.snapshot.paramMap.get('listId') ?? '');
     this.opponentId.set(this.route.snapshot.paramMap.get('opponentId') ?? '');
@@ -205,7 +213,9 @@ export class BoardChoicePage implements OnInit {
         `(${slide.deployment?.placements.length ?? 0} placement(s), ` +
         // RG_25: la réserve fait partie de ce que « Nouveau » remet à zéro.
         `${slide.deployment?.reservedUnitIds?.length ?? 0} unité(s) en réserve). ` +
-        `Le repartir de zéro effacera définitivement ces placements et cette réserve.`,
+        `Le repartir de zéro effacera définitivement ces placements et cette réserve.` +
+        // RG_45: « Nouveau » conserve la note de plan de jeu, et le dit.
+        (hasGameplanNote(slide.deployment?.note) ? ' La note de plan de jeu est conservée.' : ''),
       buttons: [
         { text: 'Annuler', role: 'cancel' },
         {

@@ -53,6 +53,7 @@ function deployment(
     boardId,
     placements,
     reservedUnitIds: reserved,
+    note: '',
     createdAt: '2026-09-01T10:00:00.000Z',
     updatedAt: '2026-09-01T10:00:00.000Z',
     versionToken: null,
@@ -99,6 +100,10 @@ describe('RG_14 / RT_11 étape 2 — statut individuel d’un plateau', () => {
 
   it('rouge quand un déploiement existe mais sans aucun placement', () => {
     expect(boardStatus(armyList, deployment([]))).toBe('missing');
+  });
+
+  it('RG_45: une note de plan de jeu seule laisse le déploiement rouge', () => {
+    expect(boardStatus(armyList, { ...deployment([]), note: 'Tenir le centre.' })).toBe('missing');
   });
 
   it('orange quand des placements existent mais que la liste est incomplète', () => {

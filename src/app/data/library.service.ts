@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 
 import { ArmyList, ArmyUnit, Deployment, Placement } from '../models/domain.models';
 import { remapAttachments } from '../deployment/attachments';
+import { normalizeGameplanNote } from '../deployment/gameplan-note';
 import {
   LocalStoreService,
   STORE_DEPLOYMENTS,
@@ -59,9 +60,12 @@ export class LibraryService {
    * tout code en aval reçoit un tableau, jamais `undefined`.
    */
   private normalizeDeployment(deployment: Deployment): Deployment {
-    return deployment.reservedUnitIds
+    // RT_60: même principe pour la note de plan de jeu (EX_13) — absente
+    // d'un enregistrement antérieur ou d'un client antérieur, elle vaut `""`.
+    const note = normalizeGameplanNote(deployment.note);
+    return deployment.reservedUnitIds && deployment.note === note
       ? deployment
-      : { ...deployment, reservedUnitIds: [] };
+      : { ...deployment, reservedUnitIds: deployment.reservedUnitIds ?? [], note };
   }
 
   private sortLists(lists: readonly ArmyList[]): ArmyList[] {
@@ -166,6 +170,10 @@ export class LibraryService {
    * EX_04/RG_07: enregistre l'état courant du déploiement, rempli ou en cours
    * de remplissage. Appelée en continu au fil de la saisie — la sauvegarde
    * n'est pas une action de fin de parcours.
+   *
+   * RT_60: c'est aussi le point de passage unique de toute écriture de la
+   * note de plan de jeu : la normalisation y ramène une note blanche à `""`
+   * et en contrôle la longueur, quel que soit l'appelant.
    */
   async saveDeployment(deployment: Deployment): Promise<Deployment> {
     const persisted: Deployment = {
@@ -198,7 +206,8 @@ export class LibraryService {
     if (existing && params.reset) {
       // RG_14/RG_25: « Nouveau » remet à zéro les placements *et* les
       // unités en réserve — la réserve est une décision de déploiement.
-      return this.saveDeployment({ ...existing, placements: [], reservedUnitIds: [] });
+      // RG_45/RT_60: la note de plan de jeu, elle, est recopiée telle quelle.
+      return this.saveDeployment({ ...existing, placements: [], reservedUnitIds: [], note: existing.note });
     }
 
     const now = new Date().toISOString();
@@ -210,6 +219,7 @@ export class LibraryService {
       boardId: params.boardId,
       placements: [],
       reservedUnitIds: [],
+      note: '',
       createdAt: now,
       updatedAt: now,
       versionToken: null,
@@ -227,6 +237,8 @@ export class LibraryService {
       placements: deployment.placements.map((p: Placement) => ({ ...p })),
       // RG_25: la copie emporte la réserve au même titre que les placements.
       reservedUnitIds: [...(deployment.reservedUnitIds ?? [])],
+      // RG_45: la copie reprend la note de plan de jeu du déploiement d'origine.
+      note: deployment.note,
       createdAt: now,
       updatedAt: now,
       versionToken: null,

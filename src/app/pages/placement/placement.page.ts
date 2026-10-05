@@ -37,10 +37,12 @@ import { BaseFootprint, clampViewOffset, formatInches, measureInches } from '../
 import { SelectionRect, idsTouchedByRect, isDoubleTap, soleSelectedUnit } from '../../deployment/selection';
 import { CoherencyBase, coherencyBase, detachedAfterRemoval, isCoherent } from '../../deployment/unit-coherency';
 import { prepareTerrain, visibilityBase, visibleZone, visibleZonePath } from '../../deployment/visibility';
+import { hasGameplanNote, normalizeGameplanNote } from '../../deployment/gameplan-note';
 import { ArmyList, ArmyUnit, Deployment, Placement, UnitModelGroup } from '../../models/domain.models';
 import { BaseShape, BaseShapeKind, Board, BoardReferential, BoardTerrain } from '../../models/referential.models';
 import { UNIT_COLOR_FALLBACK } from '../../import/unit-colors';
 import { ReferentialService } from '../../referentials/referential.service';
+import { GameplanNoteService } from '../../shared/gameplan-note.service';
 
 /**
  * Un modèle individuel de l'unité courante restant à poser, tel que listé par
@@ -258,6 +260,7 @@ export class PlacementPage implements OnInit {
   private readonly router = inject(Router);
   private readonly alerts = inject(AlertController);
   private readonly toasts = inject(ToastController);
+  private readonly notes = inject(GameplanNoteService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** RT_34: repère de positionnement du retour visuel du glisser. */
@@ -391,6 +394,9 @@ export class PlacementPage implements OnInit {
   );
 
   readonly placements = computed<readonly Placement[]>(() => this.deployment()?.placements ?? []);
+
+  /** RG_45/RG_24: le déploiement porte-t-il une note de plan de jeu ? */
+  readonly hasNote = computed(() => hasGameplanNote(this.deployment()?.note));
 
   /** RG_25/RT_35: unités déclarées en réserve sur ce déploiement. */
   readonly reservedUnits = computed<ReadonlySet<string>>(() => reservedUnitIds(this.deployment()));
@@ -2051,6 +2057,22 @@ export class PlacementPage implements OnInit {
     // On conserve l'horodatage renvoyé sans écraser des placements plus
     // récents saisis entre-temps.
     this.deployment.set({ ...this.deployment()!, updatedAt: saved.updatedAt, dirty: saved.dirty });
+  }
+
+  /**
+   * RG_45/RT_61: édition de la note de plan de jeu. N'agit que sur le champ
+   * `note` : placements, sélection, bandeau, agrandissement et modes restent
+   * tels quels. La note validée est écrite aussitôt (RT_60), sans attendre le
+   * regroupement des écritures de placement.
+   */
+  async editNote(): Promise<void> {
+    const deployment = this.deployment();
+    if (!deployment) return;
+    const note = await this.notes.edit(deployment.note ?? '');
+    if (note === undefined || !this.deployment()) return;
+    this.deployment.set({ ...this.deployment()!, note: normalizeGameplanNote(note) });
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    await this.save();
   }
 
   /** RG_07: « enregistrer sous un nouveau nom » crée une entrée distincte. */

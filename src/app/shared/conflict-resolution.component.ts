@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
+import { normalizeGameplanNote } from '../deployment/gameplan-note';
 import { ArmyList, Deployment } from '../models/domain.models';
 import { PendingConflict } from '../models/sync.models';
 import { SyncService } from '../net/sync.service';
@@ -133,7 +134,13 @@ export class ConflictResolutionComponent {
     // RG_25/RT_35: la réserve fait partie de ce que le joueur arbitre.
     const reserved = record.reservedUnitIds?.length ?? 0;
     const placements = `${record.placements.length} placement(s)`;
-    return reserved > 0 ? `${placements}, ${reserved} unité(s) en réserve` : placements;
+    const summary = reserved > 0 ? `${placements}, ${reserved} unité(s) en réserve` : placements;
+    // RT_60: la note de plan de jeu fait partie de chaque version arbitrée ;
+    // son début suffit à distinguer les deux versions.
+    const note = normalizeGameplanNote(record.note).trim();
+    if (!note) return summary;
+    const excerpt = note.length > 80 ? `${note.slice(0, 80).trimEnd()}…` : note;
+    return `${summary} — plan de jeu : « ${excerpt.replace(/\s+/g, ' ')} »`;
   }
 
   formatDate(iso: string): string {

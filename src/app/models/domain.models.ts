@@ -106,6 +106,12 @@ export interface Deployment {
    * enregistrement écrit avant RT_35.
    */
   reservedUnitIds: string[];
+  /**
+   * RG_45/RT_60: note de plan de jeu, texte brut, `""` quand il n'y en a pas.
+   * N'entre dans aucun statut, et « Nouveau » (RG_14) la conserve. Normalisée
+   * à `""` à la lecture d'un enregistrement écrit avant EX_13.
+   */
+  note: string;
   readonly createdAt: string;
   updatedAt: string;
   versionToken: string | null;
