@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
   <meta charset="utf-8" />
-  <title>Ionic App</title>
+  <title>40K Deployment Planner</title>
 
   <base href="/" />
 
@@ -12,11 +12,19 @@
   <meta name="format-detection" content="telephone=no" />
   <meta name="msapplication-tap-highlight" content="no" />
 
+  <!-- RT_53: manifeste d'installation ; couleur de barre suivant les deux
+       thèmes de RT_29 (--app-surface-page). -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#121212" />
+
   <link rel="icon" type="image/png" href="assets/icon/favicon.png" />
 
-  <!-- add to homescreen for ios -->
+  <!-- RT_53: ajout à l'écran d'accueil sur iOS. -->
+  <link rel="apple-touch-icon" href="assets/icon/apple-touch-icon.png" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="Déploiement 40K" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 </head>
 
 <body>

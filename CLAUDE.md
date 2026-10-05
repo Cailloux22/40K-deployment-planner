@@ -33,18 +33,19 @@ Layout of the app-specific code:
 - `src/app/import/` — `RT_01` format layer, `RT_13` roster JSON parser, `RG_06` colours, splitting a unit of 10+ models in two at the import summary (`RG_40`/`RT_50`/`RT_52`, `unit-split.ts`; its drag-and-drop editor is `src/app/pages/import/unit-split-editor.component.ts`, `RT_51`).
 - `src/app/deployment/` — pure status/grouping logic (`RT_11`, `RT_18`), token geometry (`RT_05`, `RT_19`), shared plane geometry and the ruler measure (`geometry.ts`, `RG_33`/`RT_42`), unit coherency (`RG_26`/`RT_36`), multi-token selection (`RG_30`/`RG_31`/`RT_40`, `selection.ts`), the compact cluster for a grouped drop from the band (`RG_32`/`RT_41`, `cluster.ts`), attached units and the deployment groups the placement rules operate on (`RG_36`/`RG_37`/`RT_45`/`RT_46`, `attachments.ts` — a leader/support and its bodyguard form one group; placements still carry the component's `idUnite`) and the zone visible from a model (`RG_27`/`RG_28`/`RT_38`).
 - `src/app/net/` — connectivity (`RT_14`), auth (`RT_21`), delta sync (`RT_09`/`RT_10`/`RT_15`).
+- `src/app/pwa/` — the installable web version (`EX_12`): install context and prompt (`RT_55`), background board download (`RT_56`), update announcement (`RT_57`), persistent storage (`RT_58`). The service worker itself is Angular's (`ngsw-config.json`, `RT_54`).
 - `src/app/pages/` + `src/app/home/` — the screens; `src/app/shared/` — cross-screen components.
-- `scripts/` — the three offline referential ingestion scripts (see below).
+- `scripts/` — the three offline referential ingestion scripts (see below), the app icon generator and a local server for the production build (PWA, see below).
 
 **The sync backend itself does not exist.** The contract is specified in [specification/openapi.yml](specification/openapi.yml) and the client implements it fully, but no server serves it, so `EX_06` is not satisfied end-to-end. This is tracked in spec.md under "Suivi des écarts entre spécification et implémentation"; per `RG_09`/`RG_10` it is non-blocking — the app is fully usable locally.
 
 Architectural decisions previously marked unmade are now taken and recorded in spec.md (`RT_06`/`RT_08` storage, `RT_16` pan/zoom). Do not treat them as open.
 
-The Android platform has been added (`android/`, debug APK builds); iOS has not.
+The Android platform has been added (`android/`, debug APK builds); iOS has not. On iPhone/iPad the app is meant to be installed as a PWA from the website (`EX_12`) — but no hosting is chosen yet (`RT_59`, listed as unmade in spec.md), so the web version is not published anywhere.
 
 ## Stack
 
-- Angular 22 + Ionic Angular 9, packaged for mobile via Capacitor 8 (`@capacitor/core`, `@capacitor/app`, `@capacitor/haptics`, `@capacitor/keyboard`, `@capacitor/status-bar`).
+- Angular 22 + Ionic Angular 9, packaged for mobile via Capacitor 8 (`@capacitor/core`, `@capacitor/app`, `@capacitor/haptics`, `@capacitor/keyboard`, `@capacitor/status-bar`), and installable from the browser as a PWA via `@angular/service-worker` (production build only, disabled inside the APK).
 - Capacitor `appId` in [capacitor.config.ts](capacitor.config.ts) is `fr.rocher.deploymentplanner` — it is baked into `android/` (package name), so changing it later means editing the Gradle/manifest files too, and it cannot change once published on the Play Store.
 - `android/` exists (`@capacitor/android`, checked in); `ios/` has not been added. Release signing (keystore, `assembleRelease`) is not set up — only debug APKs are built.
 
@@ -74,6 +75,13 @@ Android APK (needs a JDK and the Android SDK via `ANDROID_HOME`; output at `andr
 ng build && npx cap sync android   # rebuild www/ and copy it into android/
 cd android && ./gradlew assembleDebug
 npx cap open android               # open in Android Studio
+```
+
+PWA (`EX_12`) — `ng serve` never registers the service worker, so check offline behaviour, installation and updates against the production build:
+
+```bash
+ng build && npm run serve:pwa      # www/ on http://localhost:8080 (SPA rewrite + RT_59 cache headers); also the "pwa" entry of .claude/launch.json
+node scripts/generate-icons.mjs    # RT_53 — regenerates src/assets/icon/*.png (manifest, iOS, favicon)
 ```
 
 The production build enforces a per-component style budget (`anyComponentStyle` in `angular.json`, 6 kB warning / 12 kB error); `placement.page.scss` is already over the warning threshold.
@@ -124,6 +132,8 @@ Global styles in [src/global.scss](src/global.scss), Ionic theme variables/token
 Offline-first is implemented: everything except importing a new list (`RG_13`, a deliberate restriction) works without network. Records live in IndexedDB (`src/app/data/local-store.service.ts`), light config (session, sync token) behind `getConfig`/`setConfig` in the same service — that pair is the single substitution point for `@capacitor/preferences` on native. Referentials are read as asset files, not copied into the database, so an errata update can replace them without a code release.
 
 Board images are the exception (`RT_12`/`RT_27`/`RG_23`): when online, `BoardImageService` fetches each image directly from its gdmissions.app URL (`remoteAssets` in `boards.json`, CORS is `*`), accepts it only if it is a PNG with the referential's exact dimensions (placements, `playArea` and terrain are in that pixel space), and stores it as a blob in the IndexedDB store `boardImages`. Offline or on failure it serves that cached copy, then the bundled `assets` image. One network call per image per app session. Templates use `board | boardImage: variant | async` (pipe in `SharedModule`), never `board.assets[...]` directly. Only images refresh: `playArea`, terrain and the list of boards still come from the offline ingestion, so a board newly published upstream needs `ingest-boards.mjs` (+ `ingest-terrain.mjs`) to be re-run.
+
+In the browser, offline relies on the service worker (`RT_54`): app shell and JSON referentials are precached; the 90 board PNGs are cached lazily and filled in the background by `BoardPrefetchService` (`RT_56`). `BoardImageService`'s "bundled" step therefore checks, offline, that the service worker can actually serve the image, and otherwise returns an SVG "Plateau non disponible hors-ligne" placeholder (`RG_42`). Ionicons' `svg/` folder is **not** cached: every `<ion-icon name="…">` must be registered in `src/app/icons.ts`, or it will be missing offline.
 
 The sync client (`src/app/net/sync.service.ts`) pulls then pushes a delta, never overwrites a locally-modified record, and queues genuine conflicts for the player to arbitrate (`RG_11`) instead of resolving them. All failures are swallowed into a visible-but-non-blocking state (`RG_09`). No server implements the contract yet — see "Current state".
 

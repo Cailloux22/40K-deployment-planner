@@ -14,7 +14,8 @@
     "cy:open": "cypress open --e2e",
     "cy:run": "cypress run --e2e",
     "e2e": "start-server-and-test start http://localhost:4200 cy:run",
-    "e2e:open": "start-server-and-test start http://localhost:4200 cy:open"
+    "e2e:open": "start-server-and-test start http://localhost:4200 cy:open",
+    "serve:pwa": "node scripts/serve-www.mjs"
   },
   "private": true,
   "dependencies": {
@@ -25,6 +26,7 @@
     "@angular/platform-browser": "22.0.1",
     "@angular/platform-browser-dynamic": "22.0.1",
     "@angular/router": "22.0.1",
+    "@angular/service-worker": "22.0.1",
     "@capacitor/android": "^8.5.1",
     "@capacitor/app": "8.1.1",
     "@capacitor/core": "8.5.1",

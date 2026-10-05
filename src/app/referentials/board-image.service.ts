@@ -3,6 +3,8 @@ import { Injectable, inject } from '@angular/core';
 import { LocalStoreService, STORE_BOARD_IMAGES } from '../data/local-store.service';
 import { Board, BoardVariant } from '../models/referential.models';
 import { ConnectivityService } from '../net/connectivity.service';
+import { fetchAsset } from '../pwa/asset-cache';
+import { serviceWorkerControlled } from '../pwa/install-context';
 
 /** RT_27: une image de plateau en cache, par variante. */
 export interface CachedBoardImage {
@@ -39,6 +41,11 @@ export class BoardImageService {
     if (!url) {
       url = this.resolve(id, board, variant);
       this.resolved.set(id, url);
+      // RG_42: un plateau indisponible n'est pas retenu pour la session —
+      // il est redemandé au prochain affichage, une fois téléchargé ou en ligne.
+      void url.then((resolved) => {
+        if (resolved.startsWith(UNAVAILABLE_PREFIX)) this.resolved.delete(id);
+      });
     }
     return url;
   }
@@ -69,6 +76,15 @@ export class BoardImageService {
     if (cached?.blob) return URL.createObjectURL(cached.blob);
 
     // RG_23 / RT_27 étape 3: version livrée avec l'application.
+    // RG_42 / RT_54: dans le navigateur, elle n'est sur l'appareil hors-ligne
+    // que si le service worker l'a déjà rangée (affichage ou RT_56).
+    if (
+      !this.connectivity.online() &&
+      serviceWorkerControlled() &&
+      !(await fetchAsset(board.assets[variant]))
+    ) {
+      return unavailableBoardImage(board);
+    }
     return board.assets[variant];
   }
 
@@ -103,4 +119,27 @@ export function pngDimensions(header: Uint8Array): { width: number; height: numb
   if (header.length < 24 || PNG_SIGNATURE.some((byte, i) => header[i] !== byte)) return null;
   const view = new DataView(header.buffer, header.byteOffset, header.byteLength);
   return { width: view.getUint32(16), height: view.getUint32(20) };
+}
+
+const UNAVAILABLE_PREFIX = 'data:image/svg+xml;charset=utf-8,%3Csvg%20data-unavailable';
+
+/**
+ * RG_42: image de remplacement d'un plateau non disponible hors-ligne, aux
+ * dimensions de l'asset — les écrans la cadrent et la rognent comme l'image
+ * réelle. Le message est centré sur le plateau mesuré (`playArea`, RT_05),
+ * aux couleurs de la scène (RT_29), sombre dans les deux thèmes.
+ */
+export function unavailableBoardImage(board: Board): string {
+  const cx = board.playArea.left + board.playArea.width / 2;
+  const cy = board.playArea.top + board.playArea.height / 2;
+  const fontSize = Math.round(board.playArea.width / 14);
+  const svg =
+    `<svg data-unavailable="true" xmlns="http://www.w3.org/2000/svg" width="${board.width}" ` +
+    `height="${board.height}" viewBox="0 0 ${board.width} ${board.height}">` +
+    `<rect width="100%" height="100%" fill="#11131a"/>` +
+    `<text fill="#f2f2f3" font-family="sans-serif" font-size="${fontSize}" text-anchor="middle">` +
+    `<tspan x="${cx}" y="${cy}" dy="-0.2em">Plateau non disponible</tspan>` +
+    `<tspan x="${cx}" dy="1.3em">hors-ligne</tspan>` +
+    `</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }

@@ -4,7 +4,12 @@ import { TestBed } from '@angular/core/testing';
 import { LocalStoreService, STORE_BOARD_IMAGES } from '../data/local-store.service';
 import { Board } from '../models/referential.models';
 import { ConnectivityService } from '../net/connectivity.service';
-import { BoardImageService, CachedBoardImage, pngDimensions } from './board-image.service';
+import {
+  BoardImageService,
+  CachedBoardImage,
+  pngDimensions,
+  unavailableBoardImage,
+} from './board-image.service';
 
 const board = {
   id: 'take-and-hold__take-and-hold__1',
@@ -121,6 +126,57 @@ describe('BoardImageService (RT_12 / RT_27 / RG_23)', () => {
 
     expect(await service.imageUrl(board, 'no-measurements')).toBe(board.assets['no-measurements']);
     expect(cache.size).toBe(0);
+  });
+
+  describe('dans le navigateur, sous service worker (RG_42 / RT_54)', () => {
+    let cachedAssets: Set<string>;
+
+    beforeEach(() => {
+      cachedAssets = new Set();
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: { controller: {} },
+      });
+      // Service worker simulé : hors-ligne, sert son cache ou rend 504.
+      fetchMock.mockImplementation(async (url: string) =>
+        [...cachedAssets].some((path) => url.endsWith(path))
+          ? new Response('png', { status: 200 })
+          : new Response('', { status: 504 }),
+      );
+      online.set(false);
+    });
+
+    afterEach(() => {
+      delete (navigator as { serviceWorker?: unknown }).serviceWorker;
+    });
+
+    it('hors-ligne, sert l\'image embarquée déjà rangée par le service worker', async () => {
+      cachedAssets.add(board.assets['no-measurements']);
+
+      expect(await service.imageUrl(board, 'no-measurements')).toBe(board.assets['no-measurements']);
+    });
+
+    it('hors-ligne, remplace un plateau jamais téléchargé par le message, sans le retenir', async () => {
+      const playBoard = {
+        ...board,
+        playArea: { left: 100, top: 200, width: 1400, height: 1900 },
+      } as Board;
+
+      const url = await service.imageUrl(playBoard, 'no-measurements');
+      expect(url).toBe(unavailableBoardImage(playBoard));
+      // Chargée comme image, une source SVG est lue en XML strict.
+      const svg = decodeURIComponent(url.slice(url.indexOf(',') + 1));
+      const parsed = new DOMParser().parseFromString(svg, 'image/svg+xml');
+      expect(parsed.getElementsByTagName('parsererror')).toHaveLength(0);
+      expect(svg).toContain('Plateau non disponible');
+
+      // Une fois l'image téléchargée, le même plateau se résout normalement.
+      await Promise.resolve();
+      cachedAssets.add(board.assets['no-measurements']);
+      expect(await service.imageUrl(playBoard, 'no-measurements')).toBe(
+        board.assets['no-measurements'],
+      );
+    });
   });
 
   it('se rabat sur l\'embarqué quand la source répond en erreur ou échoue', async () => {

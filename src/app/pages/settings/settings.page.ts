@@ -6,6 +6,9 @@ import { AuthError, AuthService } from '../../net/auth.service';
 import { ConnectivityService } from '../../net/connectivity.service';
 import { SyncService } from '../../net/sync.service';
 import { ReferentialService } from '../../referentials/referential.service';
+import { BoardPrefetchService } from '../../pwa/board-prefetch.service';
+import { InstallService } from '../../pwa/install.service';
+import { StoragePersistenceService } from '../../pwa/storage-persistence.service';
 
 type AuthMode = 'signIn' | 'signUp';
 
@@ -13,8 +16,9 @@ type AuthMode = 'signIn' | 'signUp';
  * Écran 9 — Réglages (= À propos / crédits).
  *
  * RG_18: écran unique accessible depuis l'accueil par l'icône engrenage,
- * regroupant trois blocs — Compte, Informations utilisateur, et Mentions des
- * sources tierces. Il n'existe pas d'écran « À propos » séparé.
+ * regroupant les blocs Compte, Informations utilisateur, Mentions des sources
+ * tierces et, hors application empaquetée, Application (RG_41, RG_42, RG_44).
+ * Il n'existe pas d'écran « À propos » séparé.
  *
  * RT_20: la liste des mentions n'est pas codée en dur ici : elle est
  * construite en énumérant les référentiels embarqués et en lisant
@@ -37,6 +41,31 @@ export class SettingsPage implements OnInit {
   private readonly connectivity = inject(ConnectivityService);
   private readonly referential = inject(ReferentialService);
   private readonly router = inject(Router);
+  private readonly install = inject(InstallService);
+  private readonly prefetch = inject(BoardPrefetchService);
+  private readonly persistence = inject(StoragePersistenceService);
+
+  /** RG_18: le bloc « Application » n'existe que hors application empaquetée. */
+  readonly webApp = this.install.webApp;
+  readonly installed = this.install.installed;
+  readonly canInvite = this.install.canInvite;
+  readonly prefetchStatus = this.prefetch.status;
+  readonly persisted = this.persistence.persisted;
+
+  /** RG_42: « Prêt pour le hors-ligne » ou « Téléchargement des plateaux : n / 90 ». */
+  readonly offlineLabel = computed(() => {
+    const progress = `Téléchargement des plateaux : ${this.prefetch.present()} / ${this.prefetch.total()}`;
+    switch (this.prefetch.status()) {
+      case 'ready':
+        return 'Prêt pour le hors-ligne';
+      case 'paused':
+        return `${progress} (en pause)`;
+      case 'unsupported':
+        return 'Non disponible dans ce navigateur';
+      default:
+        return progress;
+    }
+  });
 
   readonly online = this.connectivity.online;
   readonly signedIn = this.auth.signedIn;
@@ -133,6 +162,16 @@ export class SettingsPage implements OnInit {
   /** RT_10: relance manuelle, jamais bloquante pour l'interface. */
   syncNow(): void {
     void this.sync.synchronize();
+  }
+
+  /** RG_42: action manuelle en mode économie de données. */
+  downloadBoards(): void {
+    void this.prefetch.downloadNow();
+  }
+
+  /** RG_44 / RT_58: « Protéger mes données », hors installation. */
+  protectData(): void {
+    void this.persistence.request();
   }
 
   back(): Promise<boolean> {

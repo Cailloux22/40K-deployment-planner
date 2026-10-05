@@ -7,6 +7,12 @@
       "runtimeArgs": ["start"],
       "port": 4200,
       "autoPort": true
+    },
+    {
+      "name": "pwa",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve-www.mjs", "8080"],
+      "port": 8080
     }
   ]
 }

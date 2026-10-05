@@ -29,6 +29,9 @@
     <app-conflict-resolution></app-conflict-resolution>
   }
 
+  <!-- RG_41: invitation à installer, au-dessus de la bibliothèque, fermable. -->
+  <app-install-invite variant="banner"></app-install-invite>
+
   @if (!online()) {
     <ion-note class="offline-banner">
       <ion-icon name="cloud-offline-outline"></ion-icon>

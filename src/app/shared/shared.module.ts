@@ -8,11 +8,13 @@ import { BoardImagePipe } from './board-image.pipe';
 import { BoardViewerComponent } from './board-viewer.component';
 import { ConflictResolutionComponent } from './conflict-resolution.component';
 import { DispositionIconComponent } from './disposition-icon.component';
+import { InstallInviteComponent } from './install-invite.component';
 
 /**
  * Composants transverses aux écrans : icône de disposition (RT_23), token de
  * socle (RT_05/RG_06), visualiseur plein écran (RT_16), arbitrage de
- * conflit (RG_11) et image de plateau réseau/cache (RT_12/RT_27).
+ * conflit (RG_11), image de plateau réseau/cache (RT_12/RT_27) et invitation
+ * à installer l'application (RG_41).
  */
 @NgModule({
   declarations: [
@@ -21,6 +23,7 @@ import { DispositionIconComponent } from './disposition-icon.component';
     BoardViewerComponent,
     ConflictResolutionComponent,
     DispositionIconComponent,
+    InstallInviteComponent,
   ],
   imports: [CommonModule, FormsModule, IonicModule],
   exports: [
@@ -32,6 +35,7 @@ import { DispositionIconComponent } from './disposition-icon.component';
     BoardViewerComponent,
     ConflictResolutionComponent,
     DispositionIconComponent,
+    InstallInviteComponent,
   ],
 })
 export class SharedModule {}

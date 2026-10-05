@@ -130,6 +130,75 @@
     }
   </ion-list>
 
+  <!-- ===== Bloc 4 — Application (RG_18, EX_12), hors APK seulement =====
+       Placé avant les mentions, qui sont longues : c'est l'état que le
+       joueur vient consulter. -->
+  @if (webApp) {
+    <ion-list-header>Application</ion-list-header>
+    <ion-list lines="full" class="application">
+      <!-- RG_41: installation, tant qu'elle n'est pas faite. -->
+      @if (installed()) {
+        <ion-item>
+          <ion-label>Installation</ion-label>
+          <ion-note slot="end">Application installée</ion-note>
+        </ion-item>
+      } @else if (canInvite()) {
+        <ion-item>
+          <app-install-invite variant="block"></app-install-invite>
+        </ion-item>
+      } @else {
+        <ion-item>
+          <ion-label class="ion-text-wrap">
+            <p>Ce navigateur ne permet pas d'installer l'application.</p>
+          </ion-label>
+        </ion-item>
+      }
+
+      <!-- RG_42: état de préparation au hors-ligne. -->
+      <ion-item>
+        <ion-label class="ion-text-wrap">Hors-ligne</ion-label>
+        <ion-note slot="end">{{ offlineLabel() }}</ion-note>
+      </ion-item>
+      @if (prefetchStatus() === 'awaiting-consent') {
+        <ion-item>
+          <ion-button fill="outline" size="small" [disabled]="!online()" (click)="downloadBoards()">
+            Télécharger les plateaux maintenant
+          </ion-button>
+        </ion-item>
+      }
+
+      <!-- RG_44: conservation des données sur l'appareil. -->
+      <ion-item [lines]="persisted() ? 'full' : 'none'">
+        <ion-label class="ion-text-wrap">Données</ion-label>
+        <ion-note slot="end">
+          {{
+            persisted()
+              ? 'Données conservées sur cet appareil'
+              : "Le navigateur peut effacer les données de l'application"
+          }}
+        </ion-note>
+      </ion-item>
+      @if (!persisted()) {
+        <ion-item>
+          <ion-label class="ion-text-wrap">
+            <p>
+              Vos listes et déploiements ne sont enregistrés que sur cet appareil.
+              @if (!installed()) {
+                Installez l'application pour les protéger.
+              }
+            </p>
+          </ion-label>
+          @if (!installed()) {
+            <!-- RT_58: hors installation, la demande suit un geste du joueur. -->
+            <ion-button slot="end" fill="outline" size="small" (click)="protectData()">
+              Protéger mes données
+            </ion-button>
+          }
+        </ion-item>
+      }
+    </ion-list>
+  }
+
   <!-- ===== Bloc 3 — Mentions des sources tierces (RG_18, RT_20) =====
        Énumération des référentiels embarqués : chaque attribution vient de la
        donnée générée elle-même, pas de ce gabarit. -->
