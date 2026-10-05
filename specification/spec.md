@@ -211,9 +211,9 @@ Le plateau affiché est par ailleurs **identifié une seule fois** par cet écra
 
 **Actions contextuelles, selon le statut :**
 
-- **« Nouveau »** : toujours disponible, y compris quand un déploiement existe déjà (orange ou vert). Écrase le déploiement existant du triplet (remise à zéro des placements et des unités en réserve de [[RG_25]]) et ouvre l'écran de placement ([[RG_03]] étape 3) vide. Une action destructrice de ce type est confirmée explicitement par le joueur avant d'écraser quoi que ce soit, sur le même principe que [[RG_08]]. L'identifiant du déploiement du triplet ([[RT_07]]) est conservé (mise à jour en place, cf. [[RG_07]]) ; une sauvegarde distincte n'est créée que si le joueur choisit ensuite explicitement d'enregistrer sous un nouveau nom.
+- **« Nouveau »** : toujours disponible, y compris quand un déploiement existe déjà (orange ou vert). Écrase le déploiement existant du triplet (remise à zéro des placements, des unités en réserve de [[RG_25]] et de la note de plan de jeu de [[RG_45]]) et ouvre l'écran de placement ([[RG_03]] étape 3) vide. Une action destructrice de ce type est confirmée explicitement par le joueur avant d'écraser quoi que ce soit, sur le même principe que [[RG_08]]. L'identifiant du déploiement du triplet ([[RT_07]]) est conservé (mise à jour en place, cf. [[RG_07]]) ; une sauvegarde distincte n'est créée que si le joueur choisit ensuite explicitement d'enregistrer sous un nouveau nom.
 - **« Éditer »** : disponible uniquement quand un déploiement existe déjà pour ce triplet (statut orange ou vert) ; masqué/désactivé au statut rouge. Ouvre l'écran de placement préchargé avec les placements existants. Ce bouton est affiché en **orange** lorsque le déploiement existant est non fini, pour renforcer le signal donné par le statut du plateau.
-- **« Consulter »** : disponible uniquement quand le déploiement de ce triplet est **terminé** (statut vert) ; masqué/désactivé aux statuts rouge et orange — un déploiement encore en cours de remplissage se reprend via « Éditer », pas via cette vue en lecture seule. Affiche en plein écran, zoomable, le plateau avec les placements du joueur superposés, en lecture seule (aucune édition possible), en utilisant cette fois la variante du plateau **sans** repères de mesure (« no-measurements » de [[RT_12]]).
+- **« Consulter »** : disponible uniquement quand le déploiement de ce triplet est **terminé** (statut vert) ; masqué/désactivé aux statuts rouge et orange — un déploiement encore en cours de remplissage se reprend via « Éditer », pas via cette vue en lecture seule. Affiche en plein écran, zoomable, le plateau avec les placements du joueur superposés, en lecture seule (aucune édition possible), en utilisant cette fois la variante du plateau **sans** repères de mesure (« no-measurements » de [[RT_12]]). La note de plan de jeu du déploiement y est consultable en lecture seule ([[RG_46]]).
 
 ### RG_04 — Un token = un modèle
 
@@ -527,13 +527,13 @@ La couleur de repli employée lorsqu'une unité n'a pas de couleur résolue resp
 
 Le joueur doit pouvoir sauvegarder un déploiement aussi bien **rempli** qu'**en cours de remplissage** : la sauvegarde n'est pas une action ponctuelle déclenchée uniquement en fin de saisie, elle reflète en continu l'état courant du placement au fil de la saisie ([[RG_07]]). Ce déploiement est automatiquement lié à la liste d'armée qu'il utilise pour le remplir ([[RT_07]]), sans étape de liaison manuelle.
 
-Satisfait par : [[RG_07]], [[RG_08]], [[RG_21]], [[RT_06]], [[RT_07]].
+Satisfait par : [[RG_07]], [[RG_08]], [[RG_21]], [[RT_06]], [[RT_07]]. La note de plan de jeu sauvegardée avec chaque déploiement relève de [[EX_13]].
 
 Les déploiements sauvegardés ne sont pas présentés sur un écran séparé : le joueur les retrouve en cliquant sur sa liste depuis la bibliothèque des listes importées de l'écran d'accueil ([[RG_18]]), puis en suivant le même cheminement que pour un nouveau déploiement ([[RG_03]]) : choix de la disposition adverse (étape 1, indicateur [[RG_12]]) → choix du plateau parmi les 3 layouts proposés (étape 2) → bouton **« Consulter »**, qui n'apparaît que lorsque le statut du plateau est **vert**, c'est-à-dire le déploiement terminé ([[RG_14]]) — ou bouton **« Éditer »**, déjà visible au statut orange, pour reprendre un déploiement encore en cours de remplissage.
 
 ### RG_07 — Sauvegarde nommée
 
-Un déploiement sauvegardé conserve un nom (par défaut : liste + plateau + date), la référence à la liste d'armée importée, le plateau et la disposition choisis, et l'ensemble des placements. Toute modification ultérieure du déploiement est enregistrée comme mise à jour de la même entrée, sauf sauvegarde explicite "sous un nouveau nom".
+Un déploiement sauvegardé conserve un nom (par défaut : liste + plateau + date), la référence à la liste d'armée importée, le plateau et la disposition choisis, l'ensemble des placements, et la note de plan de jeu du joueur ([[RG_45]]). Toute modification ultérieure du déploiement est enregistrée comme mise à jour de la même entrée, sauf sauvegarde explicite "sous un nouveau nom".
 
 ### RG_08 — Suppression
 
@@ -1201,6 +1201,69 @@ Les images sont demandées une à une, jamais en parallèle, pour ne pas concurr
 
 ---
 
+## EX_13 — Note de plan de jeu attachée à un déploiement
+
+Le joueur doit pouvoir **rédiger, sur l'écran de placement, une note libre** attachée au déploiement en cours, pour y consigner son plan de jeu (objectifs visés, rôle de chaque unité, entrée des réserves, réponse attendue à la disposition adverse…), puis **la relire en lecture seule** lorsqu'il consulte un déploiement terminé. La note est une donnée du déploiement au même titre que ses placements : elle est sauvegardée avec lui ([[EX_04]]), disponible hors-ligne ([[EX_05]]) et synchronisée entre appareils ([[EX_06]]).
+
+Satisfait par : [[RG_45]], [[RG_46]], [[RT_60]], [[RT_61]], [[RT_62]].
+
+### RG_45 — Édition de la note de plan de jeu depuis l'écran de placement
+
+**Accès.** L'en-tête de l'écran de placement ([[RG_03]] étape 3) porte un bouton à **icône de plan**, placé **immédiatement à gauche du bouton d'enregistrement** (« Enregistrer sous un nouveau nom », [[RG_07]]). Il est toujours disponible, quel que soit l'état du déploiement (aucun token posé, déploiement non fini ou terminé), le mode en cours (« Règle » [[RG_33]], « Déplacement » [[RG_39]]) ou l'agrandissement ([[RG_38]]).
+
+**Fenêtre d'édition.** Un appui ouvre une **fenêtre modale** titrée « Plan de jeu », qui contient un unique **champ texte multiligne** pré-rempli avec la note existante (vide sinon) et deux actions :
+
+- **« Valider »** enregistre le texte saisi comme note du déploiement et ferme la fenêtre ;
+- **« Annuler »** (ou le geste/bouton retour du système) ferme la fenêtre sans rien enregistrer. Si le texte a été modifié, l'abandon est confirmé explicitement par le joueur avant d'être appliqué, sur le même principe que [[RG_08]] ; s'il ne l'a pas été, la fenêtre se ferme directement.
+
+**Contenu.** La note est du **texte brut**, sans mise en forme ; les retours à la ligne saisis sont conservés. Sa longueur est limitée à **4 000 caractères** ; le champ affiche le nombre de caractères utilisés sur ce maximum et n'accepte pas de saisie au-delà. Une note qui ne contient que des espaces ou des retours à la ligne est tenue pour **vide** : la valider revient à supprimer la note.
+
+**Enregistrement.** « Valider » enregistre immédiatement la note dans le déploiement du triplet courant, comme mise à jour de la même entrée ([[RG_07]]) — sans attendre d'autre action et sans dépendre du réseau ([[EX_05]]). Une sauvegarde « sous un nouveau nom » ([[RG_07]]) reprend la note du déploiement d'origine. La note n'est pas modifiable ailleurs que dans cette fenêtre.
+
+**Ce que la note ne change pas.** La note n'entre dans **aucun** statut ni compte : un déploiement qui ne porte qu'une note, sans placement ni unité en réserve, reste « déploiement manquant » ([[RG_14]], [[RG_12]], [[RG_05]]). Ouvrir, éditer ou fermer la fenêtre ne modifie ni les placements ([[RT_04]]), ni la sélection courante du plateau ([[RG_30]]), ni l'unité courante du bandeau ([[RG_15]]), ni l'agrandissement et le cadrage de la vue ([[RG_38]], [[RG_39]]), ni le mode « Règle » en cours ([[RG_33]]).
+
+**Remise à zéro.** L'action « Nouveau » de [[RG_14]] écrase aussi la note. Lorsque le déploiement du triplet porte une note, la confirmation de « Nouveau » est demandée même s'il ne porte ni placement ni unité en réserve (statut rouge), et son texte mentionne que la note sera effacée.
+
+**Second canal ([[RG_24]]).** L'existence d'une note n'est pas portée par la seule couleur du bouton : son icône change de rendu (contour sans note, plein avec note) et son nom accessible l'énonce (« Rédiger le plan de jeu » / « Modifier le plan de jeu »).
+
+### RG_46 — Consultation en lecture seule de la note de plan de jeu
+
+**Accès.** Le visualiseur plein écran ouvert par l'action **« Consulter »** de [[RG_14]] — déploiement terminé, placements superposés au plateau sans repères de mesure — porte, **en haut à droite de l'écran** (la croix de fermeture occupant l'angle supérieur gauche, [[RT_16]]), le même bouton à icône de plan qu'en [[RG_45]], lorsque le déploiement consulté porte une note. Sans note, le bouton n'est pas affiché : la consultation n'offre rien à rédiger. Le visualiseur « plateau seul » de [[RG_14]], qui ne montre aucun déploiement, ne porte pas ce bouton.
+
+**Lecture seule.** Un appui ouvre une fenêtre titrée « Plan de jeu » qui affiche le texte de la note, retours à la ligne conservés, **sans aucun champ éditable** : ni saisie, ni clavier virtuel, ni action « Valider ». Le texte peut être sélectionné et copié. Une unique action « Fermer » (ou le geste/bouton retour du système) ramène au visualiseur, dans l'état de zoom et de cadrage où le joueur l'avait laissé. Une note trop longue pour l'écran défile à l'intérieur de la fenêtre.
+
+**Modifier la note.** La consultation n'offre aucun raccourci d'édition : comme pour les placements, la note se modifie en reprenant le déploiement par « Éditer » ([[RG_14]]), puis par [[RG_45]].
+
+### RT_60 — Modèle de données et persistance de la note
+
+**Stockage.** La note est un champ texte `note` de l'enregistrement de déploiement ([[RT_06]]), à côté de `placements` ([[RT_04]]) et de `reservedUnitIds` ([[RT_35]]), et non un enregistrement séparé : elle suit sans traitement particulier la mise à jour en place et la copie « sous un nouveau nom » de [[RG_07]], la suppression de [[RG_08]] et la suppression en cascade de [[RG_21]]. Une note vide est stockée comme chaîne vide `""`. Les enregistrements écrits avant cette règle n'ont pas le champ ; il est normalisé à `""` au chargement, sans migration de schéma ([[RT_08]]), comme `reservedUnitIds` ([[RT_35]]).
+
+**Écriture.** À la validation ([[RG_45]]), le texte est ramené à `""` s'il ne contient que des blancs (`trim()` vide) ; sinon il est enregistré **tel que saisi**, blancs de début et de fin compris, pour ne pas altérer la mise en page voulue par le joueur. La longueur est contrôlée à l'écriture (au plus 4 000 caractères, comptés en unités de code UTF-16, soit la mesure de l'attribut `maxlength` du champ), en plus de la limite de saisie du champ, pour qu'aucun chemin d'écriture ne la contourne. L'écriture met à jour `updatedAt` et marque l'enregistrement modifié localement (`dirty`), ce qui l'inscrit au prochain envoi de synchronisation ([[RT_10]]). Si le déploiement du triplet n'existe pas encore (écran de placement ouvert par « Nouveau », rien encore posé), la validation de la note le crée, comme le ferait le premier placement.
+
+**Remise à zéro.** L'action « Nouveau » de [[RG_14]] remet `note` à `""` en même temps que `placements` et `reservedUnitIds`. Le déclenchement de sa confirmation teste la présence d'un placement, d'une unité réservée **ou** d'une note non vide.
+
+**Statuts.** Les calculs de [[RT_11]] et [[RT_18]] ne lisent pas le champ `note` ([[RG_45]], « ce que la note ne change pas »).
+
+**Synchronisation.** Le champ fait partie du contrat de synchronisation ([openapi.yml](openapi.yml), [[RT_09]]) au même titre que les placements : une chaîne, requise en écriture, longueur maximale 4 000. Un enregistrement reçu du serveur sans le champ (client antérieur) est normalisé à `""`. Le conflit de [[RT_15]] reste détecté **par enregistrement** : une note modifiée sur deux appareils hors-ligne produit un conflit sur le déploiement entier, arbitré par [[RG_11]] sans fusion de texte ; les deux versions présentées au joueur incluent leur note respective.
+
+### RT_61 — Fenêtre d'édition de la note sur l'écran de placement
+
+**Bouton.** Le bouton est un `ion-button` icône seule inséré dans le groupe `ion-buttons` de fin de l'en-tête de l'écran de placement, **avant** le bouton d'enregistrement, avec la cible tactile de [[RT_31]]. L'icône est `clipboard-outline` sans note et `clipboard` avec note, du jeu d'icônes de l'application (Ionicons), et le nom accessible suit [[RG_45]].
+
+**Fenêtre.** La fenêtre est un `ion-modal` ouvert par le contrôleur de modales, qui reçoit en entrée la note courante et rend en sortie soit le nouveau texte (« Valider »), soit un abandon. Le champ est un `ion-textarea` à hauteur automatique, `maxlength="4000"` avec compteur de caractères, `autocapitalize="sentences"`, prenant le focus à l'ouverture. Le clavier virtuel redimensionne la fenêtre plutôt que de la recouvrir (`@capacitor/keyboard` en natif, `interactive-widget=resizes-content` en web), pour que les deux actions restent atteignables pendant la saisie.
+
+**Abandon.** La fenêtre compare le texte courant à la note reçue ; s'ils diffèrent, la fermeture par « Annuler », par le bouton retour matériel, par le geste de balayage ou par un appui hors de la fenêtre passe par la garde `canDismiss` de la modale, qui demande la confirmation de [[RG_45]]. « Valider » ferme la fenêtre sans confirmation et délègue l'écriture à [[RT_60]].
+
+**Isolation des gestes.** Tant que la fenêtre est ouverte, les gestes de l'écran de placement ([[RT_34]], [[RT_40]], [[RT_42]], [[RT_48]]) ne reçoivent aucun évènement : la modale recouvre l'écran, et l'écouteur du bouton du milieu de [[RT_48]] est inactif. Aucun état local de l'éditeur ([[RT_47]], sélection, bandeau, mode) n'est réinitialisé à l'ouverture ni à la fermeture.
+
+### RT_62 — Fenêtre de consultation de la note dans le visualiseur « Consulter »
+
+**Bouton.** Le visualiseur plein écran partagé de [[RT_16]] reçoit en entrée la note du déploiement consulté. Lorsqu'elle est non vide, il affiche le bouton `clipboard` de [[RT_61]], positionné en absolu dans l'angle supérieur droit, au-dessus de la surface zoomée et hors de la transformation `translate` + `scale`, avec la cible tactile de [[RT_31]] et le délimiteur contrasté de [[RT_43]] face à la scène. Le `pointerdown` sur ce bouton n'est pas transmis au pan/zoom du visualiseur. Le visualiseur « plateau seul » ne lui transmet aucune note.
+
+**Fenêtre.** La fenêtre est un `ion-modal` dont le contenu est un bloc de texte en `white-space: pre-wrap`, `user-select: text`, défilant à l'intérieur de la modale. Le texte est inséré par **interpolation de texte** et jamais comme HTML, la note pouvant provenir d'un autre appareil par la synchronisation ([[RT_09]]). Aucun `ion-textarea` ni élément éditable n'y figure, si bien que le clavier virtuel ne s'ouvre pas. La fermeture, par « Fermer », par le bouton retour matériel ou par le geste de balayage, ne demande aucune confirmation et laisse intacts le zoom et le décalage du visualiseur.
+
+---
+
 ## Suivi des décisions non tranchées
 
 Les règles techniques suivantes contiennent un choix encore ouvert et doivent être mises à jour dès que la décision est prise :
@@ -1210,6 +1273,8 @@ Les règles techniques suivantes contiennent un choix encore ouvert et doivent �
 Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_12]] (appel direct du client vers gdmissions.app, sans relais serveur, version embarquée en dernier recours), [[RT_05]] (`playArea` mesuré à l'ingestion, image distante acceptée seulement à dimensions identiques), [[RT_27]] (store IndexedDB dédié aux blobs), [[RT_16]] (pan/zoom implémenté sans librairie tierce, sur les évènements `Pointer` et une transformation CSS), [[RT_06]]/[[RT_08]] (IndexedDB pour les enregistrements métier, stockage de configuration léger séparé) [[RT_26]] (fichier JSON versionné avec l'application, alimenté entrée par entrée par l'assistant IA du projet) et [[RT_37]] (terrain extrait des images de plateau par un script hors-ligne plutôt que saisi à la main).
 
 ## Suivi des écarts entre spécification et implémentation
+
+- **[[EX_13]] / [[RG_45]] / [[RG_46]] / [[RT_60]] / [[RT_61]] / [[RT_62]] — spécifiées, non implémentées.** Le modèle `Deployment` (`src/app/models/domain.models.ts`) n'a pas encore de champ `note`, et le schéma `Deployment` du contrat de synchronisation ([openapi.yml](openapi.yml)) doit recevoir la propriété `note` (chaîne, requise, `maxLength: 4000`) décrite par [[RT_60]].
 
 - **[[EX_12]] / [[RG_41]] à [[RG_44]] / [[RT_53]] à [[RT_59]] — spécifiées, non implémentées.** Le dépôt ne contient ni manifeste, ni service worker, ni hébergement. `index.html` porte encore le titre, la langue et l'icône du starter Ionic. Il faut aussi produire les icônes de l'application (192, 512, 512 maskable, 180 px pour iOS), qui n'existent pas. Tant que la synchronisation de compte ([[RT_09]]) n'est pas servie, rien ne permet de transférer ses données d'un onglet Safari vers l'application installée sur iPhone ([[RG_41]]), ni d'un appareil à l'autre.
 
