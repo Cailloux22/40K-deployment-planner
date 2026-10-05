@@ -560,7 +560,7 @@ La liaison entre un déploiement et sa liste d'armée d'origine utilise un ident
 
 L'application doit rester pleinement utilisable sans connexion réseau pour la planification et la consultation des déploiements sauvegardés, qui ne dépendent pas d'un accès serveur. L'import d'une nouvelle liste fait exception à ce principe (voir [[RG_13]]) ; un plateau s'affiche hors-ligne dans la dernière version obtenue en ligne, à défaut dans celle livrée avec l'application (voir [[RG_23]]). Lorsque l'application ressort du mode hors-ligne, une éventuelle divergence entre les données locales et celles du serveur doit être arbitrée par le joueur, jamais résolue silencieusement (voir [[RG_11]]).
 
-Satisfait par : [[RG_09]], [[RG_11]], [[RG_13]], [[RG_23]], [[RT_08]], [[RT_14]], [[RT_15]], [[RT_27]].
+Satisfait par : [[RG_09]], [[RG_11]], [[RG_13]], [[RG_23]], [[RT_08]], [[RT_14]], [[RT_15]], [[RT_27]]. Dans le navigateur, ou une fois installée depuis celui-ci ([[EX_12]]), ce fonctionnement hors-ligne repose en plus sur [[RG_42]] et [[RT_54]].
 
 ### RG_09 — Dégradation gracieuse du réseau
 
@@ -572,7 +572,7 @@ L'import d'une nouvelle liste d'armée ([[RG_01]]) n'est pas proposé hors-ligne
 
 ### RG_23 — Version du plateau affichée : la plus récente obtenue en ligne, conservée pour le hors-ligne
 
-Pour que le joueur voie toujours la version la plus à jour publiée par la source, chaque image de plateau (étape 2 de [[RG_03]], écran de placement, visualiseurs de [[RG_14]]) est demandée à la source quand l'appareil est en ligne ([[RT_12]]). Toute version ainsi obtenue est conservée sur l'appareil et remplace la précédente ([[RT_27]]) : hors-ligne, ou si la source ne répond pas, le plateau s'affiche dans la **dernière version obtenue en ligne sur cet appareil**, et à défaut — plateau jamais affiché en ligne — dans la version livrée avec l'application. Aucun plateau n'est donc jamais bloqué faute de réseau : reprendre hors-ligne un déploiement déjà commencé, le cas d'usage central de [[EX_05]], fonctionne toujours, au pire sur une version moins récente du plateau.
+Pour que le joueur voie toujours la version la plus à jour publiée par la source, chaque image de plateau (étape 2 de [[RG_03]], écran de placement, visualiseurs de [[RG_14]]) est demandée à la source quand l'appareil est en ligne ([[RT_12]]). Toute version ainsi obtenue est conservée sur l'appareil et remplace la précédente ([[RT_27]]) : hors-ligne, ou si la source ne répond pas, le plateau s'affiche dans la **dernière version obtenue en ligne sur cet appareil**, et à défaut — plateau jamais affiché en ligne — dans la version livrée avec l'application. Aucun plateau n'est donc jamais bloqué faute de réseau : reprendre hors-ligne un déploiement déjà commencé, le cas d'usage central de [[EX_05]], fonctionne toujours, au pire sur une version moins récente du plateau. Dans le navigateur ([[EX_12]]), la version livrée avec l'application n'est présente sur l'appareil qu'une fois téléchargée : [[RG_42]] décrit cette seule exception.
 
 Le passage d'une version à l'autre est silencieux ([[RG_09]]) : aucun message n'informe le joueur que l'image affichée vient du cache ou de l'application plutôt que de la source. Une version distante n'est retenue que si elle reste compatible avec les placements déjà enregistrés (même cadrage, [[RT_12]]) ; sinon la version conservée continue d'être affichée.
 
@@ -652,13 +652,15 @@ Lorsque le même déploiement a été modifié hors-ligne sur deux appareils ava
 
 ### RG_18 — Point d'accès compte et informations sur l'écran d'accueil (bouton Réglages)
 
-L'écran d'accueil — la bibliothèque des listes d'armée déjà importées ([[RG_01]]) — affiche un bouton « Réglages » (icône engrenage), toujours visible quel que soit le nombre de listes déjà importées. Ce bouton ouvre un écran (ou panneau) Réglages qui regroupe, sans quitter l'application, trois blocs distincts :
+L'écran d'accueil — la bibliothèque des listes d'armée déjà importées ([[RG_01]]) — affiche un bouton « Réglages » (icône engrenage), toujours visible quel que soit le nombre de listes déjà importées. Ce bouton ouvre un écran (ou panneau) Réglages qui regroupe, sans quitter l'application, des blocs distincts :
 
 1. **Compte**, dont le contenu dépend de l'état de connexion du joueur ([[RG_10]]) :
    - non connecté : les actions « Créer un compte » et « Se connecter », menant aux formulaires de sign up / sign in ;
    - connecté : les informations du compte prévues par [[RG_19]] et une action de déconnexion (retour à un usage local uniquement, sans suppression des données locales).
 2. **Informations utilisateur**, détaillées par [[RG_19]].
 3. **Mentions des sources tierces** : la liste des attributions requises par les référentiels tiers dont l'application dépend, qu'ils soient générés hors-ligne ([[RT_02]], « Powered by Wahapedia ») ou chargés par le réseau à l'exécution ([[RT_12]], Battlemaster) — conformément aux conditions d'usage de ces sources (voir [CLAUDE.md](../CLAUDE.md)). Chaque mention indique l'adresse de la source et la rend directement ouvrable, plutôt que de l'afficher comme un texte inerte : c'est par cette adresse que le joueur vérifie l'attribution.
+
+4. **Application**, présent seulement hors application Android empaquetée ([[EX_12]]) : l'invitation à installer l'application tant qu'elle ne l'est pas ([[RG_41]]), l'état de préparation au hors-ligne et le téléchargement des plateaux ([[RG_42]]), et l'état de conservation des données sur l'appareil ([[RG_44]]).
 
 Le bloc « Mentions des sources tierces » et la consultation des informations déjà connues du bloc « Compte » restent accessibles hors-ligne ; seules les actions qui nécessitent le réseau (création de compte, connexion, synchronisation) sont soumises à la dégradation gracieuse prévue par [[RG_09]].
 
@@ -1047,15 +1049,169 @@ Un modèle n'a pas d'identité propre dans la liste ([[RT_13]] ne produit que de
 
 ---
 
+## EX_12 — Installation de l'application depuis le navigateur
+
+Le joueur doit pouvoir installer l'application sur n'importe quel appareil, iPhone et iPad compris, sans passer par un magasin d'applications. Depuis le site, il l'ajoute à son écran d'accueil. Il la lance ensuite comme une application à part entière : en plein écran, sans barre de navigateur, y compris sans réseau. Cette voie complète l'application Android empaquetée et tient lieu d'application iOS tant qu'aucune n'est publiée.
+
+Satisfait par : [[RG_41]], [[RG_42]], [[RG_43]], [[RG_44]], [[RT_53]], [[RT_54]], [[RT_55]], [[RT_56]], [[RT_57]], [[RT_58]], [[RT_59]]. Une fois installée, l'application suit [[EX_05]] comme sous toute autre forme.
+
+### RG_41 — Invitation à installer l'application
+
+**Quand.** L'invitation n'est proposée que si l'application tourne dans un onglet de navigateur, sans être installée. Elle n'apparaît ni dans l'application lancée depuis l'écran d'accueil, ni dans l'application Android empaquetée.
+
+**Où.**
+
+- **Écran d'accueil** : un bandeau au-dessus de la bibliothèque des listes ([[RG_18]]), fermable. Une fois fermé, il ne réapparaît plus sur cet appareil.
+- **Réglages** : le bloc « Application » ([[RG_18]]) propose l'installation tant qu'elle n'est pas faite, même après fermeture du bandeau.
+
+L'invitation n'est jamais présentée sur l'écran de placement et ne bloque aucune action.
+
+**Comment, selon le navigateur.**
+
+- **Le navigateur propose sa propre installation** (Chrome et Edge sur Android et sur ordinateur) : un bouton « Installer l'application » ouvre la demande d'installation du navigateur. Si le joueur refuse, rien ne change. S'il accepte, l'invitation disparaît.
+- **Le navigateur ne permet qu'un ajout manuel** (tous les navigateurs sur iPhone et iPad) : l'invitation affiche la marche à suivre, « Partager » puis « Sur l'écran d'accueil », illustrée par l'icône Partager du système.
+- **Le navigateur ne permet pas l'installation** (Firefox sur ordinateur, par exemple) : aucune invitation. L'application reste utilisable dans l'onglet.
+
+**iPhone et iPad : installer avant d'importer.** Sur ces appareils, l'application installée ne retrouve pas les données saisies dans l'onglet du navigateur : les deux disposent chacune de leur propre stockage. L'invitation le dit explicitement (« Installez l'application avant d'importer vos listes : celles importées dans le navigateur n'y seront pas reprises »). Elle est présentée dès la première ouverture, donc avant le premier import. Sans compte synchronisé ([[EX_06]]), aucun transfert n'est possible de l'un à l'autre.
+
+### RG_42 — Fonctionnement hors-ligne dès la première ouverture
+
+**Application.** Après une première ouverture complète en ligne, l'application s'ouvre et fonctionne sans réseau, installée ou non, selon les règles de [[EX_05]] : écrans, référentiels de socles, de dispositions et de terrain. L'import reste indisponible hors-ligne ([[RG_13]]).
+
+**Plateaux.** Les images de plateaux (45 plateaux en deux variantes, environ 35 Mo) ne sont pas exigées à la première ouverture. Elles sont téléchargées en arrière-plan, sans bloquer ni ralentir l'usage. Un plateau déjà affiché en ligne sur cet appareil reste toujours disponible ([[RG_23]]) : reprendre hors-ligne un déploiement commencé fonctionne donc dès la première visite.
+
+Tant que ce téléchargement n'est pas terminé, un plateau **jamais affiché** sur cet appareil peut être indisponible hors-ligne. Son image est alors remplacée par le message « Plateau non disponible hors-ligne », jamais par une image cassée. Le plateau reste sélectionnable ; seule son image manque. C'est la seule exception à la garantie de [[RG_23]] (« aucun plateau n'est jamais bloqué faute de réseau ») : dans le navigateur, la « version livrée avec l'application » n'est présente sur l'appareil qu'une fois téléchargée.
+
+**État visible.** Le bloc « Application » des Réglages ([[RG_18]]) indique :
+
+- « Prêt pour le hors-ligne » une fois tous les plateaux téléchargés ;
+- sinon « Téléchargement des plateaux : n / 90 », avec la mention « en pause » hors-ligne.
+
+Le téléchargement reprend seul au retour du réseau ou au lancement suivant. Si l'appareil signale une connexion en mode économie de données, il n'est pas lancé automatiquement : le bloc propose alors « Télécharger les plateaux maintenant ».
+
+### RG_43 — Mise à jour de l'application installée
+
+Une nouvelle version publiée est téléchargée en arrière-plan, référentiels compris : une mise à jour d'errata ([[RT_02]]) suit donc ce même chemin. Une fois la version prête, un message non bloquant annonce « Nouvelle version disponible », avec l'action « Recharger ».
+
+Le joueur n'est jamais interrompu :
+
+- le message n'est pas présenté sur l'écran de placement ; il attend que le joueur en sorte ;
+- sans action de sa part, la nouvelle version s'applique au lancement suivant ;
+- recharger ne perd aucune donnée, listes et placements étant déjà enregistrés ([[RT_08]]).
+
+### RG_44 — Conservation des données sur l'appareil
+
+Hors application Android empaquetée, les listes et les déploiements vivent dans le stockage du navigateur. Le navigateur peut l'effacer de lui-même : par manque d'espace, ou, sur iPhone et iPad, pour un site non installé resté quelques jours sans visite. Tant que la synchronisation de compte ([[EX_06]]) n'est pas disponible, ce stockage est la **seule copie** des données du joueur. En conséquence :
+
+- l'application demande au navigateur de conserver durablement ses données ;
+- le bloc « Application » des Réglages ([[RG_18]]) indique si les données sont protégées (« Données conservées sur cet appareil ») ou non (« Le navigateur peut effacer les données de l'application ») ;
+- quand elles ne le sont pas, ce bloc recommande d'installer l'application ([[RG_41]]) et, dès que la synchronisation existe, de se connecter à un compte ([[RG_10]]).
+
+### RT_53 — Manifeste d'application web et métadonnées d'installation
+
+**Manifeste.** Un fichier `src/manifest.webmanifest` est copié à la racine du build (`assets` de `angular.json`) et référencé par `<link rel="manifest">` dans `index.html`. Il déclare :
+
+- `name` « 40K Deployment Planner », `short_name` court (affiché sous l'icône) ;
+- `id`, `start_url` et `scope` relatifs (`./`), pour suivre le `base href` de [[RT_59]] ;
+- `display: standalone` et `orientation: any`, le placement servant en portrait comme en paysage ;
+- `theme_color` et `background_color` : le fond de l'application du thème clair de [[RT_29]], le manifeste n'acceptant qu'une valeur ;
+- des icônes PNG 192 et 512 px (`purpose: any`) et une icône 512 px `maskable`, dont le motif tient dans la zone de sécurité.
+
+**Métadonnées de `index.html`.**
+
+- `<title>` au nom de l'application et `lang="fr"`, à la place des valeurs du starter (« Ionic App », `en`) ;
+- `<meta name="theme-color">` en double, avec `media="(prefers-color-scheme: …)"`, pour suivre les deux thèmes de [[RT_29]] ;
+- pour iOS : `apple-touch-icon` (180 px), `apple-mobile-web-app-title`, et `apple-mobile-web-app-status-bar-style` à `black-translucent`. Le contenu passe alors sous la barre d'état ; les marges de sécurité sont déjà gérées par le cadre d'interface (`viewport-fit=cover` est posé).
+
+### RT_54 — Service worker et mise en cache de l'application
+
+**Choix : `@angular/service-worker`.** Le service worker d'Angular (`ngsw-worker.js`, configuré par `ngsw-config.json`) est enregistré dans `AppModule`. Il est actif seulement si l'application est un build de production **et** ne tourne pas dans l'application empaquetée (`Capacitor.isNativePlatform()`). Dans l'APK, les fichiers sont déjà locaux, et un service worker y figerait des versions en concurrence avec les mises à jour de l'application native. Stratégie d'enregistrement : `registerWhenStable:30000`, pour ne pas concurrencer le premier affichage.
+
+**Groupes d'assets.**
+
+| Groupe | Contenu | `installMode` | `updateMode` |
+|---|---|---|---|
+| `app` | `index.html`, `manifest.webmanifest`, bundles JS/CSS, icônes de l'application, `assets/icons/**` | `prefetch` | `prefetch` |
+| `referentials` | `assets/referentials/*.json` (environ 1 Mo) | `prefetch` | `prefetch` |
+| `boards` | `assets/referentials/boards/**` (90 images) | `lazy` | `lazy` |
+
+Les groupes `prefetch` assurent la partie « application » de [[RG_42]]. Le groupe `boards` n'est rempli qu'à la demande, par l'affichage ou par [[RT_56]].
+
+**Icônes Ionicons.** Le dossier `svg/` copié depuis `ionicons` (environ 1 350 fichiers, 2,6 Mo) n'est pas mis en cache. Les icônes réellement utilisées sont enregistrées dans le bundle par `addIcons` et ne sont donc plus chargées par le réseau. Sans cela, une icône jamais affichée en ligne manquerait hors-ligne.
+
+**Aucun groupe de données.** L'API de synchronisation ([[RT_09]]) ne doit pas être servie depuis un cache. Les images distantes de gdmissions.app ([[RT_12]]) ont déjà leur propre cache ([[RT_27]]). Les requêtes vers d'autres origines, non déclarées, traversent le service worker sans être interceptées.
+
+**Navigation.** Les `navigationUrls` par défaut servent `index.html` pour tout chemin de l'application : un lien profond (écran de placement) s'ouvre hors-ligne.
+
+**Ordre de [[RT_27]] inchangé.** La résolution réseau → cache IndexedDB → image embarquée reste celle de `BoardImageService`. Hors-ligne, l'étape « image embarquée » est servie par le cache du service worker si l'image s'y trouve. Sinon elle échoue, et le service rend l'état « indisponible » qui affiche le message de [[RG_42]].
+
+### RT_55 — Détection du contexte et déclenchement de l'installation
+
+**Capture au démarrage.** Un service racine (`InstallService`) est instancié au démarrage de l'application, avant tout écran : l'évènement `beforeinstallprompt` peut survenir avant l'affichage de l'accueil. Le service l'intercepte (`preventDefault()`) et le conserve. Le bouton de [[RG_41]] appelle son `prompt()` puis lit `userChoice`. L'évènement `appinstalled` fait passer l'état à « installée ».
+
+**Mode d'invitation**, exposé en signal, évalué dans cet ordre :
+
+1. `Capacitor.isNativePlatform()` → `none` ;
+2. `matchMedia('(display-mode: standalone)').matches` ou `navigator.standalone === true` (iOS) → `installed` ;
+3. iPhone, iPad ou iPod d'après l'agent utilisateur, ou iPadOS se déclarant « Macintosh » avec `navigator.maxTouchPoints > 1` → `ios-instructions` ;
+4. évènement `beforeinstallprompt` capturé → `prompt` ;
+5. sinon → `none`.
+
+**Fermeture du bandeau.** Elle est mémorisée par la paire `getConfig`/`setConfig` de [[RT_08]]. Un échec d'écriture est absorbé : le bandeau peut alors réapparaître au lancement suivant.
+
+### RT_56 — Téléchargement des plateaux en arrière-plan
+
+**Conditions.** Le téléchargement n'a lieu que si un service worker contrôle la page (`navigator.serviceWorker.controller`, [[RT_54]]) : il est sans objet dans l'APK, qui embarque les images. Il démarre une fois l'application stable, après le premier affichage. Si `navigator.connection?.saveData` est vrai, il ne démarre que sur l'action des Réglages ([[RG_42]]).
+
+**Déroulement.** Pour chaque plateau et chaque variante de `boards.json`, l'URL de l'image embarquée (`assets[variante]`) est examinée :
+
+- si `caches.match(url)` la trouve, elle est comptée comme présente ;
+- sinon, elle est demandée par `fetch(url)`, et le service worker la range dans le groupe `boards`.
+
+Les images sont demandées une à une, jamais en parallèle, pour ne pas concurrencer l'usage. Le compteur `présentes / total` alimente l'état de [[RG_42]].
+
+**Interruptions.** Le passage hors-ligne ([[RT_14]]) suspend la boucle, et le retour en ligne la reprend. Une image en échec est sautée, puis retentée au lancement suivant.
+
+**Indépendance de [[RT_27]].** Ce téléchargement porte sur les images **embarquées**, servies par la même origine que l'application : elles ont les dimensions exactes du référentiel et ne dépendent pas de la disponibilité de gdmissions.app. Le cache IndexedDB des versions distantes n'est pas touché : il continue d'être rempli à l'affichage, et reste prioritaire sur la version embarquée.
+
+### RT_57 — Détection et application des mises à jour
+
+- **Version prête.** `SwUpdate.versionUpdates`, filtré sur `VERSION_READY`, déclenche un toast avec l'action « Recharger » (cibles tactiles de [[RT_31]]). L'action appelle `activateUpdate()` puis recharge le document.
+- **Report sur l'écran de placement.** Tant que la route active est celle de l'écran de placement, l'annonce est mise en attente. Elle est présentée au premier changement de route qui en sort.
+- **Vérification.** `checkForUpdate()` est appelé au retour au premier plan (`visibilitychange`), en plus de la vérification que fait le service worker à chaque ouverture.
+- **Échecs.** `VERSION_INSTALLATION_FAILED` est ignoré silencieusement ([[RG_09]]). Un état `unrecoverable` (cache du service worker incohérent) recharge le document après un message, aucune donnée n'étant en jeu.
+
+### RT_58 — Demande de stockage persistant
+
+- **Appel automatique.** En mode installé ([[RT_55]]), l'application appelle `navigator.storage.persisted()` au lancement, puis `navigator.storage.persist()` si le stockage n'est pas encore persistant. Chrome accorde la persistance sans demande au joueur ; WebKit l'accorde aux applications installées sur l'écran d'accueil.
+- **Hors installation.** L'appel n'est fait que sur l'action « Protéger mes données » du bloc « Application », car certains navigateurs (Firefox) présentent alors leur propre demande d'autorisation, qui ne doit pas surgir sans geste du joueur.
+- **Affichage.** Le résultat de `persisted()` alimente l'état de [[RG_44]]. Une API absente est traitée comme « non protégé ».
+- **APK.** Sans objet : les données vivent dans le bac à sable de l'application.
+
+### RT_59 — Hébergement de la version web
+
+- **Contenu.** Le site sert le contenu de `www/` produit par le build de production, **en HTTPS** : un service worker ne s'enregistre pas autrement, hors `localhost`.
+- **Liens profonds.** Tout chemin inconnu du serveur est réécrit vers `index.html`, pour qu'un lien profond fonctionne avant que le service worker soit installé.
+- **En-têtes de cache.** `ngsw-worker.js`, `ngsw.json`, `index.html` et `manifest.webmanifest` sont servis avec `Cache-Control: no-cache`, faute de quoi les mises à jour de [[RT_57]] ne seraient pas détectées. Les bundles, dont le nom porte une empreinte, peuvent être mis en cache longuement.
+- **Politique de sécurité.** Si une politique de sécurité du contenu est posée, elle autorise gdmissions.app en `connect-src` et `img-src` ([[RT_12]]), ainsi que l'URL de l'API de synchronisation ([[RT_09]]).
+- **`base href`.** Il vaut `/`. Un hébergement dans un sous-chemin demande `ng build --base-href /<chemin>/`, que le manifeste suit grâce à ses chemins relatifs ([[RT_53]]).
+- **Mentions.** Le site rend les référentiels publics : les mentions de [[RT_20]], accessibles hors-ligne dans les Réglages, y satisfont les conditions d'usage de Wahapedia et de Battlemaster.
+
+**Décision non tranchée : hébergeur et domaine** (voir « Suivi des décisions non tranchées »).
+
+---
+
 ## Suivi des décisions non tranchées
 
 Les règles techniques suivantes contiennent un choix encore ouvert et doivent être mises à jour dès que la décision est prise :
 
-Aucune à ce jour.
+- **[[RT_59]] — hébergeur et domaine de la version web.** Toute offre d'hébergement statique en HTTPS convient, à condition de permettre la réécriture des chemins vers `index.html` et des en-têtes de cache par fichier (Netlify, Cloudflare Pages… ; GitHub Pages ne permet pas ces en-têtes). Le domaine fixe l'origine, donc le stockage des données du joueur : en changer après publication revient à repartir d'une application vide sur chaque appareil.
 
 Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_12]] (appel direct du client vers gdmissions.app, sans relais serveur, version embarquée en dernier recours), [[RT_05]] (`playArea` mesuré à l'ingestion, image distante acceptée seulement à dimensions identiques), [[RT_27]] (store IndexedDB dédié aux blobs), [[RT_16]] (pan/zoom implémenté sans librairie tierce, sur les évènements `Pointer` et une transformation CSS), [[RT_06]]/[[RT_08]] (IndexedDB pour les enregistrements métier, stockage de configuration léger séparé) [[RT_26]] (fichier JSON versionné avec l'application, alimenté entrée par entrée par l'assistant IA du projet) et [[RT_37]] (terrain extrait des images de plateau par un script hors-ligne plutôt que saisi à la main).
 
 ## Suivi des écarts entre spécification et implémentation
+
+- **[[EX_12]] / [[RG_41]] à [[RG_44]] / [[RT_53]] à [[RT_59]] — spécifiées, non implémentées.** Le dépôt ne contient ni manifeste, ni service worker, ni hébergement. `index.html` porte encore le titre, la langue et l'icône du starter Ionic. Il faut aussi produire les icônes de l'application (192, 512, 512 maskable, 180 px pour iOS), qui n'existent pas. Tant que la synchronisation de compte ([[RT_09]]) n'est pas servie, rien ne permet de transférer ses données d'un onglet Safari vers l'application installée sur iPhone ([[RG_41]]), ni d'un appareil à l'autre.
 
 - **[[RT_09]] — backend de synchronisation non réalisé.** Le contrat d'API est spécifié ([openapi.yml](openapi.yml)) et le **client** est implémenté au complet contre ce contrat : authentification ([[RT_21]]), déclenchement ([[RT_10]]), pull/push delta, détection de conflit ([[RT_15]]) et écran d'arbitrage ([[RG_11]]). Aucun serveur ne l'expose en revanche : tant qu'un backend n'est pas déployé à l'URL configurée, [[EX_06]] reste non satisfaite de bout en bout. Conformément à [[RG_09]] et [[RG_10]], cette absence est non bloquante — l'application fonctionne intégralement en local, l'état affiché étant « Usage local uniquement » ([[RG_19]]) tant qu'aucun compte n'est connecté.
 - **[[RG_01]] — un seul format d'import.** Seul le roster JSON de [[RT_13]] est branché derrière [[RT_01]], ce qui satisfait le « à minima un export texte/JSON d'un list-builder tiers » de la règle. L'ajout d'un second format ne demande qu'une entrée supplémentaire dans la table des formats, sans toucher aux écrans.
