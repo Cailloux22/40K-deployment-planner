@@ -661,12 +661,17 @@ L'écran d'accueil — la bibliothèque des listes d'armée déjà importées ([
 3. **Mentions des sources tierces** : la liste des attributions requises par les référentiels tiers dont l'application dépend, qu'ils soient générés hors-ligne ([[RT_02]], « Powered by Wahapedia ») ou chargés par le réseau à l'exécution ([[RT_12]], Battlemaster) — conformément aux conditions d'usage de ces sources (voir [CLAUDE.md](../CLAUDE.md)). Chaque mention indique l'adresse de la source et la rend directement ouvrable, plutôt que de l'afficher comme un texte inerte : c'est par cette adresse que le joueur vérifie l'attribution.
 
 4. **Application**, présent seulement hors application Android empaquetée ([[EX_12]]) : l'invitation à installer l'application tant qu'elle ne l'est pas ([[RG_41]]), l'état de préparation au hors-ligne et le téléchargement des plateaux ([[RG_42]]), et l'état de conservation des données sur l'appareil ([[RG_44]]).
+5. **Version**, en bas de l'écran et dans tous les contextes (application Android comme version web) : le numéro de version de l'application ([[RG_47]]).
 
 Le bloc « Mentions des sources tierces » et la consultation des informations déjà connues du bloc « Compte » restent accessibles hors-ligne ; seules les actions qui nécessitent le réseau (création de compte, connexion, synchronisation) sont soumises à la dégradation gracieuse prévue par [[RG_09]].
 
 ### RG_19 — Informations utilisateur affichées
 
 Lorsque le joueur est connecté, le bloc « Compte » de l'écran Réglages ([[RG_18]]) affiche a minima l'identifiant du compte (adresse email) et l'état de synchronisation courant (synchronisé / en attente / hors-ligne, conformément à [[RG_09]]). Le joueur peut s'y déconnecter à tout moment ; la déconnexion ne supprime aucune donnée stockée localement ([[RT_08]]), qui reste utilisable en usage local seul ([[RG_10]]).
+
+### RG_47 — Numéro de version affiché
+
+L'écran Réglages ([[RG_18]]) affiche le numéro de version de l'application sous la forme `MAJEUR.MINEUR.CORRECTIF`, consultable hors-ligne. Il permet au joueur de savoir quelle version tourne sur chacun de ses appareils, et de la citer lorsqu'il signale un problème. Chaque modification du code livrée fait évoluer ce numéro ([[RT_63]]) ; une modification de la seule spécification ne le change pas.
 
 ### RT_09 — Backend de synchronisation
 
@@ -685,6 +690,14 @@ La liste affichée par le bloc « Mentions des sources tierces » de [[RG_18]] n
 Les actions « Créer un compte » / « Se connecter » de [[RG_18]] s'appuient sur le même backend de synchronisation que [[RT_09]] (endpoints d'inscription/connexion). Le jeton de session obtenu est persisté localement au même titre que les autres données de configuration légères ([[RT_08]]), pour que la synchronisation ([[RT_10]]) démarre sans ressaisie dès la connexion établie. La détection de connectivité de [[RT_14]] est réutilisée pour désactiver ces deux actions — et afficher un message explicite — lorsque l'application est hors-ligne, sur le même principe que [[RG_13]] pour l'import.
 
 ---
+
+### RT_63 — Source et incrément du numéro de version
+
+Le champ `version` de `package.json` est l'unique source du numéro de [[RG_47]] :
+- l'application le lit à la compilation (import du seul champ `version`, les autres champs de `package.json` n'étant pas embarqués dans le bundle), sans appel réseau ni fichier généré à tenir à jour ;
+- l'application Android en dérive à la compilation son `versionName` (identique) et son `versionCode` (`MAJEUR × 1 000 000 + MINEUR × 1 000 + CORRECTIF`, strictement croissant comme l'exige le Play Store).
+
+Chaque commit qui modifie du code (application, scripts, configuration de build, référentiels générés) incrémente le correctif dans ce même commit, par `npm run version:patch` (`npm version patch --no-git-tag-version`, qui met aussi à jour `package-lock.json`). Un commit qui ne touche que la spécification (`specification/`) ou la documentation ne l'incrémente pas. Les incréments mineur et majeur sont décidés par le porteur du produit.
 
 ## EX_07 — Lisibilité et accessibilité de l'interface
 
@@ -1276,6 +1289,8 @@ Les règles techniques suivantes contiennent un choix encore ouvert et doivent �
 Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_12]] (appel direct du client vers gdmissions.app, sans relais serveur, version embarquée en dernier recours), [[RT_05]] (`playArea` mesuré à l'ingestion, image distante acceptée seulement à dimensions identiques), [[RT_27]] (store IndexedDB dédié aux blobs), [[RT_16]] (pan/zoom implémenté sans librairie tierce, sur les évènements `Pointer` et une transformation CSS), [[RT_06]]/[[RT_08]] (IndexedDB pour les enregistrements métier, stockage de configuration léger séparé) [[RT_26]] (fichier JSON versionné avec l'application, alimenté entrée par entrée par l'assistant IA du projet) et [[RT_37]] (terrain extrait des images de plateau par un script hors-ligne plutôt que saisi à la main).
 
 ## Suivi des écarts entre spécification et implémentation
+
+- **[[RG_47]] / [[RT_63]] — implémentées.** Le numéro est exposé par `src/app/app-version.ts` et affiché en bas des Réglages ; `android/app/build.gradle` lit `package.json` pour `versionName`/`versionCode`. Le build Android n'a pas été relancé pour le vérifier.
 
 - **[[EX_13]] / [[RG_45]] / [[RG_46]] / [[RT_60]] / [[RT_61]] / [[RT_62]] — implémentées, vérifiées en navigateur.** La normalisation de la note (`src/app/deployment/gameplan-note.ts`) et le statut rouge d'un déploiement qui ne porte qu'une note sont couverts par des tests unitaires ; le champ `note` figure au schéma `Deployment` de [openapi.yml](openapi.yml). La fenêtre est `src/app/shared/gameplan-note.component.ts`, ouverte par `gameplan-note.service.ts`. Le test de bout en bout `cypress/e2e/gameplan-note.cy.ts` (375 × 812 environ) contrôle la rédaction, l'abandon confirmé d'un texte modifié, la fermeture sans confirmation d'un texte inchangé, le changement de nom accessible du bouton, la conservation de la note par « Nouveau » sans confirmation au statut rouge, et la lecture seule dans « Consulter » ; le déploiement « fait » y est obtenu en écrivant directement la réserve de toutes les unités dans IndexedDB. Le bouton de l'écran de placement est rendu par deux `ion-button` à libellé fixe plutôt que par un `aria-label` lié, pour la raison donnée sous [[RT_43]]. Le redimensionnement par le clavier virtuel ([[RT_61]]) repose en web sur `interactive-widget=resizes-content` (`src/index.html`) et en natif sur le comportement par défaut d'Android ; aucun réglage `@capacitor/keyboard` n'a été ajouté, et rien n'a été vérifié sur appareil.
 
