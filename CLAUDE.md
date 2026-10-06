@@ -84,7 +84,7 @@ PWA (`EX_12`) — `ng serve` never registers the service worker, so check offlin
 
 ```bash
 ng build && npm run serve:pwa      # www/ on http://localhost:8080 (SPA rewrite + RT_59 cache headers); also the "pwa" entry of .claude/launch.json
-node scripts/generate-icons.mjs    # RT_53 — regenerates src/assets/icon/*.png (manifest, iOS, favicon)
+node scripts/generate-icons.mjs    # RT_53 — from resources/icon.png (1024 px master): src/assets/icon/*.png (manifest, iOS, favicon) + Android launcher mipmaps and adaptive background colour
 ```
 
 The production build enforces a per-component style budget (`anyComponentStyle` in `angular.json`, 6 kB warning / 12 kB error); `placement.page.scss` is already over the warning threshold.
