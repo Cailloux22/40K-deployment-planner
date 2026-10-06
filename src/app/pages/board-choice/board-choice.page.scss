@@ -166,8 +166,21 @@
   }
 }
 
+/**
+ * RG_14: l'aperçu tient entièrement dans la fenêtre. La page est une colonne
+ * pleine hauteur dont le pager prend le reste ; sous la hauteur plancher du
+ * pager, la page redevient défilable.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 /* RG_14: un seul plateau visible à la fois, glissable horizontalement. */
 .pager {
+  flex: 1 1 auto;
+  min-height: 240px;
   display: flex;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -180,9 +193,22 @@
 
 .slide {
   flex: 0 0 100%;
+  display: flex;
+  flex-direction: column;
   scroll-snap-align: center;
   padding: 4px 16px 24px;
   box-sizing: border-box;
+}
+
+// RG_14: conteneur de taille, pour que l'aperçu lise la largeur ET la hauteur
+// qui lui restent (unités `cqw`/`cqh`).
+.stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  container-type: size;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
 /**
@@ -194,7 +220,10 @@
 .preview {
   position: relative;
   display: block;
+  flex: none;
   width: 100%;
+  // RG_14: la plus grande taille qui tient à la fois en largeur et en hauteur.
+  width: min(100cqw, 100cqh * var(--board-ratio, 1000));
   padding: 0;
   border: none;
   border-radius: var(--app-radius-lg);

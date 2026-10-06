@@ -314,7 +314,13 @@ export class BoardChoicePage implements OnInit {
    * placement, où l'espace vertical est disputé.
    */
   previewCrop(board: Board): Record<string, string> {
-    return { 'aspect-ratio': `${board.width} / ${board.height - board.playArea.top}` };
+    const visibleHeight = board.height - board.playArea.top;
+    return {
+      'aspect-ratio': `${board.width} / ${visibleHeight}`,
+      // RG_14: même rapport, en nombre, pour borner la largeur par la hauteur
+      // disponible (cf. `.preview` dans la feuille de style).
+      '--board-ratio': `${board.width / visibleHeight}`,
+    };
   }
 
   previewImage(board: Board): Record<string, string> {

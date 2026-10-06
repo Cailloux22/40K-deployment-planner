@@ -10,6 +10,9 @@
 </ion-header>
 
 <ion-content>
+  <!-- RG_14: colonne pleine hauteur — le pager prend la hauteur restante, dans
+       laquelle l'aperçu doit tenir en entier. -->
+  <div class="page">
   <!-- Bandeau « VS » de la maquette : les 2 dispositions en jeu (RT_23). -->
   <div class="versus">
     <div class="side">
@@ -94,6 +97,9 @@
     <div #pager class="pager" (scroll)="onPagerScroll()">
       @for (slide of slides(); track slide.board.id) {
         <div class="slide">
+          <!-- RG_14: zone de taille connue dans laquelle l'aperçu est borné en
+               largeur ET en hauteur. -->
+          <div class="stage">
           <!-- RG_14: tap sur l'aperçu -> plein écran avec mesures, quel que
                soit le statut, sans jamais montrer les placements. -->
           <button
@@ -109,6 +115,7 @@
               [alt]="boardLabel(slide.board)"
             />
           </button>
+          </div>
 
           <!-- RG_14: identification UNIQUE du plateau, dans le même sens de
                lecture que le bandeau VOUS/VS/ADVERSAIRE.
@@ -125,6 +132,7 @@
       }
     </div>
   }
+  </div>
 </ion-content>
 
 <!-- RT_16: visualiseur plein écran partagé par les deux vues de RG_14. -->
