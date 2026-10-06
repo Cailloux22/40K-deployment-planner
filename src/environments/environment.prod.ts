@@ -1,8 +1,8 @@
 export const environment = {
   production: true,
-  // RT_71: l'adresse de production n'est pas tranchée (spec.md, « Suivi des
-  // décisions non tranchées »). Tant qu'elle ne l'est pas, `null` : le bloc
-  // Compte des Réglages indique que la synchronisation n'est pas disponible
-  // dans cette version, et aucune requête ne part (RG_10).
-  syncApiBaseUrl: null as string | null,
+  // RT_71: racine absolue du serveur de synchronisation (RT_09) de production,
+  // auto-hébergé derrière nginx en HTTPS. Seul endroit où cette adresse figure.
+  // RG_10: le compte étant optionnel, aucune requête n'y part tant que le
+  // joueur ne s'est pas connecté.
+  syncApiBaseUrl: 'https://api.windfallplanner.pokepuller.fr/v1' as string | null,
 };
