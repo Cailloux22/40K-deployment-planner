@@ -582,7 +582,7 @@ Le passage d'une version à l'autre est silencieux ([[RG_09]]) : aucun message n
 
 Les données de l'application (listes importées, référentiel de socles, déploiements sauvegardés) sont persistées via le stockage local du terminal (IndexedDB en environnement web ; `@capacitor/preferences` ou équivalent pour les données de configuration légères sur mobile natif), lu/écrit systématiquement avant toute tentative de synchronisation réseau.
 
-**Répartition retenue.** Les enregistrements métier (listes, déploiements, et les marqueurs de suppression à pousser au prochain sync, cf. [[RT_15]]) vont en IndexedDB, un store par type, indexés par identifiant ([[RT_06]]). Les données de configuration légères — session obtenue par [[RT_21]], jeton de version de [[RT_15]], horodatage du dernier sync — passent par une paire d'accesseurs dédiée, aujourd'hui adossée à `localStorage` en web ; c'est le seul point à réimplémenter pour `@capacitor/preferences` sur mobile natif, aucun appelant n'ayant à changer. Toute indisponibilité du stockage de configuration (navigation privée, quota) est absorbée silencieusement : l'application reste utilisable en usage local ([[RG_10]]), simplement sans session mémorisée. Les référentiels réellement statiques ([[RT_02]], [[RT_23]]), eux, ne sont pas recopiés en base : ils sont livrés comme fichiers d'assets et lus une fois par session, ce qui permet de les remplacer indépendamment du code lors d'une mise à jour d'errata. La métadonnée du référentiel de plateaux ([[RT_12]]) et ses images embarquées suivent la même règle ; les images obtenues par le réseau, elles, sont mises en cache dans un store IndexedDB séparé, dédié à ce cache, décrit par [[RT_27]].
+**Répartition retenue.** Les enregistrements métier (listes, déploiements, et les marqueurs de suppression à pousser au prochain sync, cf. [[RT_15]]) vont en IndexedDB, un store par type, indexés par identifiant ([[RT_06]]). Les données de configuration légères — jeton d'appareil obtenu par [[RT_21]] ([[RT_67]]), jeton de version de [[RT_15]], horodatage du dernier sync — passent par une paire d'accesseurs dédiée, aujourd'hui adossée à `localStorage` en web ; c'est le seul point à réimplémenter pour `@capacitor/preferences` sur mobile natif, aucun appelant n'ayant à changer. Toute indisponibilité du stockage de configuration (navigation privée, quota) est absorbée silencieusement : l'application reste utilisable en usage local ([[RG_10]]), simplement sans session mémorisée. Les référentiels réellement statiques ([[RT_02]], [[RT_23]]), eux, ne sont pas recopiés en base : ils sont livrés comme fichiers d'assets et lus une fois par session, ce qui permet de les remplacer indépendamment du code lors d'une mise à jour d'errata. La métadonnée du référentiel de plateaux ([[RT_12]]) et ses images embarquées suivent la même règle ; les images obtenues par le réseau, elles, sont mises en cache dans un store IndexedDB séparé, dédié à ce cache, décrit par [[RT_27]].
 
 ### RT_27 — Cache local des plateaux chargés par le réseau
 
@@ -642,7 +642,7 @@ Aucune mesure ni calcul spécifique à chaque plateau n'est nécessaire au-delà
 
 Le joueur doit pouvoir associer un compte à ses données pour retrouver ses listes et déploiements sur un autre appareil (ex. bureau puis téléphone).
 
-Satisfait par : [[RG_10]], [[RG_11]], [[RG_18]], [[RG_19]], [[RG_50]], [[RG_51]], [[RG_52]], [[RG_53]], [[RT_09]], [[RT_10]], [[RT_20]], [[RT_21]], [[RT_67]], [[RT_68]], [[RT_69]]. Le contrat d'API est [openapi.yml](openapi.yml).
+Satisfait par : [[RG_10]], [[RG_11]], [[RG_18]], [[RG_19]], [[RG_50]], [[RG_51]], [[RG_52]], [[RG_53]], [[RG_54]], [[RT_09]], [[RT_10]], [[RT_20]], [[RT_21]], [[RT_67]], [[RT_68]], [[RT_69]], [[RT_70]], [[RT_71]]. Le contrat d'API est [openapi.yml](openapi.yml).
 
 ### RG_10 — Compte optionnel
 
@@ -650,7 +650,7 @@ L'utilisation de l'application sans compte reste possible et fonctionnelle (donn
 
 ### RG_11 — Résolution de conflit
 
-Lorsque le même déploiement a été modifié hors-ligne sur deux appareils avant resynchronisation, l'application ne doit jamais choisir automatiquement une version au détriment de l'autre. À la détection du conflit — typiquement au retour en ligne après une session hors-ligne, cf. [[EX_05]] — la synchronisation de cet enregistrement est mise en attente et l'application présente explicitement au joueur les deux versions (locale et serveur, avec leur horodatage respectif) ; le joueur choisit celle à conserver, ce choix écrasant l'autre version pour cet enregistrement. Les enregistrements non conflictuels continuent de se synchroniser normalement sans attendre cette décision.
+Lorsque le même déploiement a été modifié hors-ligne sur deux appareils avant resynchronisation, l'application ne doit jamais choisir automatiquement une version au détriment de l'autre. À la détection du conflit — typiquement au retour en ligne après une session hors-ligne, cf. [[EX_05]] — la synchronisation de cet enregistrement est mise en attente et l'application présente explicitement au joueur les deux versions (locale et serveur, avec leur horodatage respectif) ; le joueur choisit celle à conserver, ce choix écrasant l'autre version pour cet enregistrement. Les enregistrements non conflictuels continuent de se synchroniser normalement sans attendre cette décision. Les cas de conflit et les informations présentées pour chacun (date, heure et appareil de chaque version) sont détaillés par [[RG_54]].
 
 ### RG_18 — Point d'accès compte et informations sur l'écran d'accueil (bouton Réglages)
 
@@ -658,7 +658,7 @@ L'écran d'accueil — la bibliothèque des listes d'armée déjà importées ([
 
 1. **Compte**, dont le contenu dépend de l'état de connexion du joueur ([[RG_10]]) :
    - non connecté : les actions « Créer un compte » et « Se connecter », menant aux formulaires de sign up / sign in ;
-   - connecté : les informations du compte prévues par [[RG_19]], une action de déconnexion (retour à un usage local uniquement, sans suppression des données locales), la gestion du compte ([[RG_52]]) et la liste des appareils connectés ([[RG_53]]).
+   - connecté : les informations du compte prévues par [[RG_19]], une action de déconnexion (retour à un usage local uniquement, sans suppression des données locales), et la gestion du compte ([[RG_52]]). Il n'y a pas de liste des appareils connectés : un appareil connecté le reste ([[RG_53]]).
 2. **Informations utilisateur**, détaillées par [[RG_19]].
 3. **Mentions des sources tierces** : la liste des attributions requises par les référentiels tiers dont l'application dépend, qu'ils soient générés hors-ligne ([[RT_02]], « Powered by Wahapedia ») ou chargés par le réseau à l'exécution ([[RT_12]], Battlemaster) — conformément aux conditions d'usage de ces sources (voir [CLAUDE.md](../CLAUDE.md)). Chaque mention indique l'adresse de la source et la rend directement ouvrable, plutôt que de l'afficher comme un texte inerte : c'est par cette adresse que le joueur vérifie l'attribution.
 
@@ -677,7 +677,7 @@ L'écran Réglages ([[RG_18]]) affiche le numéro de version de l'application so
 
 ### RT_09 — Backend de synchronisation
 
-Un backend nodejs expose une API de synchronisation par différence (delta) des enregistrements créés/modifiés/supprimés depuis la dernière synchronisation réussie, identifiée par un jeton de version côté client.
+Un backend nodejs expose une API de synchronisation par différence (delta) des enregistrements créés/modifiés/supprimés depuis la dernière synchronisation réussie, identifiée par un jeton de version côté client. Le protocole est détaillé par [[RT_68]], la persistance (PostgreSQL) par [[RT_70]], l'adresse du serveur par [[RT_71]].
 
 ### RT_10 — Déclenchement de la synchronisation
 
@@ -689,14 +689,14 @@ La liste affichée par le bloc « Mentions des sources tierces » de [[RG_18]] n
 
 ### RT_21 — Authentification (sign up / sign in)
 
-Les actions « Créer un compte » / « Se connecter » de [[RG_18]] s'appuient sur le même backend de synchronisation que [[RT_09]] (endpoints d'inscription/connexion). Le jeton de session obtenu est persisté localement au même titre que les autres données de configuration légères ([[RT_08]]), pour que la synchronisation ([[RT_10]]) démarre sans ressaisie dès la connexion établie. La détection de connectivité de [[RT_14]] est réutilisée pour désactiver ces deux actions — et afficher un message explicite — lorsque l'application est hors-ligne, sur le même principe que [[RG_13]] pour l'import. Le cycle de vie de la session (durées, rotation, une session par appareil) est fixé par [[RT_67]].
+Les actions « Créer un compte » / « Se connecter » de [[RG_18]] s'appuient sur le même backend de synchronisation que [[RT_09]] (endpoints d'inscription/connexion). Le jeton d'appareil obtenu ([[RT_67]]) est persisté localement au même titre que les autres données de configuration légères ([[RT_08]]), pour que la synchronisation ([[RT_10]]) démarre sans ressaisie dès la connexion établie. La détection de connectivité de [[RT_14]] est réutilisée pour désactiver ces deux actions — et afficher un message explicite — lorsque l'application est hors-ligne, sur le même principe que [[RG_13]] pour l'import. Ce jeton n'expire pas ([[RG_53]]) ; l'adresse du serveur appelé dépend de l'environnement ([[RT_71]]).
 
 ### RG_50 — Inscription et connexion
 
 Le compte s'identifie par une adresse email et un mot de passe, sans fournisseur tiers. L'adresse est normalisée (espaces retirés, minuscules) avant tout contrôle, et un compte au plus existe par adresse. Le mot de passe compte de 8 à 128 caractères, sans autre contrainte de composition.
 
 - **Pas de vérification de l'adresse.** Le compte est utilisable, et synchronisable, dès sa création. Aucun courriel n'est envoyé par l'application.
-- **Pas de récupération de mot de passe.** Faute d'adresse vérifiée, un mot de passe oublié ne peut pas être réinitialisé : le compte devient inaccessible. Le formulaire d'inscription le dit explicitement, avant validation. Les données locales de chaque appareil restent intactes et utilisables ([[RG_10]]) ; le joueur peut les verser dans un nouveau compte ([[RG_51]]).
+- **Pas de récupération de mot de passe.** Faute d'adresse vérifiée, un mot de passe oublié ne peut pas être réinitialisé. Le formulaire d'inscription le dit explicitement, avant validation. Les appareils déjà connectés le restent ([[RG_53]]) et continuent de synchroniser ; seul un nouvel appareil ne peut plus se connecter. Les données locales de chaque appareil restent intactes ([[RG_10]]) et peuvent être versées dans un nouveau compte ([[RG_51]]).
 - **Échec de connexion.** Le message est le même pour une adresse inconnue et pour un mot de passe erroné, pour ne pas révéler l'existence d'un compte. Après des échecs répétés, les tentatives sont temporairement refusées ([[RT_69]]) ; le message indique alors le délai d'attente.
 - **Hors-ligne.** Inscription et connexion sont désactivées, avec un message explicite ([[RT_21]]).
 
@@ -718,42 +718,144 @@ Juste après une inscription ou une connexion, et avant toute synchronisation, l
 
 Le bloc « Compte » des Réglages ([[RG_18]]), une fois connecté, propose trois actions, toutes soumises à la saisie du mot de passe courant et indisponibles hors-ligne ([[RG_09]]) :
 
-- **Changer le mot de passe.** Les autres appareils sont déconnectés ; l'appareil courant reste connecté.
+- **Changer le mot de passe.** Le nouveau mot de passe ne sert qu'aux connexions suivantes : tous les appareils déjà connectés le restent ([[RG_53]]).
 - **Changer l'adresse email.** Mêmes règles que l'inscription ([[RG_50]]) ; les appareils restent connectés.
-- **Supprimer le compte.** Action confirmée explicitement ([[RG_08]]), dont le texte précise que les listes et déploiements enregistrés sur le serveur sont définitivement supprimés, et que ceux de l'appareil sont conservés. L'appareil courant repasse aussitôt en usage local seul ([[RG_10]]), les autres appareils à leur prochaine tentative de synchronisation, chacun avec ses données locales.
+- **Supprimer le compte.** Action confirmée explicitement ([[RG_08]]), dont le texte précise que les listes et déploiements enregistrés sur le serveur sont définitivement supprimés, et que ceux de l'appareil sont conservés. La suppression est **immédiate et totale** : à la réponse du serveur, il ne conserve plus aucune donnée du joueur — compte, adresse, listes, déploiements, traces de suppression, appareils connectés ([[RT_70]]). Rien n'est différé ni récupérable. L'appareil courant repasse aussitôt en usage local seul ([[RG_10]]), les autres appareils à leur prochaine tentative de synchronisation, chacun avec ses données locales.
 
-### RG_53 — Appareils connectés
+### RG_53 — Connexion permanente d'un appareil
 
-Le bloc « Compte » liste les appareils connectés au compte : nom de l'appareil, type (application Android, version web), date de dernière activité, l'appareil courant étant signalé comme tel. Le joueur peut déconnecter un autre appareil, ou tous les autres en une fois — par exemple un appareil perdu ou prêté. Un appareil déconnecté à distance repasse en « Usage local uniquement » ([[RG_19]]) à sa prochaine tentative de synchronisation, sans perdre ses données locales ; ses modifications non encore synchronisées n'atteignent alors pas le compte.
+Un appareil connecté à un compte **le reste** : la connexion n'expire pas, ne demande jamais de ressaisir le mot de passe, et n'est interrompue ni par l'inactivité, ni par un changement de mot de passe ou d'adresse ([[RG_52]]), ni depuis un autre appareil. Elle ne prend fin que dans deux cas :
 
-### RT_67 — Sessions et jetons
+- le joueur se déconnecte **depuis cet appareil** ([[RG_19]]) ;
+- le compte est supprimé ([[RG_52]]) — l'appareil repasse alors en « Usage local uniquement » à sa prochaine tentative de synchronisation, sans perdre ses données locales.
 
-- **Une session par appareil.** Le client génère, à la première ouverture, un identifiant d'appareil (UUID) conservé dans la configuration légère ([[RT_08]]), et l'envoie avec un libellé et une plateforme (`android`, `ios`, `web`) à l'inscription et à la connexion. Une nouvelle connexion du même appareil remplace sa session précédente. C'est cette session que [[RG_53]] liste et révoque.
-- **Jetons.** Un access token JWT de 15 minutes, joint aux appels ([[RT_21]]), et un refresh token opaque valable 90 jours, prolongés à chaque usage. Le client renouvelle l'access token avant son expiration (la réponse en donne l'échéance) ou sur un 401 `ACCESS_TOKEN_EXPIRED`, puis rejoue l'appel une fois.
-- **Rotation.** Chaque renouvellement remplace le refresh token. Présenter un refresh token déjà remplacé révoque la session entière (signe d'un vol de jeton). Une session révoquée — à distance ([[RG_53]]), par changement de mot de passe ou suppression du compte ([[RG_52]]), ou par expiration — renvoie le client en usage local, sans erreur bloquante ([[RG_09]]).
-- **Déconnexion.** Le client envoie aussi le refresh token, pour que la session soit fermée même avec un access token expiré ; la déconnexion locale est effective même si l'appel échoue ([[RG_19]]).
-- **Serveur.** Mots de passe hachés en argon2id ; refresh tokens stockés hachés.
-- **Changement de compte ([[RG_51]]).** Le client mémorise l'identifiant du dernier compte synchronisé. S'il diffère de celui de la session ouverte, il efface son jeton de synchronisation ([[RT_15]]) et le `versionToken` de chaque enregistrement local avant de synchroniser.
+Il n'existe ni liste des appareils connectés, ni déconnexion à distance. Conséquence assumée : un appareil perdu ou prêté garde l'accès au compte tant qu'il n'y est pas déconnecté lui-même, ou que le compte n'est pas supprimé.
+
+### RG_54 — Conflits entre appareils
+
+Complète [[RG_11]]. Toute divergence née de modifications faites sur plusieurs appareils sans synchronisation intermédiaire — le plus souvent hors-ligne ([[EX_05]]) — est **tranchée par le joueur**, jamais par l'application ni par le serveur, quel que soit l'ordre d'arrivée des modifications ou leurs horodatages. Pour chaque conflit, l'application présente les deux versions, chacune avec **la date et l'heure de la modification** et **l'appareil qui l'a faite** (« Ce téléphone », ou le nom de l'autre appareil), et le joueur désigne celle qui prime. Les cas sont les suivants :
+
+- **Modifié des deux côtés.** Le même déploiement, ou la même liste, a été modifié sur deux appareils.
+- **Modifié ici, supprimé ailleurs** (et l'inverse). L'une des deux versions est « supprimé le … sur … ».
+- **Liste supprimée, déploiement modifié.** Un appareil supprime une liste (donc ses déploiements, [[RG_21]]) pendant qu'un autre modifie ou crée un déploiement de cette liste. Garder la suppression supprime aussi ce déploiement ; garder le déploiement conserve aussi sa liste. Les déploiements concernés sont listés avec le conflit.
+- **Même plateau créé deux fois.** Deux appareils créent chacun le déploiement d'un même triplet liste, disposition adverse, plateau ([[RG_14]]) sans avoir vu celui de l'autre. Le joueur garde l'un des deux ; l'autre est supprimé. Une sauvegarde délibérée « sous un nouveau nom » ([[RG_07]]) sur un appareil qui connaissait déjà le déploiement du triplet n'est pas un conflit.
+
+Les horodatages sont **affichés, jamais comparés** : ils aident le joueur à choisir mais ne décident de rien, d'autant que l'horloge de deux appareils peut différer. Un conflit en attente ne bloque pas la synchronisation des autres enregistrements.
+
+### RT_67 — Jeton d'appareil
+
+- **Un jeton par appareil, sans expiration.** L'inscription et la connexion renvoient un **jeton d'appareil** : une valeur aléatoire opaque (256 bits), jointe à chaque appel ([[RT_21]]). Il n'a pas de durée de validité et n'est jamais renouvelé ([[RG_53]]) ; il n'y a donc ni access token court, ni refresh token. Le client le conserve dans sa configuration légère ([[RT_08]]).
+- **Identité de l'appareil.** Le client génère, à la première ouverture, un identifiant d'appareil (UUID) conservé dans la configuration légère, et l'envoie avec un libellé (« Chrome — Windows », « Pixel 8 »…) et une plateforme (`android`, `ios`, `web`) à l'inscription et à la connexion. Le serveur rattache ce libellé à chaque écriture, pour l'afficher dans les conflits ([[RG_54]]). Une nouvelle connexion du même appareil remplace son jeton précédent.
+- **Fin du jeton.** Le jeton est supprimé à la déconnexion depuis l'appareil — la déconnexion locale est effective même si l'appel échoue ([[RG_19]]) — et à la suppression du compte. Un jeton inconnu reçoit `401` : le client repasse en usage local sans erreur bloquante ([[RG_09]]).
+- **Serveur.** Mots de passe hachés en argon2id ; jetons d'appareil stockés hachés (SHA-256), jamais en clair. Comme un jeton n'expire pas, sa fuite donne un accès durable : il ne doit jamais apparaître dans une URL ni dans les journaux.
+- **Changement de compte ([[RG_51]]).** Le client mémorise l'identifiant du dernier compte synchronisé. S'il diffère de celui du compte connecté, il efface son jeton de synchronisation ([[RT_15]]) et le `versionToken` de chaque enregistrement local avant de synchroniser.
 
 ### RT_68 — Protocole de synchronisation
 
-Précise [[RT_09]] et [[RT_15]] ; le contrat est celui de [openapi.yml](openapi.yml).
+Précise [[RT_09]] et [[RT_15]] ; le contrat est celui de [openapi.yml](openapi.yml), la mécanique des jetons celle de [[RT_70]].
 
 - **Jeton de base par enregistrement.** Chaque liste ou déploiement poussé porte le `versionToken` reçu à sa dernière synchronisation ; une création n'en porte pas. Le serveur écrit l'enregistrement seulement si ce jeton est encore le sien, et renvoie alors le nouveau jeton, que le client conserve pour cet enregistrement.
-- **Suppressions versionnées.** Une suppression locale part avec le jeton de la version supprimée. Trois natures de conflit en résultent ([[RG_11]]) : modifié des deux côtés, modifié ici mais supprimé ailleurs, supprimé ici mais modifié ailleurs. Dans les deux derniers cas, l'une des deux versions présentées au joueur est « supprimé le … ». Une suppression d'un enregistrement jamais synchronisé est acceptée sans effet.
-- **Cascade ([[RG_21]]).** Supprimer une liste supprime ses déploiements sur le serveur ; les autres appareils les reçoivent comme suppressions au pull suivant.
-- **Traitement par enregistrement.** Dans une même poussée, chaque enregistrement est accepté, en conflit ou rejeté (non conforme, ou déploiement dont la liste n'existe pas — la liaison de [[RT_07]] est immuable). Aucun n'empêche les autres d'être acceptés. Un enregistrement rejeté reste intact sur l'appareil et le rejet est signalé par l'état de synchronisation ([[RG_19]]). Les listes sont traitées avant les déploiements.
-- **Pull paginé.** Le pull renvoie les changements par pages (200 enregistrements par défaut), avec un indicateur « il en reste ». Le client applique chaque page puis mémorise son jeton avant de demander la suivante : une synchronisation interrompue reprend là où elle s'est arrêtée. Seul le pull fait avancer ce jeton ; le pull suivant renvoie donc aussi les écritures de l'appareil lui-même, reconnues à leur `versionToken` et ignorées.
-- **Poussée découpée.** Au-delà de 200 enregistrements ou 5 Mo, le client découpe sa poussée en plusieurs requêtes.
-- **Jeton trop ancien.** Le serveur conserve la trace des suppressions au moins 90 jours. Au-delà, un pull reçoit `410` : le client refait un pull complet et supprime localement les enregistrements synchronisés que le compte n'a plus, sauf ceux modifiés localement, qui partent au push suivant.
+- **Suppressions versionnées.** Une suppression locale part avec le jeton de la version supprimée. Une suppression d'un enregistrement jamais synchronisé est acceptée sans effet.
+- **Conflits ([[RG_54]]).** Le serveur n'écrit rien et renvoie un conflit dans chacun des cas suivants :
+  - jeton de base différent du jeton courant (modifié des deux côtés, ou supprimé ici et modifié ailleurs) ;
+  - enregistrement supprimé sur le serveur (modifié ici, supprimé ailleurs) ;
+  - suppression d'une liste alors que le serveur porte, pour cette liste, un déploiement absent des suppressions de la même poussée ou modifié depuis : le conflit porte sur la liste et liste ces déploiements ;
+  - création ou modification d'un déploiement dont la liste a été supprimée sur le serveur : le conflit porte sur le déploiement ;
+  - création d'un déploiement alors que le serveur porte déjà un déploiement du même triplet (liste, disposition adverse, plateau) écrit **après** le jeton d'appareil `since` envoyé avec la poussée — c'est-à-dire que l'appareil ne l'a pas encore vu.
+
+  Chaque conflit renvoie la version serveur, sa date de modification et le libellé de l'appareil qui l'a écrite.
+- **Cascade ([[RG_21]]).** Une suppression de liste acceptée supprime ses déploiements sur le serveur ; les autres appareils les reçoivent comme suppressions au pull suivant. Le client envoie la suppression de la liste **et** celle de chacun de ses déploiements, chacune avec son jeton de base.
+- **Ordre dans une poussée.** Le serveur traite d'abord les listes écrites, puis les déploiements écrits, puis les suppressions de déploiements, puis les suppressions de listes. Un déploiement peut ainsi référencer une liste créée dans la même poussée, et une liste n'est supprimée qu'après ses déploiements.
+- **Traitement par enregistrement.** Chaque enregistrement est accepté, en conflit ou rejeté (non conforme au schéma ou à ses bornes, déploiement dont la liste n'a jamais existé, ou dont la liste changerait — la liaison de [[RT_07]] est immuable). Aucun n'empêche les autres d'être acceptés. Un enregistrement rejeté reste intact sur l'appareil et le rejet est signalé par l'état de synchronisation ([[RG_19]]).
+- **Résolution.** Le joueur ayant choisi ([[RG_54]]), le client envoie sa décision. Garder la version locale l'écrit sur le serveur, en y restaurant si besoin la liste du déploiement ; garder la version serveur la renvoie au client, avec les enregistrements liés à restaurer (déploiements d'une liste dont la suppression est abandonnée) ou à supprimer (déploiement en double écarté).
+- **Résolution périmée.** Une résolution cite le jeton de la version serveur présentée au joueur. Si le serveur a changé depuis, elle est refusée, et le conflit est présenté à nouveau avec la nouvelle version : le joueur ne tranche jamais contre une version qu'il n'a pas vue.
+- **Horodatages.** `createdAt`/`updatedAt` sont fixés par l'appareil au moment où le joueur fait la modification — c'est l'heure qu'il reconnaît — et conservés tels quels par le serveur, qui ne s'en sert pour aucune décision. Seuls les jetons décident d'un conflit ; les dates ne sont qu'affichées ([[RG_54]]).
+- **Pull paginé.** Le pull renvoie les changements par pages (200 enregistrements par défaut), avec un indicateur « il en reste ». Le client applique chaque page puis mémorise son jeton avant de demander la suivante : une synchronisation interrompue reprend là où elle s'est arrêtée. Seul le pull fait avancer ce jeton ; le pull suivant renvoie donc aussi les écritures de l'appareil lui-même, reconnues à leur `versionToken` et ignorées. Une liste supprimée sur le serveur n'est pas supprimée localement tant qu'un de ses déploiements y est modifié : elle attend l'issue du conflit.
+- **Poussée découpée.** Au-delà de 200 enregistrements ou 5 Mo, le client découpe sa poussée en plusieurs requêtes, une liste et ses déploiements restant dans la même requête.
+- **Jeton trop ancien.** Le serveur conserve la trace des suppressions 90 jours. Au-delà, un pull reçoit `410` : le client refait un pull complet et supprime localement les enregistrements synchronisés que le compte n'a plus, sauf ceux modifiés localement, qui partent au push suivant.
 - **Idempotence.** Chaque poussée et chaque résolution de conflit porte une clé `Idempotency-Key`, réutilisée en cas de nouvelle tentative : une requête rejouée après une réponse perdue renvoie la réponse initiale au lieu de produire des conflits contre ses propres écritures.
-- **Résolution périmée.** Une résolution de conflit cite le jeton de la version serveur présentée au joueur. Si le serveur a changé depuis, elle est refusée, et le conflit est présenté à nouveau avec la nouvelle version : le joueur ne tranche jamais contre une version qu'il n'a pas vue.
 
 ### RT_69 — Erreurs, limites et compatibilité
 
 - **Erreurs.** Toutes les routes renvoient le même corps d'erreur : un `code` énuméré, sur lequel le client décide, et un `message` en français, affichable tel quel.
-- **Limitation de débit.** Inscription, connexion et actions protégées par mot de passe ([[RG_52]]) sont limitées par adresse email et par adresse IP. Le serveur répond `429` avec un délai `Retry-After`, que le client respecte sans bloquer le joueur ([[RG_09]]).
+- **Limitation de débit.** Le serveur répond `429` avec un délai `Retry-After`, que le client respecte sans bloquer le joueur ([[RG_09]]). Seuils :
+
+  | Action | Limite |
+  |---|---|
+  | Connexion échouée, par adresse email | 5 par 15 minutes |
+  | Connexion, par adresse IP | 20 par 15 minutes |
+  | Inscription, par adresse IP | 5 par heure |
+  | Mot de passe erroné sur une action de [[RG_52]], par compte | 5 par 15 minutes |
+  | Toute autre requête, par jeton d'appareil | 120 par minute |
+
+- **Bornes des données.** Le contrat ([openapi.yml](openapi.yml)) borne chaque champ, pour que le schéma de base et la validation du serveur soient déterminés. Ces bornes sont larges devant tout usage réel — une liste d'armée compte quelques dizaines d'unités — et ne visent qu'à refuser un enregistrement aberrant ou malveillant :
+
+  | Donnée | Borne |
+  |---|---|
+  | Identifiant d'enregistrement, d'unité, de groupe, de socle, de référentiel | 100 caractères (`idModele` : 150) |
+  | Nom de liste, de déploiement, d'unité, de profil de modèle | 200 caractères |
+  | Email / mot de passe / libellé d'appareil | 254 / 8 à 128 / 80 caractères |
+  | Note de plan de jeu ([[RG_45]]) | 4 000 caractères (inchangé) |
+  | Unités par liste, unités en réserve | 300 |
+  | Groupes de modèles par unité | 50 |
+  | Modèles par groupe et par unité | 500 |
+  | Placements par déploiement | 2 000 |
+  | Coordonnées `x`/`y` (pixels d'asset, [[RT_04]]) | 0 à 10 000 |
+  | Rotation | −3 600° à 3 600° |
+  | Socle sur mesure ([[RT_28]]) | > 0 et ≤ 1 000 mm |
+  | Couleur d'unité ([[RG_06]]) | `#RRGGBB` |
+  | Poussée | 200 enregistrements, 5 Mo |
+
+  Le serveur ne vérifie pas que les identifiants de référentiel (`boardId`, `forceDispositionId`, `opponentDispositionId`, `baseShapeId`) existent : les référentiels sont embarqués dans le client ([[RT_02]], [[RT_12]], [[RT_23]]) et le serveur ne les connaît pas. Il les stocke tels quels.
 - **Compatibilité.** Chaque appel porte la version de l'application ([[RG_47]]) dans l'en-tête `X-Client-Version`. Un client trop ancien pour le schéma servi reçoit `426` : il suspend la synchronisation, garde ses données locales, et l'état de synchronisation ([[RG_19]]) invite à mettre l'application à jour.
+
+### RT_70 — Persistance serveur
+
+Le serveur de [[RT_09]] (Node.js) stocke ses données dans **PostgreSQL**. Il ne fait que ranger, versionner et renvoyer les listes et déploiements : il n'en interprète pas le contenu, au-delà des contrôles de [[RT_68]] et des bornes de [[RT_69]].
+
+**Révisions : ce que sont `since` et `versionToken`.** Chaque compte a un **compteur de révision**, un entier qui part de 0. Toute écriture sur le compte (création, modification, suppression d'une liste ou d'un déploiement) l'incrémente de 1, et l'enregistrement écrit garde la valeur obtenue comme **révision**. Les deux jetons du contrat sont ces nombres, transmis sous forme de chaîne :
+
+- le `versionToken` d'un enregistrement est la révision de sa dernière écriture ;
+- le `since` d'un appareil est la plus haute révision qu'il a reçue par le pull.
+
+Exemple. Le compte est à la révision 41. Le téléphone pousse une liste nouvelle : elle prend la révision 42. La tablette, à `since = 40`, demande les changements : le serveur renvoie tout ce dont la révision dépasse 40, soit cette liste (42) et ce qui avait été écrit en 41, et le nouveau `since` de la tablette est 42. Plus tard, téléphone et tablette, hors-ligne, modifient tous deux cette liste, qui est à la révision 42. Le téléphone pousse le premier : sa base est 42, égale à la révision courante, l'écriture est acceptée et prend la révision 43. La tablette pousse ensuite avec la base 42 : elle diffère de 43, c'est un conflit ([[RG_54]]). Le compteur est par compte, et non global : l'activité d'un joueur ne touche jamais celle d'un autre.
+
+**Tables.**
+
+| Table | Contenu | Clé |
+|---|---|---|
+| `users` | email (unique, normalisé), hash argon2id du mot de passe, compteur de révision, dates de création | `id` (UUID) |
+| `device_tokens` | compte, hash SHA-256 du jeton, identifiant, libellé et plateforme de l'appareil, date de création | hash du jeton ; unique (`user_id`, `device_id`) |
+| `records` | compte, type (`list`/`deployment`), identifiant, révision, supprimé (booléen), contenu complet en **JSONB**, `list_id` et triplet (`opponent_disposition_id`, `board_id`) extraits pour les déploiements, libellé de l'appareil auteur, date de suppression | (`user_id`, `resource_type`, `id`) ; index (`user_id`, `revision`) pour le pull ; index (`user_id`, `list_id`) pour la cascade et le triplet |
+| `idempotency_keys` | compte, clé, empreinte du corps, réponse renvoyée, date | (`user_id`, `key`) |
+
+Une suppression ne retire pas la ligne de `records` : elle la marque supprimée, vide son contenu et lui donne une révision — c'est la trace que le pull transmet aux autres appareils. Les traces de plus de 90 jours sont purgées, et le compte retient la plus haute révision purgée : un `since` inférieur reçoit `410` ([[RT_68]]). Les clés d'idempotence sont purgées après 24 heures.
+
+**Concurrence.** Une poussée s'exécute dans une transaction qui verrouille la ligne du compte dans `users` : deux poussées du même compte ne s'entrelacent jamais, et la révision croît sans trou visible.
+
+**Suppression du compte ([[RG_52]]).** Une seule transaction supprime toutes les lignes du compte dans les quatre tables, puis le compte lui-même. Les journaux du serveur ne contiennent ni adresse email, ni jeton, ni contenu d'enregistrement.
+
+La portée des identifiants d'enregistrement — uniques par compte, ce que suppose la clé de `records` — sera précisée ultérieurement (voir « Suivi des décisions non tranchées »).
+
+### RT_71 — Adresse du serveur selon l'environnement
+
+L'adresse du serveur de [[RT_09]] dépend de l'environnement de build du client, et ne figure qu'à un seul endroit par environnement : `syncApiBaseUrl` dans `src/environments/environment*.ts`. Aucun autre fichier ne la contient.
+
+| Environnement | Build | Adresse |
+|---|---|---|
+| Développement | `ng serve`, `ionic serve` | `http://localhost:3000/v1` |
+| Production | `ng build` (web, PWA, APK) | non tranchée (voir « Suivi des décisions non tranchées ») |
+
+Passer en production ne demande que de renseigner l'adresse de `environment.prod.ts` : le remplacement de fichier par Angular au build ([angular.json](../angular.json)) fait le reste. L'adresse est **absolue** dans les deux cas : l'APK Android est servi depuis l'origine `https://localhost` de Capacitor, où une adresse relative comme `/v1` ne mène à aucun serveur.
+
+**Développement sur appareil Android.** Sur l'APK, `localhost` désigne le téléphone et non l'ordinateur de développement : un émulateur atteint ce dernier par `http://10.0.2.2:3000/v1`, un téléphone réel par l'adresse IP locale de l'ordinateur. Ce cas passe par un environnement de build dédié (`environment.android-dev.ts`), et non par une modification de l'environnement de développement.
+
+**CORS.** Le serveur autorise les origines du client, et elles seules :
+
+- en développement : `http://localhost:4200` (`ng serve`), `http://localhost:8100` (`ionic serve`), `http://localhost:8080` (`npm run serve:pwa`) et `https://localhost` (APK Android) ;
+- en production : l'origine de la version web ([[RT_59]]) et `https://localhost`.
+
+Il autorise les en-têtes `Authorization`, `Content-Type`, `Idempotency-Key` et `X-Client-Version`, et expose `Retry-After`.
 
 ---
 
@@ -1490,6 +1592,8 @@ Les règles techniques suivantes contiennent un choix encore ouvert et doivent �
 
 - **[[RT_59]] — hébergeur et domaine de la version web.** Toute offre d'hébergement statique en HTTPS convient, à condition de permettre la réécriture des chemins vers `index.html` et des en-têtes de cache par fichier (Netlify, Cloudflare Pages… ; GitHub Pages ne permet pas ces en-têtes). Le domaine fixe l'origine, donc le stockage des données du joueur : en changer après publication revient à repartir d'une application vide sur chaque appareil.
 - **[[RG_49]] / [[RT_64]] — texte d'attribution des cartes de mission.** Les plateaux sont crédités à Battlemaster, source déclarée par gdmissions.app ([[RT_12]]) ; pour les cartes de mission primaire, gdmissions.app ne nomme pas d'autre source que le pack « GDM 2026 » lui-même. Reste à fixer, avant implémentation, le nom de source et le texte que le script d'ingestion écrira dans le bloc `source` de `missions.json` (au minimum « gdmissions.app », éventuellement complété de l'éditeur du pack de missions).
+- **[[RT_71]] — adresse du serveur de production.** Le développement se fait contre un serveur local (`http://localhost:3000/v1`). L'adresse de production, et donc l'hébergement du serveur de [[RT_09]], reste à choisir ; elle ne demandera que de renseigner `environment.prod.ts` et la liste des origines CORS. Elle est liée au choix de [[RT_59]] (origine de la version web).
+- **[[RT_70]] — portée des identifiants d'enregistrement.** Les identifiants sont générés par le client (`list_<uuid>`, `depl_<uuid>`, ou repris de l'import pour les unités). [[RT_70]] suppose qu'ils sont uniques par compte — clé (`user_id`, `resource_type`, `id`) —, ce qu'exige la fusion lors d'un changement de compte ([[RG_51]]), qui verse les mêmes identifiants dans un second compte. À confirmer.
 
 Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_12]] (appel direct du client vers gdmissions.app, sans relais serveur, version embarquée en dernier recours), [[RT_05]] (`playArea` mesuré à l'ingestion, image distante acceptée seulement à dimensions identiques), [[RT_27]] (store IndexedDB dédié aux blobs), [[RT_16]] (pan/zoom implémenté sans librairie tierce, sur les évènements `Pointer` et une transformation CSS), [[RT_06]]/[[RT_08]] (IndexedDB pour les enregistrements métier, stockage de configuration léger séparé) [[RT_26]] (fichier JSON versionné avec l'application, alimenté entrée par entrée par l'assistant IA du projet) et [[RT_37]] (terrain extrait des images de plateau par un script hors-ligne plutôt que saisi à la main).
 
@@ -1519,16 +1623,17 @@ Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_12]] (
 - **[[RT_59]] — hébergement non réalisé.** Aucun hébergeur ni domaine n'est choisi (voir « Suivi des décisions non tranchées ») : la version web installable n'est publiée nulle part. Tant que la synchronisation de compte ([[RT_09]]) n'est pas servie, rien ne permet de transférer ses données d'un onglet Safari vers l'application installée sur iPhone ([[RG_41]]), ni d'un appareil à l'autre.
 
 - **[[RT_09]] — backend de synchronisation non réalisé.** Le contrat d'API est spécifié ([openapi.yml](openapi.yml)) et le **client** est implémenté au complet contre ce contrat : authentification ([[RT_21]]), déclenchement ([[RT_10]]), pull/push delta, détection de conflit ([[RT_15]]) et écran d'arbitrage ([[RG_11]]). Aucun serveur ne l'expose en revanche : tant qu'un backend n'est pas déployé à l'URL configurée, [[EX_06]] reste non satisfaite de bout en bout. Conformément à [[RG_09]] et [[RG_10]], cette absence est non bloquante — l'application fonctionne intégralement en local, l'état affiché étant « Usage local uniquement » ([[RG_19]]) tant qu'aucun compte n'est connecté.
-- **[[RG_50]] à [[RG_53]] / [[RT_67]] à [[RT_69]] — contrat v1.0.0 spécifié, client resté sur le contrat v0.1.** [openapi.yml](openapi.yml) passe en v1.0.0 (validé par `redocly lint`, deux avertissements assumés : pas de licence déclarée, `/auth/logout` idempotent sans réponse 4xx). Le client (`src/app/net/`, `src/app/models/sync.models.ts`) n'a pas été adapté :
-  - inscription et connexion n'envoient pas `device` ([[RT_67]]), et le formulaire d'inscription n'avertit pas de l'absence de récupération de mot de passe ([[RG_50]]) ;
-  - ni `GET /sync/summary` ni le choix fusion/remplacement ([[RG_51]]) : les données locales sont toujours versées dans le compte, y compris lors d'un changement de compte, avec les `versionToken` de l'ancien ;
-  - la poussée envoie encore `since`, `deletedListIds`/`deletedDeploymentIds` sans jeton de base, et lit `acceptedListIds`/`acceptedDeploymentIds` ; `markSynced` attribue à chaque enregistrement accepté le `nextToken` global au lieu du jeton renvoyé par enregistrement, et ce `nextToken` de poussée fait avancer le jeton de l'appareil, ce que [[RT_68]] interdit ;
-  - ni pagination du pull (`hasMore`), ni traitement des réponses 410, 413, 426 et 429, ni `Idempotency-Key`, ni `X-Client-Version` ;
-  - conflits : pas de nature `deletedOnServer`/`deletedLocally`, pas de `serverVersionToken` à la résolution, enregistrements `rejected` ignorés ;
-  - refresh : ni renouvellement anticipé, ni rejeu de la requête ; un échec de refresh déconnecte, ce qui reste conforme à [[RT_67]] ;
-  - aucun écran pour [[RG_52]] ni [[RG_53]].
+- **[[RG_50]] à [[RG_54]] / [[RT_67]] à [[RT_71]] — contrat v1.1.0 spécifié, client resté sur le contrat v0.1, serveur inexistant.** [openapi.yml](openapi.yml) est en v1.1.0, validé par `redocly lint` avec deux avertissements assumés : pas de licence déclarée, et un serveur `localhost` ([[RT_71]]). Le client (`src/app/net/`, `src/app/models/sync.models.ts`, `src/environments/`) n'a pas été adapté :
+  - **adresse ([[RT_71]])** : `syncApiBaseUrl` vaut `/v1`, relatif, dans les deux environnements ; ni `http://localhost:3000/v1` en développement, ni environnement de build Android de développement ;
+  - **connexion ([[RT_67]], [[RG_53]])** : le client attend un couple access/refresh token et appelle `/auth/refresh`, qui n'existe plus ; il n'envoie pas `device` et n'a pas d'identifiant d'appareil ; le formulaire d'inscription n'avertit pas de l'absence de récupération de mot de passe ([[RG_50]]) ;
+  - **première connexion ([[RG_51]])** : ni `GET /sync/summary` ni choix fusion/remplacement ; les données locales sont toujours versées dans le compte, y compris lors d'un changement de compte, avec les `versionToken` de l'ancien ;
+  - **poussée ([[RT_68]])** : le client envoie `deletedListIds`/`deletedDeploymentIds` au lieu de `deletions`, et ses traces de suppression locales ne gardent pas le jeton de base ; il lit `acceptedListIds`/`acceptedDeploymentIds` ; `markSynced` attribue à chaque enregistrement accepté le `nextToken` global au lieu de sa révision, et ce `nextToken` de poussée fait avancer la révision de l'appareil, ce que [[RT_68]] interdit ;
+  - **pull ([[RT_68]])** : pas de pagination (`hasMore`), et une liste supprimée sur le serveur est supprimée localement même si l'un de ses déploiements y est modifié ;
+  - **conflits ([[RG_54]])** : seul « modifié des deux côtés » est géré ; l'écran n'affiche ni l'appareil auteur de chaque version, ni les déploiements liés ; pas de `kind`, `serverVersionToken`, `localList`, `relatedRecords`/`relatedDeletions` ; enregistrements `rejected` ignorés ;
+  - **robustesse ([[RT_69]])** : ni traitement des réponses 410, 413, 426 et 429, ni `Idempotency-Key`, ni `X-Client-Version` ;
+  - **compte ([[RG_52]])** : aucun écran de changement de mot de passe ou d'adresse, ni de suppression du compte.
 
-  La v1.0.0 n'est pas rétrocompatible pour la synchronisation (corps de poussée et de résolution changés) : un serveur conforme ne synchronisera pas ce client tel quel, qui doit être aligné avant toute mise en service. Seul `/auth/me` est conservé, en alias déprécié de `GET /account`.
+  Le contrat n'est pas rétrocompatible avec la v0.1 : un serveur conforme ne connectera ni ne synchronisera ce client tel quel, qui doit être aligné avant toute mise en service. Seul `/auth/me` est conservé, en alias déprécié de `GET /account`. Aucun serveur ([[RT_70]]) n'est écrit.
 - **[[RG_01]] — un seul format d'import.** Seul le roster JSON de [[RT_13]] est branché derrière [[RT_01]], ce qui satisfait le « à minima un export texte/JSON d'un list-builder tiers » de la règle. L'ajout d'un second format ne demande qu'une entrée supplémentaire dans la table des formats, sans toucher aux écrans.
 - **[[RG_03]] étape 3 — aucune zone de déploiement matérialisée.** Choix de périmètre déjà assumé par la règle ; l'implémentation borne simplement les tokens au rectangle du plateau mesuré ([[RT_05]]), sans validation des règles de zone du jeu.
 - **[[RT_26]] — 130 des 208 gabarits sont des estimations, pas des mesures.** La couverture des lignes `Use model` est complète (208/208) mais inégale : 78 entrées remontent à une mesure trouvée et citée — directement ou par un châssis partagé (Rhino, Predator, Land Raider, Leman Russ, Chimera, Baneblade, Drop Pod, Stompa, Thunderhawk, Manta, Trukk) — et les 130 autres sont des estimations, préfixées `estimation — ` dans leur `sourceNote`. Écart assumé et non bloquant — un gabarit approché reste exploitable pour planifier un déploiement — mais à résorber entrée par entrée : toute mesure réelle obtenue ultérieurement remplace l'estimation correspondante.
