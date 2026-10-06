@@ -25,6 +25,10 @@
 <ion-content [fullscreen]="true">
   <!-- RG_11: un conflit détecté à la resynchronisation est arbitré par le
        joueur, jamais automatiquement. -->
+  <!-- RG_51: tant que le joueur n'a pas choisi, aucune synchronisation n'a lieu. -->
+  @if (hasFirstSyncChoice()) {
+    <app-first-sync-choice></app-first-sync-choice>
+  }
   @if (hasConflicts()) {
     <app-conflict-resolution></app-conflict-resolution>
   }

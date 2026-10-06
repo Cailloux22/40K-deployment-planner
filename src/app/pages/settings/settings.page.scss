@@ -12,7 +12,8 @@
   color: var(--app-text-secondary);
 }
 
-.offline {
+.offline,
+.recovery-warning {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -90,4 +91,10 @@ ion-note {
 // RT_31: un bouton pleine largeur reste à 36 px de haut par défaut.
 ion-button[expand='block'] {
   min-height: var(--app-touch-min);
+}
+
+// RG_50: l'avertissement d'absence de récupération reprend la surface d'alerte.
+.recovery-warning {
+  display: block;
+  margin: 8px 0 0;
 }

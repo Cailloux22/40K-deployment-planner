@@ -8,6 +8,7 @@ import { BoardImagePipe } from './board-image.pipe';
 import { BoardViewerComponent } from './board-viewer.component';
 import { ConflictResolutionComponent } from './conflict-resolution.component';
 import { DispositionIconComponent } from './disposition-icon.component';
+import { FirstSyncChoiceComponent } from './first-sync-choice.component';
 import { GameplanNoteComponent } from './gameplan-note.component';
 import { InstallInviteComponent } from './install-invite.component';
 import { MissionCardsComponent } from './mission-cards.component';
@@ -17,7 +18,8 @@ import { PanZoomComponent } from './pan-zoom.component';
 /**
  * Composants transverses aux écrans : icône de disposition (RT_23), token de
  * socle (RT_05/RG_06), visualiseur plein écran (RT_16), arbitrage de
- * conflit (RG_11), image de plateau réseau/cache (RT_12/RT_27) et invitation
+ * conflit (RG_11, RG_54), choix de première synchronisation (RG_51), image
+ * de plateau réseau/cache (RT_12/RT_27) et invitation
  * à installer l'application (RG_41), fenêtre « Plan de jeu » (EX_13), surface
  * de pan/zoom (RT_16) et fenêtre « Missions primaires » avec l'image de carte
  * réseau/cache (EX_14, RT_65/RT_66).
@@ -29,6 +31,7 @@ import { PanZoomComponent } from './pan-zoom.component';
     BoardViewerComponent,
     ConflictResolutionComponent,
     DispositionIconComponent,
+    FirstSyncChoiceComponent,
     GameplanNoteComponent,
     InstallInviteComponent,
     MissionCardsComponent,
@@ -45,6 +48,7 @@ import { PanZoomComponent } from './pan-zoom.component';
     BoardViewerComponent,
     ConflictResolutionComponent,
     DispositionIconComponent,
+    FirstSyncChoiceComponent,
     GameplanNoteComponent,
     InstallInviteComponent,
     MissionCardsComponent,

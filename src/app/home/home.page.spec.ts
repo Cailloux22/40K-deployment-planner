@@ -71,7 +71,7 @@ describe('HomePage — écran 1 (accueil / bibliothèque)', () => {
         { provide: LibraryService, useValue: library },
         { provide: ReferentialService, useValue: { allDispositions: async () => DISPOSITIONS } },
         { provide: ConnectivityService, useValue: { online, offlineMessage: () => 'hors-ligne' } },
-        { provide: SyncService, useValue: { pendingConflicts: signal([]) } },
+        { provide: SyncService, useValue: { pendingConflicts: signal([]), firstConnectionChoice: signal(null) } },
         { provide: Router, useValue: { navigate } },
         { provide: AlertController, useValue: { create: alertCreate } },
         { provide: ToastController, useValue: { create: alertCreate } },

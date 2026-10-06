@@ -11,6 +11,10 @@
 
 <ion-content>
   <!-- RG_11: l'arbitrage d'un conflit est aussi accessible depuis cet écran. -->
+  <!-- RG_51: tant que le joueur n'a pas choisi, aucune synchronisation n'a lieu. -->
+  @if (hasFirstSyncChoice()) {
+    <app-first-sync-choice></app-first-sync-choice>
+  }
   @if (hasConflicts()) {
     <app-conflict-resolution></app-conflict-resolution>
   }
@@ -31,6 +35,16 @@
         <ion-label>Synchronisation</ion-label>
         <ion-note slot="end" [color]="syncStateColor()">{{ syncStateLabel() }}</ion-note>
       </ion-item>
+      @if (rejected().length) {
+        <!-- RT_68/RG_19: un enregistrement refusé reste intact sur l'appareil. -->
+        <ion-item>
+          <ion-label class="ion-text-wrap">
+            @for (record of rejected(); track record.resourceType + record.id) {
+              <p>{{ record.resourceType === 'list' ? 'Liste' : 'Déploiement' }} refusé : {{ record.message }}</p>
+            }
+          </ion-label>
+        </ion-item>
+      }
       <ion-item lines="none">
         <ion-buttons>
           <!-- RT_10: relance non bloquante, désactivée hors-ligne (RG_09). -->
@@ -44,6 +58,16 @@
         </ion-buttons>
       </ion-item>
     </ion-list>
+    <!-- RG_52: gestion du compte, mot de passe courant exigé. -->
+    <app-account-management></app-account-management>
+  } @else if (!syncAvailable) {
+    <!-- RT_71: adresse du serveur de production non tranchée. -->
+    <div class="account">
+      <ion-note class="local-only">
+        Vous utilisez l'application en local. La synchronisation entre appareils n'est pas encore
+        disponible dans cette version.
+      </ion-note>
+    </div>
   } @else {
     <div class="account">
       <!-- RG_10: l'application reste pleinement utilisable sans compte ; la
@@ -83,7 +107,8 @@
           label="Mot de passe"
           labelPlacement="stacked"
           type="password"
-          autocomplete="current-password"
+          [autocomplete]="mode() === 'signUp' ? 'new-password' : 'current-password'"
+          [maxlength]="passwordMax"
           [disabled]="!canAuthenticate()"
           [value]="password()"
           (ionInput)="password.set($any($event.target).value)"
@@ -91,7 +116,16 @@
           <ion-input-password-toggle slot="end"></ion-input-password-toggle>
         </ion-input>
       </ion-item>
-      <ion-note class="hint">8 caractères minimum.</ion-note>
+      <ion-note class="hint">{{ passwordMin }} à {{ passwordMax }} caractères.</ion-note>
+      @if (mode() === 'signUp') {
+        <!-- RG_50: ni vérification de l'adresse, ni récupération du mot de passe —
+             dit explicitement avant validation. -->
+        <ion-note class="recovery-warning">
+          Aucun mot de passe oublié ne peut être récupéré : notez-le. Sans lui, vous ne pourrez plus
+          connecter de nouvel appareil ; ceux déjà connectés le restent, et les données de chaque
+          appareil restent intactes.
+        </ion-note>
+      }
 
       @if (error()) {
         <ion-note color="danger" class="error">{{ error() }}</ion-note>

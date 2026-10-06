@@ -37,6 +37,8 @@ export class LibraryService {
   readonly lists = signal<readonly ArmyList[]>([]);
   readonly deployments = signal<readonly Deployment[]>([]);
   readonly loaded = signal(false);
+  /** RT_15/RG_19: suppressions locales pas encore poussées — l'état « en attente » en tient compte. */
+  readonly pendingDeletions = signal(0);
 
   private loading?: Promise<void>;
 
@@ -50,6 +52,7 @@ export class LibraryService {
       this.lists.set(this.sortLists(lists));
       this.deployments.set(deployments.map((d) => this.normalizeDeployment(d)));
       this.loaded.set(true);
+      void this.refreshPendingDeletions();
     })());
   }
 
@@ -113,10 +116,16 @@ export class LibraryService {
    * d'entrée orpheline. L'appelant a confirmé explicitement au préalable.
    */
   async deleteList(listId: string): Promise<void> {
-    const impacted = this.deploymentsOfList(listId).map((d) => d.id);
-    await this.store.deleteListCascade(listId, impacted);
+    const list = this.list(listId);
+    // RT_68: la suppression de la liste et celle de chacun de ses déploiements
+    // partent au serveur, chacune avec son jeton de base.
+    await this.store.deleteListCascade(
+      { id: listId, versionToken: list?.versionToken ?? null },
+      this.deploymentsOfList(listId).map((d) => ({ id: d.id, versionToken: d.versionToken })),
+    );
     this.lists.set(this.lists().filter((l) => l.id !== listId));
     this.deployments.set(this.deployments().filter((d) => d.listId !== listId));
+    void this.refreshPendingDeletions();
   }
 
   /**
@@ -251,8 +260,15 @@ export class LibraryService {
    * jamais à la liste d'armée associée, réutilisable pour d'autres plateaux.
    */
   async deleteDeployment(deploymentId: string): Promise<void> {
-    await this.store.deleteDeployment(deploymentId);
+    const deployment = this.deployments().find((d) => d.id === deploymentId);
+    if (!deployment) return;
+    await this.store.deleteDeployment({
+      id: deploymentId,
+      versionToken: deployment.versionToken,
+      listId: deployment.listId,
+    });
     this.deployments.set(this.deployments().filter((d) => d.id !== deploymentId));
+    void this.refreshPendingDeletions();
   }
 
   /** RG_07: nom par défaut d'un déploiement — liste + plateau + date. */
@@ -277,65 +293,129 @@ export class LibraryService {
     return this.store.getAll<Tombstone>(STORE_TOMBSTONES);
   }
 
-  async clearTombstones(ids: readonly string[]): Promise<void> {
-    for (const id of ids) await this.store.delete(STORE_TOMBSTONES, id);
+  private async refreshPendingDeletions(): Promise<void> {
+    try {
+      this.pendingDeletions.set((await this.tombstones()).length);
+    } catch {
+      // RG_09: un indicateur d'état ne doit jamais interrompre le joueur.
+    }
+  }
+
+  /** RG_51: nombre de listes et de déploiements de l'appareil, présenté au choix fusion/remplacement. */
+  counts(): { lists: number; deployments: number } {
+    return { lists: this.lists().length, deployments: this.deployments().length };
   }
 
   /**
-   * Applique le delta serveur (RT_09) au stockage local, en marquant les
-   * enregistrements comme synchronisés (`dirty: false`) avec leur nouveau
-   * jeton de version (RT_15).
+   * RT_09/RT_68: applique localement des changements venus du serveur (page
+   * de pull, résolution de conflit). Les enregistrements reçus sont marqués
+   * synchronisés (`dirty: false`) avec leur jeton (RT_15) ; les suppressions
+   * reçues ne laissent aucune trace à pousser.
    */
-  async applyServerDelta(delta: {
-    lists: readonly ArmyList[];
-    deployments: readonly Deployment[];
-    deletedListIds: readonly string[];
-    deletedDeploymentIds: readonly string[];
+  async applyRemote(changes: {
+    lists?: readonly ArmyList[];
+    deployments?: readonly Deployment[];
+    deletedListIds?: readonly string[];
+    deletedDeploymentIds?: readonly string[];
+    clearedTombstoneIds?: readonly string[];
   }): Promise<void> {
-    const lists = delta.lists.map((l) => ({ ...l, dirty: false }));
-    const deployments = delta.deployments.map((d) => ({
+    const lists = (changes.lists ?? []).map((l) => ({ ...l, dirty: false }));
+    const deployments = (changes.deployments ?? []).map((d) => ({
       ...this.normalizeDeployment(d),
       dirty: false,
     }));
+    const deletedListIds = changes.deletedListIds ?? [];
+    const deletedDeploymentIds = changes.deletedDeploymentIds ?? [];
+    if (
+      !lists.length &&
+      !deployments.length &&
+      !deletedListIds.length &&
+      !deletedDeploymentIds.length &&
+      !changes.clearedTombstoneIds?.length
+    ) {
+      return;
+    }
 
-    if (lists.length) await this.store.putMany(STORE_LISTS, lists);
-    if (deployments.length) await this.store.putMany(STORE_DEPLOYMENTS, deployments);
-    for (const id of delta.deletedListIds) await this.store.delete(STORE_LISTS, id);
-    for (const id of delta.deletedDeploymentIds) await this.store.delete(STORE_DEPLOYMENTS, id);
+    await this.store.applyChanges({
+      putLists: lists,
+      putDeployments: deployments,
+      deleteListIds: deletedListIds,
+      deleteDeploymentIds: deletedDeploymentIds,
+      deleteTombstoneIds: changes.clearedTombstoneIds,
+    });
+    this.lists.set(this.sortLists(mergeById(this.lists(), lists, deletedListIds)));
+    this.deployments.set(mergeById(this.deployments(), deployments, deletedDeploymentIds));
+    void this.refreshPendingDeletions();
+  }
 
-    const byId = <T extends { id: string }>(current: readonly T[], incoming: readonly T[], removed: readonly string[]) => {
-      const map = new Map(current.map((r) => [r.id, r]));
-      for (const record of incoming) map.set(record.id, record);
-      for (const id of removed) map.delete(id);
-      return [...map.values()];
+  /**
+   * RT_15/RT_68: une poussée acceptée. Chaque enregistrement prend sa propre
+   * révision comme jeton de base ; il n'est marqué synchronisé que s'il n'a
+   * pas été modifié de nouveau pendant la poussée (`updatedAt` inchangé) —
+   * sinon il garde sa modification en attente, sur la nouvelle base. Une
+   * suppression acceptée efface sa trace.
+   */
+  async markAccepted(
+    accepted: readonly { resourceType: 'list' | 'deployment'; id: string; deleted: boolean; versionToken?: string }[],
+    pushedUpdatedAt: ReadonlyMap<string, string>,
+  ): Promise<void> {
+    const tokens = new Map(
+      accepted.filter((a) => !a.deleted && a.versionToken).map((a) => [`${a.resourceType}:${a.id}`, a.versionToken!]),
+    );
+    const accept = <T extends ArmyList | Deployment>(record: T, type: 'list' | 'deployment'): T => {
+      const versionToken = tokens.get(`${type}:${record.id}`);
+      if (!versionToken) return record;
+      return { ...record, versionToken, dirty: record.updatedAt !== pushedUpdatedAt.get(record.id) };
     };
 
-    this.lists.set(this.sortLists(byId(this.lists(), lists, delta.deletedListIds)));
-    this.deployments.set(byId(this.deployments(), deployments, delta.deletedDeploymentIds));
-  }
-
-  /** Marque comme synchronisés les enregistrements acceptés par le serveur. */
-  async markSynced(
-    acceptedListIds: readonly string[],
-    acceptedDeploymentIds: readonly string[],
-    versionToken: string,
-  ): Promise<void> {
-    const lists = this.lists().map((l) =>
-      acceptedListIds.includes(l.id) ? { ...l, dirty: false, versionToken } : l,
-    );
-    const deployments = this.deployments().map((d) =>
-      acceptedDeploymentIds.includes(d.id) ? { ...d, dirty: false, versionToken } : d,
-    );
-
-    await this.store.putMany(
-      STORE_LISTS,
-      lists.filter((l) => acceptedListIds.includes(l.id)),
-    );
-    await this.store.putMany(
-      STORE_DEPLOYMENTS,
-      deployments.filter((d) => acceptedDeploymentIds.includes(d.id)),
-    );
+    const lists = this.lists().map((l) => accept(l, 'list'));
+    const deployments = this.deployments().map((d) => accept(d, 'deployment'));
+    await this.store.applyChanges({
+      putLists: lists.filter((l) => tokens.has(`list:${l.id}`)),
+      putDeployments: deployments.filter((d) => tokens.has(`deployment:${d.id}`)),
+      deleteTombstoneIds: accepted.filter((a) => a.deleted).map((a) => a.id),
+    });
     this.lists.set(this.sortLists(lists));
     this.deployments.set(deployments);
+    void this.refreshPendingDeletions();
   }
+
+  /**
+   * RG_51/RT_67: données de l'appareil versées dans un compte qui ne les a
+   * jamais vues (premier compte, ou changement de compte) — tout redevient
+   * une création : plus de jeton de base, tout est à pousser, et les traces
+   * de suppression de l'ancien compte n'ont plus d'objet.
+   */
+  async resetSyncMetadata(): Promise<void> {
+    const lists = this.lists().map((l) => ({ ...l, versionToken: null, dirty: true }));
+    const deployments = this.deployments().map((d) => ({ ...d, versionToken: null, dirty: true }));
+    const tombstoneIds = (await this.tombstones()).map((t) => t.id);
+    await this.store.applyChanges({
+      putLists: lists,
+      putDeployments: deployments,
+      deleteTombstoneIds: tombstoneIds,
+    });
+    this.lists.set(this.sortLists(lists));
+    this.deployments.set(deployments);
+    void this.refreshPendingDeletions();
+  }
+
+  /** RG_51: « Les remplacer par celles du compte » — efface les listes et déploiements de l'appareil. */
+  async clearAll(): Promise<void> {
+    await this.store.clearRecords();
+    this.lists.set([]);
+    this.deployments.set([]);
+    this.pendingDeletions.set(0);
+  }
+}
+
+function mergeById<T extends { id: string }>(
+  current: readonly T[],
+  incoming: readonly T[],
+  removed: readonly string[],
+): T[] {
+  const map = new Map(current.map((r) => [r.id, r]));
+  for (const record of incoming) map.set(record.id, record);
+  for (const id of removed) map.delete(id);
+  return [...map.values()];
 }

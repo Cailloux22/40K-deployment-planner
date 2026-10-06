@@ -54,6 +54,8 @@ export class HomePage implements OnInit {
   readonly online = this.connectivity.online;
   /** RG_11: un conflit en attente est signalé dès l'accueil. */
   readonly hasConflicts = computed(() => this.sync.pendingConflicts().length > 0);
+  /** RG_51: le choix de première synchronisation est aussi présenté dès l'accueil. */
+  readonly hasFirstSyncChoice = computed(() => this.sync.firstConnectionChoice() !== null);
 
   readonly cards = computed<readonly ListCard[]>(() => {
     const byId = new Map(this.dispositions().map((d) => [d.id, d]));

@@ -4,9 +4,9 @@
 
 export const environment = {
   production: false,
-  // RT_09/RT_21: racine du backend de synchronisation (cf.
-  // `specification/openapi.yml`, `servers: /v1`). RG_10: le compte etant
-  // optionnel, aucune requete ne partira vers cette URL tant que le joueur
-  // ne demande pas explicitement a synchroniser.
-  syncApiBaseUrl: "/v1",
+  // RT_71: racine absolue du serveur de synchronisation (RT_09) en
+  // développement — le serveur local du dépôt `Windfall-Planner-api`. Seul
+  // endroit où cette adresse figure. RG_10: le compte étant optionnel, aucune
+  // requête n'y part tant que le joueur ne s'est pas connecté.
+  syncApiBaseUrl: 'http://localhost:3000/v1' as string | null,
 };

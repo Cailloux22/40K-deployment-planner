@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 
 import { APP_VERSION } from '../../app-version';
 import { ReferentialSource } from '../../models/referential.models';
-import { AuthError, AuthService } from '../../net/auth.service';
+import { AuthError, AuthService, PASSWORD_MAX, PASSWORD_MIN } from '../../net/auth.service';
 import { ConnectivityService } from '../../net/connectivity.service';
 import { SyncService } from '../../net/sync.service';
 import { ReferentialService } from '../../referentials/referential.service';
@@ -74,9 +74,15 @@ export class SettingsPage implements OnInit {
   readonly online = this.connectivity.online;
   readonly signedIn = this.auth.signedIn;
   readonly user = this.auth.user;
+  /** RT_71: aucun serveur de synchronisation n'est configuré pour ce build. */
+  readonly syncAvailable = this.auth.available;
   /** RT_21/RT_14: sign up / sign in désactivés hors-ligne. */
   readonly canAuthenticate = this.auth.canAuthenticate;
+  readonly passwordMin = PASSWORD_MIN;
+  readonly passwordMax = PASSWORD_MAX;
   readonly hasConflicts = computed(() => this.sync.pendingConflicts().length > 0);
+  /** RG_51: le choix de première synchronisation est aussi présenté dès l'accueil. */
+  readonly hasFirstSyncChoice = computed(() => this.sync.firstConnectionChoice() !== null);
 
   /** RT_20: attributions lues dans les référentiels embarqués. */
   readonly attributions = signal<readonly ReferentialSource[]>([]);
@@ -92,7 +98,10 @@ export class SettingsPage implements OnInit {
       this.canAuthenticate() &&
       !this.busy() &&
       this.email().includes('@') &&
-      this.password().length >= 8,
+      // RG_50: 8 à 128 caractères, contrôlés à l'inscription ; à la connexion,
+      // le serveur seul juge (un ancien mot de passe plus court n'existe pas).
+      this.password().length >= PASSWORD_MIN &&
+      this.password().length <= PASSWORD_MAX,
   );
 
   async ngOnInit(): Promise<void> {
@@ -110,9 +119,12 @@ export class SettingsPage implements OnInit {
         return 'success';
       case 'conflict':
       case 'error':
+      case 'rejected':
+      case 'upgradeRequired':
         return 'danger';
       case 'offline':
       case 'pending':
+      case 'awaitingChoice':
         return 'warning';
       default:
         return 'medium';
@@ -130,6 +142,9 @@ export class SettingsPage implements OnInit {
     this.mode.set(mode);
     this.error.set(null);
   }
+
+  /** RT_68/RG_19: enregistrements refusés par le serveur, conservés sur l'appareil. */
+  readonly rejected = this.sync.rejected;
 
   /** RG_18/RT_21: « Créer un compte » / « Se connecter ». */
   async submit(): Promise<void> {

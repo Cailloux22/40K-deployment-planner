@@ -32,6 +32,29 @@ export interface Tombstone {
   readonly id: string;
   readonly resourceType: 'list' | 'deployment';
   readonly deletedAt: string;
+  /**
+   * RT_68: jeton de la version supprimée, pour qu'une modification faite
+   * ailleurs entre-temps produise un conflit au lieu d'être perdue. `null`
+   * pour un enregistrement jamais synchronisé ; absent d'une trace antérieure.
+   */
+  readonly versionToken?: string | null;
+  /** RT_68: liste d'un déploiement supprimé — une liste et ses déploiements partent dans la même poussée. */
+  readonly listId?: string;
+}
+
+/** Référence d'un enregistrement supprimé, avec son jeton de base (RT_68). */
+export interface DeletedRef {
+  readonly id: string;
+  readonly versionToken: string | null;
+}
+
+/** RT_09/RT_68: changements venus du serveur, appliqués en une transaction. */
+export interface StoreChanges {
+  readonly putLists?: readonly unknown[];
+  readonly putDeployments?: readonly unknown[];
+  readonly deleteListIds?: readonly string[];
+  readonly deleteDeploymentIds?: readonly string[];
+  readonly deleteTombstoneIds?: readonly string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -130,33 +153,74 @@ export class LocalStoreService {
   /**
    * RG_21: la suppression d'une liste et celle de ses déploiements doivent
    * être atomiques — une liste supprimée ne doit jamais laisser derrière elle
-   * des déploiements orphelins.
+   * des déploiements orphelins. RT_68: chaque trace garde le jeton de base de
+   * la version supprimée.
    */
-  async deleteListCascade(listId: string, deploymentIds: readonly string[]): Promise<void> {
+  async deleteListCascade(list: DeletedRef, deployments: readonly DeletedRef[]): Promise<void> {
     await this.transact(
       [STORE_LISTS, STORE_DEPLOYMENTS, STORE_TOMBSTONES],
       'readwrite',
-      ([lists, deployments, tombstones]) => {
+      ([lists, deploymentStore, tombstones]) => {
         const deletedAt = new Date().toISOString();
-        lists.delete(listId);
-        tombstones.put({ id: listId, resourceType: 'list', deletedAt } satisfies Tombstone);
-        for (const id of deploymentIds) {
-          deployments.delete(id);
-          tombstones.put({ id, resourceType: 'deployment', deletedAt } satisfies Tombstone);
+        lists.delete(list.id);
+        tombstones.put({
+          id: list.id,
+          resourceType: 'list',
+          deletedAt,
+          versionToken: list.versionToken,
+        } satisfies Tombstone);
+        for (const deployment of deployments) {
+          deploymentStore.delete(deployment.id);
+          tombstones.put({
+            id: deployment.id,
+            resourceType: 'deployment',
+            deletedAt,
+            versionToken: deployment.versionToken,
+            listId: list.id,
+          } satisfies Tombstone);
         }
       },
     );
   }
 
   /** RG_08: suppression d'un déploiement seul, la liste associée est conservée. */
-  async deleteDeployment(deploymentId: string): Promise<void> {
+  async deleteDeployment(deployment: DeletedRef & { listId: string }): Promise<void> {
     await this.transact([STORE_DEPLOYMENTS, STORE_TOMBSTONES], 'readwrite', ([deployments, tombstones]) => {
-      deployments.delete(deploymentId);
+      deployments.delete(deployment.id);
       tombstones.put({
-        id: deploymentId,
+        id: deployment.id,
         resourceType: 'deployment',
         deletedAt: new Date().toISOString(),
+        versionToken: deployment.versionToken,
+        listId: deployment.listId,
       } satisfies Tombstone);
+    });
+  }
+
+  /**
+   * RT_09/RT_68: application atomique de changements venus du serveur — une
+   * page de pull, une poussée acceptée, une résolution de conflit. Les
+   * suppressions reçues ne laissent aucune trace à pousser : elles viennent
+   * déjà du serveur.
+   */
+  async applyChanges(changes: StoreChanges): Promise<void> {
+    await this.transact(
+      [STORE_LISTS, STORE_DEPLOYMENTS, STORE_TOMBSTONES],
+      'readwrite',
+      ([lists, deployments, tombstones]) => {
+        for (const value of changes.putLists ?? []) lists.put(value);
+        for (const value of changes.putDeployments ?? []) deployments.put(value);
+        for (const id of changes.deleteListIds ?? []) lists.delete(id);
+        for (const id of changes.deleteDeploymentIds ?? []) deployments.delete(id);
+        for (const id of changes.deleteTombstoneIds ?? []) tombstones.delete(id);
+      },
+    );
+  }
+
+  /** RG_51: « Les remplacer par celles du compte » — listes, déploiements et traces effacés. */
+  async clearRecords(): Promise<void> {
+    await this.transact([STORE_LISTS, STORE_DEPLOYMENTS, STORE_TOMBSTONES], 'readwrite', (stores) => {
+      for (const store of stores) store.clear();
     });
   }
 
