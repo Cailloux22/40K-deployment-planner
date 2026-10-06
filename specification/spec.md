@@ -213,7 +213,7 @@ Le plateau affiché est par ailleurs **identifié une seule fois** par cet écra
 
 **Actions contextuelles, selon le statut :**
 
-- **« Nouveau »** : toujours disponible, y compris quand un déploiement existe déjà (orange ou vert). Écrase le déploiement existant du triplet (remise à zéro des placements et des unités en réserve de [[RG_25]] ; la note de plan de jeu de [[RG_45]] est en revanche **conservée**) et ouvre l'écran de placement ([[RG_03]] étape 3) vide. Une action destructrice de ce type est confirmée explicitement par le joueur avant d'écraser quoi que ce soit, sur le même principe que [[RG_08]]. L'identifiant du déploiement du triplet ([[RT_07]]) est conservé (mise à jour en place, cf. [[RG_07]]) ; une sauvegarde distincte n'est créée que si le joueur choisit ensuite explicitement d'enregistrer sous un nouveau nom.
+- **« Nouveau »** : toujours disponible, y compris quand un déploiement existe déjà (orange ou vert). Écrase le déploiement existant du triplet (remise à zéro des placements et des unités en réserve de [[RG_25]] ; la note de plan de jeu de [[RG_45]] est en revanche **conservée**) et ouvre l'écran de placement ([[RG_03]] étape 3) vide. Une action destructrice de ce type est confirmée explicitement par le joueur avant d'écraser quoi que ce soit, sur le même principe que [[RG_08]]. L'identifiant du déploiement du triplet ([[RT_07]]) est conservé (mise à jour en place, cf. [[RG_07]]) ; il n'existe jamais qu'un déploiement par triplet.
 - **« Éditer »** : disponible uniquement quand un déploiement existe déjà pour ce triplet (statut orange ou vert) ; masqué/désactivé au statut rouge. Ouvre l'écran de placement préchargé avec les placements existants. Ce bouton est affiché en **orange** lorsque le déploiement existant est non fini, pour renforcer le signal donné par le statut du plateau.
 - **« Consulter »** : disponible uniquement quand le déploiement de ce triplet est **terminé** (statut vert) ; masqué/désactivé aux statuts rouge et orange — un déploiement encore en cours de remplissage se reprend via « Éditer », pas via cette vue en lecture seule. Affiche en plein écran, zoomable, le plateau avec les placements du joueur superposés, en lecture seule (aucune édition possible), en utilisant cette fois la variante du plateau **sans** repères de mesure (« no-measurements » de [[RT_12]]). La note de plan de jeu du déploiement y est consultable en lecture seule ([[RG_46]]).
 
@@ -535,7 +535,9 @@ Les déploiements sauvegardés ne sont pas présentés sur un écran séparé : 
 
 ### RG_07 — Sauvegarde nommée
 
-Un déploiement sauvegardé conserve un nom (par défaut : liste + plateau + date), la référence à la liste d'armée importée, le plateau et la disposition choisis, l'ensemble des placements, et la note de plan de jeu du joueur ([[RG_45]]). Toute modification ultérieure du déploiement est enregistrée comme mise à jour de la même entrée, sauf sauvegarde explicite "sous un nouveau nom".
+Un déploiement sauvegardé conserve un nom (par défaut : liste + plateau + date), la référence à la liste d'armée importée, le plateau et la disposition choisis, l'ensemble des placements, et la note de plan de jeu du joueur ([[RG_45]]). Toute modification ultérieure du déploiement est enregistrée comme mise à jour de la même entrée : il n'existe qu'**un seul déploiement par triplet** (liste, disposition adverse, plateau), et l'application ne propose **aucune** sauvegarde « sous un nouveau nom » ni copie d'un déploiement. La sauvegarde étant continue ([[EX_04]]), l'écran de placement ne porte **aucun bouton d'enregistrement**.
+
+*Décision (précédemment : copie « Enregistrer sous un nouveau nom » depuis l'en-tête de l'écran de placement) :* ce bouton à icône de disquette a été retiré. Il était pris pour une sauvegarde nécessaire, et la copie qu'il créait portait le même triplet : invisible au choix du plateau ([[RG_14]], un déploiement par plateau), sans écran pour l'ouvrir ni la supprimer, elle était pourtant comptée par le cadran ([[RG_12]]/[[RG_24]], « 2/3 » pour un seul plateau) et par l'accueil (« 2 déploiements sauvegardés »).
 
 ### RG_08 — Suppression
 
@@ -738,7 +740,7 @@ Complète [[RG_11]]. Toute divergence née de modifications faites sur plusieurs
 - **Modifié des deux côtés.** Le même déploiement, ou la même liste, a été modifié sur deux appareils.
 - **Modifié ici, supprimé ailleurs** (et l'inverse). L'une des deux versions est « supprimé le … sur … ».
 - **Liste supprimée, déploiement modifié.** Un appareil supprime une liste (donc ses déploiements, [[RG_21]]) pendant qu'un autre modifie ou crée un déploiement de cette liste. Garder la suppression supprime aussi ce déploiement ; garder le déploiement conserve aussi sa liste. Les déploiements concernés sont listés avec le conflit.
-- **Même plateau créé deux fois.** Deux appareils créent chacun le déploiement d'un même triplet liste, disposition adverse, plateau ([[RG_14]]) sans avoir vu celui de l'autre. Le joueur garde l'un des deux ; l'autre est supprimé. Une sauvegarde délibérée « sous un nouveau nom » ([[RG_07]]) sur un appareil qui connaissait déjà le déploiement du triplet n'est pas un conflit.
+- **Même plateau créé deux fois.** Deux appareils créent chacun le déploiement d'un même triplet liste, disposition adverse, plateau ([[RG_14]]) sans avoir vu celui de l'autre. Le joueur garde l'un des deux ; l'autre est supprimé.
 
 Les horodatages sont **affichés, jamais comparés** : ils aident le joueur à choisir mais ne décident de rien, d'autant que l'horloge de deux appareils peut différer. Un conflit en attente ne bloque pas la synchronisation des autres enregistrements.
 
@@ -1429,7 +1431,7 @@ Satisfait par : [[RG_45]], [[RG_46]], [[RT_60]], [[RT_61]], [[RT_62]].
 
 ### RG_45 — Édition de la note de plan de jeu depuis l'écran de placement
 
-**Accès.** L'en-tête de l'écran de placement ([[RG_03]] étape 3) porte un bouton à **icône de plan**, placé **immédiatement à gauche du bouton d'enregistrement** (« Enregistrer sous un nouveau nom », [[RG_07]]). Il est toujours disponible, quel que soit l'état du déploiement (aucun token posé, déploiement non fini ou terminé), le mode en cours (« Règle » [[RG_33]], « Déplacement » [[RG_39]]) ou l'agrandissement ([[RG_38]]).
+**Accès.** L'en-tête de l'écran de placement ([[RG_03]] étape 3) porte un bouton à **icône de plan**, placé **immédiatement à gauche du menu des unités** ([[RG_16]]). Il est toujours disponible, quel que soit l'état du déploiement (aucun token posé, déploiement non fini ou terminé), le mode en cours (« Règle » [[RG_33]], « Déplacement » [[RG_39]]) ou l'agrandissement ([[RG_38]]).
 
 **Fenêtre d'édition.** Un appui ouvre une **fenêtre modale** titrée « Plan de jeu », qui contient un unique **champ texte multiligne** pré-rempli avec la note existante (vide sinon) et deux actions :
 
@@ -1456,7 +1458,7 @@ Satisfait par : [[RG_45]], [[RG_46]], [[RT_60]], [[RT_61]], [[RT_62]].
 
 ### RT_60 — Modèle de données et persistance de la note
 
-**Stockage.** La note est un champ texte `note` de l'enregistrement de déploiement ([[RT_06]]), à côté de `placements` ([[RT_04]]) et de `reservedUnitIds` ([[RT_35]]), et non un enregistrement séparé : elle suit sans traitement particulier la mise à jour en place et la copie « sous un nouveau nom » de [[RG_07]], la suppression de [[RG_08]] et la suppression en cascade de [[RG_21]]. Une note vide est stockée comme chaîne vide `""`. Les enregistrements écrits avant cette règle n'ont pas le champ ; il est normalisé à `""` au chargement, sans migration de schéma ([[RT_08]]), comme `reservedUnitIds` ([[RT_35]]).
+**Stockage.** La note est un champ texte `note` de l'enregistrement de déploiement ([[RT_06]]), à côté de `placements` ([[RT_04]]) et de `reservedUnitIds` ([[RT_35]]), et non un enregistrement séparé : elle suit sans traitement particulier la mise à jour en place de [[RG_07]], la suppression de [[RG_08]] et la suppression en cascade de [[RG_21]]. Une note vide est stockée comme chaîne vide `""`. Les enregistrements écrits avant cette règle n'ont pas le champ ; il est normalisé à `""` au chargement, sans migration de schéma ([[RT_08]]), comme `reservedUnitIds` ([[RT_35]]).
 
 **Écriture.** À la validation ([[RG_45]]), le texte est ramené à `""` s'il ne contient que des blancs (`trim()` vide) ; sinon il est enregistré **tel que saisi**, blancs de début et de fin compris, pour ne pas altérer la mise en page voulue par le joueur. La longueur est contrôlée à l'écriture (au plus 4 000 caractères, comptés en unités de code UTF-16, soit la mesure de l'attribut `maxlength` du champ), en plus de la limite de saisie du champ, pour qu'aucun chemin d'écriture ne la contourne. L'écriture met à jour `updatedAt` et marque l'enregistrement modifié localement (`dirty`), ce qui l'inscrit au prochain envoi de synchronisation ([[RT_10]]). Si le déploiement du triplet n'existe pas encore (écran de placement ouvert par « Nouveau », rien encore posé), la validation de la note le crée, comme le ferait le premier placement.
 
