@@ -38,6 +38,7 @@ import { SelectionRect, idsTouchedByRect, isDoubleTap, soleSelectedUnit } from '
 import { CoherencyBase, coherencyBase, detachedAfterRemoval, isCoherent } from '../../deployment/unit-coherency';
 import { prepareTerrain, visibilityBase, visibleZone, visibleZonePath } from '../../deployment/visibility';
 import { hasGameplanNote, normalizeGameplanNote } from '../../deployment/gameplan-note';
+import { MissionsService } from '../../shared/missions.service';
 import { ArmyList, ArmyUnit, Deployment, Placement, UnitModelGroup } from '../../models/domain.models';
 import { BaseShape, BaseShapeKind, Board, BoardReferential, BoardTerrain } from '../../models/referential.models';
 import { UNIT_COLOR_FALLBACK } from '../../import/unit-colors';
@@ -261,6 +262,7 @@ export class PlacementPage implements OnInit {
   private readonly alerts = inject(AlertController);
   private readonly toasts = inject(ToastController);
   private readonly notes = inject(GameplanNoteService);
+  private readonly missions = inject(MissionsService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** RT_34: repère de positionnement du retour visuel du glisser. */
@@ -307,6 +309,8 @@ export class PlacementPage implements OnInit {
   private readonly rulerCoherentUnits = signal<ReadonlySet<string>>(new Set());
 
   readonly board = signal<Board | undefined>(undefined);
+  /** RG_48: le bouton n'est masqué que si aucune carte du couple n'est connue. */
+  readonly missionsAvailable = signal(false);
   readonly deployment = signal<Deployment | undefined>(undefined);
   /** RG_15/RG_37: rang, parmi les groupes de déploiement, de celui du bandeau. */
   readonly selectedGroupIndex = signal(0);
@@ -709,6 +713,7 @@ export class PlacementPage implements OnInit {
     }
     this.board.set(board);
     this.boardReferential.set(await this.referential.boardReferential());
+    this.missionsAvailable.set(await this.missions.available(list.forceDispositionId, this.opponentId()));
     this.terrain.set(await this.referential.terrain(board.id));
 
     const shapes = await this.referential.allBaseShapes();
@@ -2073,6 +2078,32 @@ export class PlacementPage implements OnInit {
     this.deployment.set({ ...this.deployment()!, note: normalizeGameplanNote(note) });
     if (this.saveTimer) clearTimeout(this.saveTimer);
     await this.save();
+  }
+
+  /**
+   * RG_48/RT_66: missions primaires du couple, avec le plateau du déploiement
+   * en colonne « Plateau » de la vue côte à côte. Comme la note, la fenêtre
+   * ne touche ni aux placements, ni à la sélection, ni au bandeau, ni à la
+   * vue, ni au mode « Règle ».
+   */
+  async openMissions(): Promise<void> {
+    const list = this.list();
+    const board = this.board();
+    if (!list || !board) return;
+    const [player, opponent] = await Promise.all([
+      this.referential.disposition(list.forceDispositionId),
+      this.referential.disposition(this.opponentId()),
+    ]);
+    // RG_14: identification du plateau, dans le sens de lecture du bandeau.
+    const boardLabel = board.mirror
+      ? `${player?.label ?? ''} miroir · ${board.index}`
+      : `${player?.label ?? ''} vs ${opponent?.label ?? ''} · ${board.index}`;
+    await this.missions.open({
+      playerDispositionId: list.forceDispositionId,
+      opponentDispositionId: this.opponentId(),
+      board,
+      boardLabel,
+    });
   }
 
   /** RG_07: « enregistrer sous un nouveau nom » crée une entrée distincte. */

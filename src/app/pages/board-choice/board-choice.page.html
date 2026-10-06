@@ -25,6 +25,17 @@
     </div>
   </div>
 
+  <!-- RG_48/RT_66: la mission dépend du couple, pas du plateau affiché — le
+       bouton est rattaché au bandeau des dispositions, sous celles-ci. -->
+  @if (missionsAvailable()) {
+    <div class="missions">
+      <ion-button size="small" fill="outline" aria-label="Voir les missions primaires" (click)="openMissions()">
+        <ion-icon name="document-text-outline" slot="start"></ion-icon>
+        Missions
+      </ion-button>
+    </div>
+  }
+
   @if (slides().length === 0) {
     <div class="loading"><ion-spinner></ion-spinner></div>
   } @else {
@@ -124,6 +135,7 @@
     [title]="boardLabel(current.board)"
     [placements]="viewerPlacements()"
     [note]="viewerNote()"
+    [missionPair]="viewerMissionPair()"
     [list]="list()"
     [shapes]="shapes()"
     (closed)="closeViewer()"

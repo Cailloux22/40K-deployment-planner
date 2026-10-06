@@ -13,7 +13,7 @@ import { InstallService } from './install.service';
  * - `downloading` : téléchargement en cours ;
  * - `paused` : hors-ligne, reprise au retour du réseau ;
  * - `incomplete` : des images ont échoué, retentées au lancement suivant ;
- * - `ready` : tous les plateaux sont disponibles hors-ligne.
+ * - `ready` : tous les plateaux et cartes de mission sont disponibles hors-ligne.
  */
 export type BoardPrefetchStatus =
   | 'unsupported'
@@ -30,6 +30,9 @@ export type BoardPrefetchStatus =
  * sert depuis son groupe `boards` (RT_54) si elle y est, sinon il la télécharge
  * et l'y range — hors-ligne, une image absente échoue sans requête réseau. Le cache IndexedDB des versions
  * distantes (RT_27) n'est pas concerné : il reste prioritaire à l'affichage.
+ *
+ * RG_49/RT_65: les cartes de mission (groupe `missions`) sont parcourues dans
+ * la même boucle, après les plateaux, et comptées avec eux.
  */
 @Injectable({ providedIn: 'root' })
 export class BoardPrefetchService {
@@ -80,7 +83,7 @@ export class BoardPrefetchService {
     if (this.running) return;
     this.running = true;
     try {
-      const paths = await this.boardAssetPaths();
+      const paths = await this.assetPaths();
       this.total.set(paths.length);
       if (fetchMissing) this.status.set('downloading');
 
@@ -106,12 +109,17 @@ export class BoardPrefetchService {
     }
   }
 
-  private async boardAssetPaths(): Promise<string[]> {
-    const referential = await this.referential.boardReferential();
+  private async assetPaths(): Promise<string[]> {
+    const [boards, missions] = await Promise.all([
+      this.referential.boardReferential(),
+      this.referential.missionReferential(),
+    ]);
     const paths = new Set<string>();
-    for (const board of referential.boards) {
-      for (const variant of referential.variants) paths.add(board.assets[variant]);
+    for (const board of boards.boards) {
+      for (const variant of boards.variants) paths.add(board.assets[variant]);
     }
+    // RT_65: les cartes après les plateaux, dans la même boucle séquentielle.
+    for (const card of missions.missions) paths.add(card.asset);
     return [...paths];
   }
 }

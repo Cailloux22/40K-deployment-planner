@@ -32,6 +32,14 @@
       "resources": {
         "files": ["/assets/referentials/boards/**"]
       }
+    },
+    {
+      "name": "missions",
+      "installMode": "lazy",
+      "updateMode": "lazy",
+      "resources": {
+        "files": ["/assets/referentials/missions/**"]
+      }
     }
   ]
 }

@@ -233,3 +233,48 @@ export interface TerrainReferential {
   /** Indexé par identifiant de plateau ; un plateau absent a un terrain non décrit. */
   readonly boards: Readonly<Record<string, BoardTerrain>>;
 }
+
+// ---------------------------------------------------------------------------
+// RT_64 — référentiel des missions primaires
+// ---------------------------------------------------------------------------
+
+/**
+ * RT_64: une carte de mission primaire. Chaque disposition a une carte par
+ * disposition adverse possible ; `opponent === disposition` pour la carte
+ * miroir.
+ */
+export interface MissionCard {
+  /** `{disposition}/{carte}` — aussi la clé du cache local (RT_65). */
+  readonly id: string;
+  /** Nom tel que publié par la source. */
+  readonly name: string;
+  /** Jeu de la carte : la disposition de celui qui la joue (RT_23). */
+  readonly disposition: string;
+  /** Disposition adverse visée par la carte (RT_23). */
+  readonly opponent: string;
+  /** RT_65: une image distante n'est acceptée qu'à ces dimensions. */
+  readonly width: number;
+  readonly height: number;
+  /** RG_49: version embarquée, dernier recours hors-ligne. */
+  readonly asset: string;
+  /** RT_65: URL gdmissions.app appelée directement quand l'appareil est en ligne. */
+  readonly remoteAsset: string;
+}
+
+export interface MissionReferential {
+  readonly source: ReferentialSource;
+  readonly generatedAt: string;
+  readonly missions: readonly MissionCard[];
+}
+
+/**
+ * RG_48: les deux cartes d'un couple ordonné (disposition du joueur,
+ * disposition adverse). Dans un couple miroir, les deux sont la même carte.
+ * Une carte absente du référentiel vaut `undefined` (« Mission non disponible
+ * pour ce couple »).
+ */
+export interface PairMissions {
+  readonly mirror: boolean;
+  readonly player?: MissionCard;
+  readonly opponent?: MissionCard;
+}

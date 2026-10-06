@@ -139,6 +139,21 @@ $ramp-green-on-dark: #8fe3a0;
   --app-ruler-stroke: #5ce1ff;
   --app-ruler-label-bg: #0b2530;
   --app-ruler-label-on: #e6fbff;
+
+  // RG_48/RT_66 — couleur de disposition des cartes de mission. Posée sur la
+  // scène des cartes, identique dans les deux thèmes, comme la règle. Teintes de
+  // gdmissions.app ; l'or de Priority Assets (#a17b14) est assombri pour
+  // porter un texte blanc à 4,5:1.
+  --app-dispo-color-take-and-hold: #2f6b4f;
+  --app-dispo-color-take-and-hold-on: #ffffff;
+  --app-dispo-color-purge-the-foe: #8a2b2b;
+  --app-dispo-color-purge-the-foe-on: #ffffff;
+  --app-dispo-color-reconnaissance: #1f7a82;
+  --app-dispo-color-reconnaissance-on: #ffffff;
+  --app-dispo-color-priority-assets: #8a6a10;
+  --app-dispo-color-priority-assets-on: #ffffff;
+  --app-dispo-color-disruption: #1f4f8a;
+  --app-dispo-color-disruption-on: #ffffff;
 }
 
 // ---------------------------------------------------------------------------
@@ -222,6 +237,21 @@ $ramp-green-on-dark: #8fe3a0;
   --app-ruler-stroke: #5ce1ff;
   --app-ruler-label-bg: #0b2530;
   --app-ruler-label-on: #e6fbff;
+
+  // RG_48/RT_66 — couleur de disposition des cartes de mission. Posée sur la
+  // scène des cartes, identique dans les deux thèmes (voir thème clair). Teintes de
+  // gdmissions.app ; l'or de Priority Assets (#a17b14) est assombri pour
+  // porter un texte blanc à 4,5:1.
+  --app-dispo-color-take-and-hold: #2f6b4f;
+  --app-dispo-color-take-and-hold-on: #ffffff;
+  --app-dispo-color-purge-the-foe: #8a2b2b;
+  --app-dispo-color-purge-the-foe-on: #ffffff;
+  --app-dispo-color-reconnaissance: #1f7a82;
+  --app-dispo-color-reconnaissance-on: #ffffff;
+  --app-dispo-color-priority-assets: #8a6a10;
+  --app-dispo-color-priority-assets-on: #ffffff;
+  --app-dispo-color-disruption: #1f4f8a;
+  --app-dispo-color-disruption-on: #ffffff;
 }
 
 // ---------------------------------------------------------------------------
@@ -340,3 +370,11 @@ $ramp-green-on-dark: #8fe3a0;
 // @contrast --app-unit-none-border on --app-surface-page >= 3
 // @contrast --app-unit-partial-border on --app-surface-page >= 3
 // @contrast --app-unit-done-border on --app-surface-page >= 3
+
+// RG_48/RT_66 — en-tête et onglet d'une carte de mission sur la couleur de
+// sa disposition.
+// @contrast --app-dispo-color-take-and-hold-on on --app-dispo-color-take-and-hold >= 4.5
+// @contrast --app-dispo-color-purge-the-foe-on on --app-dispo-color-purge-the-foe >= 4.5
+// @contrast --app-dispo-color-reconnaissance-on on --app-dispo-color-reconnaissance >= 4.5
+// @contrast --app-dispo-color-priority-assets-on on --app-dispo-color-priority-assets >= 4.5
+// @contrast --app-dispo-color-disruption-on on --app-dispo-color-disruption >= 4.5

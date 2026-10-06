@@ -21,9 +21,11 @@ export const STORE_DEPLOYMENTS = 'deployments';
 export const STORE_TOMBSTONES = 'tombstones';
 /** RT_27: cache des images de plateau obtenues par le réseau (RT_12). */
 export const STORE_BOARD_IMAGES = 'boardImages';
+/** RT_65: cache des images de carte de mission obtenues par le réseau (RT_64). */
+export const STORE_MISSION_IMAGES = 'missionImages';
 
 const DB_NAME = '40k-deployment-planner';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const CONFIG_PREFIX = '40kdp.';
 
 export interface Tombstone {
@@ -58,6 +60,10 @@ export class LocalStoreService {
         // métier synchronisés.
         if (!db.objectStoreNames.contains(STORE_BOARD_IMAGES)) {
           db.createObjectStore(STORE_BOARD_IMAGES, { keyPath: 'id' });
+        }
+        // RT_65: même principe pour les cartes de mission, dans leur propre store.
+        if (!db.objectStoreNames.contains(STORE_MISSION_IMAGES)) {
+          db.createObjectStore(STORE_MISSION_IMAGES, { keyPath: 'id' });
         }
       };
       request.onsuccess = () => resolve(request.result);

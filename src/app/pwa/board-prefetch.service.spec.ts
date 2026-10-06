@@ -6,7 +6,14 @@ import { ReferentialService } from '../referentials/referential.service';
 import { BoardPrefetchService } from './board-prefetch.service';
 import { InstallService } from './install.service';
 
-const PATHS = ['assets/b/no/1.png', 'assets/b/with/1.png', 'assets/b/no/2.png', 'assets/b/with/2.png'];
+const PATHS = [
+  'assets/b/no/1.png',
+  'assets/b/with/1.png',
+  'assets/b/no/2.png',
+  'assets/b/with/2.png',
+  // RT_65: une carte de mission, parcourue après les plateaux.
+  'assets/m/purge-the-foe/meatgrinder.png',
+];
 
 const referential = {
   variants: ['no-measurements', 'with-measurements'],
@@ -16,7 +23,9 @@ const referential = {
   ],
 };
 
-describe('BoardPrefetchService (RT_56 / RG_42)', () => {
+const missions = { missions: [{ asset: PATHS[4] }] };
+
+describe('BoardPrefetchService (RT_56 / RG_42 / RT_65)', () => {
   let online: ReturnType<typeof signal<boolean>>;
   let reconnections: ReturnType<typeof signal<number>>;
   let cached: Set<string>;
@@ -56,7 +65,13 @@ describe('BoardPrefetchService (RT_56 / RG_42)', () => {
     TestBed.configureTestingModule({
       providers: [
         { provide: ConnectivityService, useValue: { online, reconnections } },
-        { provide: ReferentialService, useValue: { boardReferential: async () => referential } },
+        {
+          provide: ReferentialService,
+          useValue: {
+            boardReferential: async () => referential,
+            missionReferential: async () => missions,
+          },
+        },
         { provide: InstallService, useValue: { webApp: true } },
       ],
     });
@@ -69,14 +84,14 @@ describe('BoardPrefetchService (RT_56 / RG_42)', () => {
     vi.unstubAllGlobals();
   });
 
-  it('télécharge une à une les images absentes du cache, puis se déclare prêt', async () => {
+  it('télécharge une à une les images absentes du cache, cartes après plateaux, puis se déclare prêt', async () => {
     cached.add(PATHS[0]);
 
     await service.start();
 
-    expect(downloaded).toEqual([PATHS[1], PATHS[2], PATHS[3]]);
-    expect(service.present()).toBe(4);
-    expect(service.total()).toBe(4);
+    expect(downloaded).toEqual([PATHS[1], PATHS[2], PATHS[3], PATHS[4]]);
+    expect(service.present()).toBe(5);
+    expect(service.total()).toBe(5);
     expect(service.status()).toBe('ready');
   });
 
@@ -100,7 +115,7 @@ describe('BoardPrefetchService (RT_56 / RG_42)', () => {
     reconnections.update((n) => n + 1);
     TestBed.tick();
     await vi.waitFor(() => expect(service.status()).toBe('ready'));
-    expect(downloaded).toHaveLength(4);
+    expect(downloaded).toHaveLength(5);
   });
 
   it('une image en échec est sautée et laisse le téléchargement incomplet', async () => {
@@ -108,8 +123,8 @@ describe('BoardPrefetchService (RT_56 / RG_42)', () => {
 
     await service.start();
 
-    expect(downloaded).toEqual([PATHS[1], PATHS[2], PATHS[3]]);
-    expect(service.present()).toBe(3);
+    expect(downloaded).toEqual([PATHS[1], PATHS[2], PATHS[3], PATHS[4]]);
+    expect(service.present()).toBe(4);
     expect(service.status()).toBe('incomplete');
   });
 
@@ -127,7 +142,7 @@ describe('BoardPrefetchService (RT_56 / RG_42)', () => {
     expect(service.status()).toBe('awaiting-consent');
 
     await service.downloadNow();
-    expect(downloaded).toEqual([PATHS[0], PATHS[1], PATHS[3]]);
+    expect(downloaded).toEqual([PATHS[0], PATHS[1], PATHS[3], PATHS[4]]);
     expect(service.status()).toBe('ready');
   });
 

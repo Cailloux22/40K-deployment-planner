@@ -50,3 +50,14 @@ body {
   color: var(--app-text);
   background: var(--app-surface-page);
 }
+
+/**
+ * RG_48/RT_66 — la fenêtre « Missions primaires » est plein écran à toutes
+ * les largeurs : sans cela, `ion-modal` devient une boîte centrée de 600 px
+ * sur tablette, précisément là où la vue côte à côte doit occuper l'écran.
+ */
+ion-modal.missions-modal {
+  --width: 100%;
+  --height: 100%;
+  --border-radius: 0;
+}

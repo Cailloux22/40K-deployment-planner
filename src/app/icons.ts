@@ -11,6 +11,7 @@ import {
   cloudOfflineOutline,
   cloudUploadOutline,
   documentAttachOutline,
+  documentTextOutline,
   downloadOutline,
   ellipsisVertical,
   expandOutline,
@@ -51,6 +52,8 @@ export function registerIcons(): void {
     'cloud-offline-outline': cloudOfflineOutline,
     'cloud-upload-outline': cloudUploadOutline,
     'document-attach-outline': documentAttachOutline,
+    // RT_66: bouton « Missions » (choix du plateau, placement, « Consulter »).
+    'document-text-outline': documentTextOutline,
     'download-outline': downloadOutline,
     'ellipsis-vertical': ellipsisVertical,
     'expand-outline': expandOutline,

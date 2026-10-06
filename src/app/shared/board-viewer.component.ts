@@ -1,11 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   EventEmitter,
   Input,
   Output,
-  ViewChild,
   computed,
   inject,
   signal,
@@ -13,6 +11,7 @@ import {
 
 import { normalizeGameplanNote } from '../deployment/gameplan-note';
 import { GameplanNoteService } from './gameplan-note.service';
+import { MissionsService } from './missions.service';
 
 import { ArmyList, Placement } from '../models/domain.models';
 import { BaseShape, BaseShapeKind, Board, BoardVariant } from '../models/referential.models';
@@ -36,10 +35,10 @@ interface PlacementView {
  * - « Consulter », variante `no-measurements`, avec les placements existants
  *   superposés en lecture seule.
  *
- * Décision technique (RT_16, autrefois ouverte) : le pan/zoom est implémenté
- * ici, sur les évènements Pointer et une transformation CSS, sans librairie
- * tierce. Le geste de pincement pilote le zoom, un doigt déplace l'image ; un
- * bouton de fermeture est affiché en permanence en haut à gauche.
+ * Le pan/zoom (RT_16) est celui de `app-pan-zoom`, partagé avec la fenêtre
+ * des missions primaires (RT_66) ; le pincement pilote le zoom, un doigt
+ * déplace l'image. Un bouton de fermeture est affiché en permanence en haut à
+ * gauche.
  *
  * Ce composant est distinct de l'éditeur de placement (RT_03), qui reste dédié
  * à la saisie par drag-and-drop et n'expose aucun geste de zoom (RG_17).
@@ -62,103 +61,111 @@ interface PlacementView {
         <ion-icon name="close" slot="icon-only"></ion-icon>
       </ion-button>
 
-      <!-- RG_46/RT_62: note de plan de jeu en lecture seule, en haut à droite,
-           hors de la surface zoomée ; absente quand il n'y a pas de note. -->
-      @if (hasNote()) {
-        <ion-button
-          class="note"
-          fill="solid"
-          color="dark"
-          shape="round"
-          aria-label="Lire le plan de jeu"
-          (click)="openNote()"
-        >
-          <ion-icon name="clipboard" slot="icon-only"></ion-icon>
-        </ion-button>
-      }
+      <div class="corner-actions">
+        <!-- RG_48/RT_66: missions primaires du couple, à gauche du plan de jeu ;
+             seule la vue « Consulter » reçoit le couple. -->
+        @if (missionPair) {
+          <ion-button
+            class="corner"
+            fill="solid"
+            color="dark"
+            shape="round"
+            aria-label="Voir les missions primaires"
+            (click)="openMissions()"
+          >
+            <ion-icon name="document-text-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        }
+
+        <!-- RG_46/RT_62: note de plan de jeu en lecture seule, en haut à droite,
+             hors de la surface zoomée ; absente quand il n'y a pas de note. -->
+        @if (hasNote()) {
+          <ion-button
+            class="corner"
+            fill="solid"
+            color="dark"
+            shape="round"
+            aria-label="Lire le plan de jeu"
+            (click)="openNote()"
+          >
+            <ion-icon name="clipboard" slot="icon-only"></ion-icon>
+          </ion-button>
+        }
+      </div>
 
       @if (title) {
         <div class="title">{{ title }}</div>
       }
 
-      <div
-        #surface
-        class="surface"
-        (pointerdown)="onPointerDown($event)"
-        (pointermove)="onPointerMove($event)"
-        (pointerup)="onPointerUp($event)"
-        (pointercancel)="onPointerUp($event)"
-        (wheel)="onWheel($event)"
-      >
-        <div class="stage" [style.transform]="transform()">
-          @if (board) {
-            <img
-              class="board"
-              [src]="board | boardImage: variant | async"
-              [alt]="title || 'Plateau'"
-              draggable="false"
-              (load)="onImageLoad()"
-            />
+      @if (board) {
+        <app-pan-zoom class="surface" [contentWidth]="board.width" [contentHeight]="board.height">
+          <img
+            class="board"
+            [src]="board | boardImage: variant | async"
+            [alt]="title || 'Plateau'"
+            [style.width.px]="board.width"
+            [style.height.px]="board.height"
+            draggable="false"
+          />
 
-            <!-- RT_16: placements superposés en lecture seule (aucun geste
-                 de déplacement n'est branché ici). -->
-            @if (placementViews().length) {
-              <svg
-                class="overlay"
-                [attr.viewBox]="'0 0 ' + board.width + ' ' + board.height"
-                [attr.width]="board.width"
-                [attr.height]="board.height"
-                aria-hidden="true"
-              >
-                @for (view of placementViews(); track view.placement.idModele) {
-                  <!-- RT_26: un gabarit rectangulaire se rend comme tel. -->
-                  @if (view.shapeKind === 'rectangle') {
-                    <rect
-                      [attr.x]="view.placement.x - view.rx"
-                      [attr.y]="view.placement.y - view.ry"
-                      [attr.width]="view.rx * 2"
-                      [attr.height]="view.ry * 2"
-                      [attr.fill]="view.color"
-                      fill-opacity="0.85"
-                      stroke="var(--app-token-stroke)"
-                      stroke-width="2"
-                      [attr.transform]="
-                        'rotate(' +
-                        view.placement.rotation +
-                        ' ' +
-                        view.placement.x +
-                        ' ' +
-                        view.placement.y +
-                        ')'
-                      "
-                    />
-                  } @else {
-                    <ellipse
-                      [attr.cx]="view.placement.x"
-                      [attr.cy]="view.placement.y"
-                      [attr.rx]="view.rx"
-                      [attr.ry]="view.ry"
-                      [attr.fill]="view.color"
-                      fill-opacity="0.85"
-                      stroke="var(--app-token-stroke)"
-                      stroke-width="2"
-                      [attr.transform]="
-                        'rotate(' +
-                        view.placement.rotation +
-                        ' ' +
-                        view.placement.x +
-                        ' ' +
-                        view.placement.y +
-                        ')'
-                      "
-                    />
-                  }
+          <!-- RT_16: placements superposés en lecture seule (aucun geste
+               de déplacement n'est branché ici). -->
+          @if (placementViews().length) {
+            <svg
+              class="overlay"
+              [attr.viewBox]="'0 0 ' + board.width + ' ' + board.height"
+              [attr.width]="board.width"
+              [attr.height]="board.height"
+              aria-hidden="true"
+            >
+              @for (view of placementViews(); track view.placement.idModele) {
+                <!-- RT_26: un gabarit rectangulaire se rend comme tel. -->
+                @if (view.shapeKind === 'rectangle') {
+                  <rect
+                    [attr.x]="view.placement.x - view.rx"
+                    [attr.y]="view.placement.y - view.ry"
+                    [attr.width]="view.rx * 2"
+                    [attr.height]="view.ry * 2"
+                    [attr.fill]="view.color"
+                    fill-opacity="0.85"
+                    stroke="var(--app-token-stroke)"
+                    stroke-width="2"
+                    [attr.transform]="
+                      'rotate(' +
+                      view.placement.rotation +
+                      ' ' +
+                      view.placement.x +
+                      ' ' +
+                      view.placement.y +
+                      ')'
+                    "
+                  />
+                } @else {
+                  <ellipse
+                    [attr.cx]="view.placement.x"
+                    [attr.cy]="view.placement.y"
+                    [attr.rx]="view.rx"
+                    [attr.ry]="view.ry"
+                    [attr.fill]="view.color"
+                    fill-opacity="0.85"
+                    stroke="var(--app-token-stroke)"
+                    stroke-width="2"
+                    [attr.transform]="
+                      'rotate(' +
+                      view.placement.rotation +
+                      ' ' +
+                      view.placement.x +
+                      ' ' +
+                      view.placement.y +
+                      ')'
+                    "
+                  />
                 }
-              </svg>
-            }
+              }
+            </svg>
           }
-        </div>
-      </div>
+        </app-pan-zoom>
+      }
 
       <div class="hint">Pincez pour zoomer · glissez pour déplacer</div>
     </div>
@@ -174,28 +181,8 @@ interface PlacementView {
         overflow: hidden;
       }
       .surface {
-        /* RT_16: la surface doit garder la taille de l'écran. Sans min-width/
-           min-height à 0, l'item flex s'élargit à la taille native de l'image
-           et fitToScreen() la centre alors hors du viewport. */
+        /* RT_16: la surface garde la taille de l'écran. */
         flex: 1;
-        position: relative;
-        min-width: 0;
-        min-height: 0;
-        overflow: hidden;
-        /* Le composant gère lui-même pincement et déplacement : on neutralise
-           les gestes natifs du navigateur sur cette zone. */
-        touch-action: none;
-        overscroll-behavior: contain;
-        cursor: grab;
-      }
-      .stage {
-        /* Le placement est entièrement porté par la transformation (offset +
-           échelle) : la scène part du coin haut-gauche de la surface. */
-        position: absolute;
-        top: 0;
-        left: 0;
-        transform-origin: 0 0;
-        will-change: transform;
       }
       .board {
         display: block;
@@ -215,11 +202,15 @@ interface PlacementView {
         z-index: 2;
         margin: 0;
       }
-      .note {
+      .corner-actions {
         position: absolute;
         top: max(12px, env(safe-area-inset-top));
         right: 12px;
         z-index: 2;
+        display: flex;
+        gap: var(--app-touch-gap);
+      }
+      .corner {
         margin: 0;
       }
       .title {
@@ -249,8 +240,6 @@ interface PlacementView {
   ],
 })
 export class BoardViewerComponent {
-  @ViewChild('surface') surface?: ElementRef<HTMLElement>;
-
   @Input() board?: Board;
   /** RT_16: `with-measurements` pour le plateau seul, `no-measurements` sinon. */
   @Input() variant: BoardVariant = 'with-measurements';
@@ -269,7 +258,16 @@ export class BoardViewerComponent {
     this.noteText.set(normalizeGameplanNote(value));
   }
 
+  /**
+   * RG_48/RT_66: couple de dispositions du déploiement consulté. Le
+   * visualiseur « plateau seul » n'en reçoit jamais : l'écran de choix du
+   * plateau porte déjà le bouton.
+   */
+  @Input() missionPair?: { readonly playerDispositionId: string; readonly opponentDispositionId: string };
+
   @Output() readonly closed = new EventEmitter<void>();
+
+  private readonly missions = inject(MissionsService);
 
   private readonly notes = inject(GameplanNoteService);
   private readonly noteText = signal('');
@@ -280,17 +278,12 @@ export class BoardViewerComponent {
     void this.notes.view(this.noteText());
   }
 
-  private readonly scale = signal(1);
-  private readonly offset = signal({ x: 0, y: 0 });
-  private readonly pointers = new Map<number, { x: number; y: number }>();
-  private pinchStart: { distance: number; scale: number } | null = null;
-  private panStart: { x: number; y: number; offsetX: number; offsetY: number } | null = null;
-  private fitted = false;
-
-  readonly transform = computed(() => {
-    const { x, y } = this.offset();
-    return `translate(${x}px, ${y}px) scale(${this.scale()})`;
-  });
+  /** RG_48: le zoom et le cadrage du visualiseur restent intacts. */
+  openMissions(): void {
+    const pair = this.missionPair;
+    if (!pair) return;
+    void this.missions.open({ ...pair, board: this.board, boardLabel: this.title });
+  }
 
   /**
    * Placements rendus en lecture seule. Les coordonnées sont celles du repère
@@ -339,129 +332,5 @@ export class BoardViewerComponent {
     const horizontal = board.playArea.width / (44 * MM_PER_INCH);
     const vertical = board.playArea.height / (60 * MM_PER_INCH);
     return (horizontal + vertical) / 2;
-  }
-
-  /** Ajuste l'image à l'écran à la première ouverture. */
-  fitToScreen(): void {
-    const host = this.surface?.nativeElement;
-    const board = this.board;
-    if (!host || !board) return;
-    const scale = Math.min(host.clientWidth / board.width, host.clientHeight / board.height);
-    this.scale.set(scale);
-    this.offset.set({
-      x: (host.clientWidth - board.width * scale) / 2,
-      y: (host.clientHeight - board.height * scale) / 2,
-    });
-    this.fitted = true;
-  }
-
-  onImageLoad(): void {
-    if (!this.fitted) this.fitToScreen();
-  }
-
-  onPointerDown(event: PointerEvent): void {
-    if (!this.fitted) this.fitToScreen();
-    try {
-      // Confort de saisie seulement : un échec de capture ne doit pas
-      // empêcher le pan/zoom, géré par les écouteurs de la surface.
-      (event.target as Element).setPointerCapture?.(event.pointerId);
-    } catch {
-      /* pointeur non capturable */
-    }
-    this.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-
-    if (this.pointers.size === 1) {
-      const offset = this.offset();
-      this.panStart = {
-        x: event.clientX,
-        y: event.clientY,
-        offsetX: offset.x,
-        offsetY: offset.y,
-      };
-    } else if (this.pointers.size === 2) {
-      this.panStart = null;
-      this.pinchStart = { distance: this.pointerDistance(), scale: this.scale() };
-    }
-  }
-
-  onPointerMove(event: PointerEvent): void {
-    if (!this.pointers.has(event.pointerId)) return;
-    this.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-
-    // Deux doigts : pincement, centré sur le milieu du geste pour que le point
-    // regardé reste sous les doigts.
-    if (this.pointers.size >= 2 && this.pinchStart) {
-      const distance = this.pointerDistance();
-      if (distance > 0) {
-        const target = this.clampScale((this.pinchStart.scale * distance) / this.pinchStart.distance);
-        this.zoomAround(this.pointerMidpoint(), target);
-      }
-      return;
-    }
-
-    if (this.panStart) {
-      this.offset.set({
-        x: this.panStart.offsetX + (event.clientX - this.panStart.x),
-        y: this.panStart.offsetY + (event.clientY - this.panStart.y),
-      });
-    }
-  }
-
-  onPointerUp(event: PointerEvent): void {
-    this.pointers.delete(event.pointerId);
-    if (this.pointers.size < 2) this.pinchStart = null;
-    if (this.pointers.size === 0) {
-      this.panStart = null;
-      return;
-    }
-    // Un doigt reste posé après un pincement : il reprend le déplacement.
-    const [remaining] = [...this.pointers.values()];
-    const offset = this.offset();
-    this.panStart = {
-      x: remaining.x,
-      y: remaining.y,
-      offsetX: offset.x,
-      offsetY: offset.y,
-    };
-  }
-
-  /** Molette / pavé tactile : équivalent desktop du pincement. */
-  onWheel(event: WheelEvent): void {
-    if (!this.fitted) this.fitToScreen();
-    event.preventDefault();
-    const factor = Math.exp(-event.deltaY / 400);
-    this.zoomAround({ x: event.clientX, y: event.clientY }, this.clampScale(this.scale() * factor));
-  }
-
-  private clampScale(value: number): number {
-    return Math.min(Math.max(value, 0.1), 8);
-  }
-
-  /** Zoom conservant le point `center` (coordonnées écran) sous les doigts. */
-  private zoomAround(center: { x: number; y: number }, nextScale: number): void {
-    const host = this.surface?.nativeElement;
-    if (!host) return;
-    const rect = host.getBoundingClientRect();
-    const localX = center.x - rect.left;
-    const localY = center.y - rect.top;
-    const current = this.scale();
-    const offset = this.offset();
-    const ratio = nextScale / current;
-    this.offset.set({
-      x: localX - (localX - offset.x) * ratio,
-      y: localY - (localY - offset.y) * ratio,
-    });
-    this.scale.set(nextScale);
-  }
-
-  private pointerDistance(): number {
-    const [a, b] = [...this.pointers.values()];
-    if (!a || !b) return 0;
-    return Math.hypot(a.x - b.x, a.y - b.y);
-  }
-
-  private pointerMidpoint(): { x: number; y: number } {
-    const [a, b] = [...this.pointers.values()];
-    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   }
 }

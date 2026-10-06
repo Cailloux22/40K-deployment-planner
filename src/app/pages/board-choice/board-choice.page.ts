@@ -17,6 +17,7 @@ import { hasGameplanNote } from '../../deployment/gameplan-note';
 import { ArmyList, BoardDeploymentStatus, Deployment } from '../../models/domain.models';
 import { BaseShape, Board, ForceDisposition } from '../../models/referential.models';
 import { ReferentialService } from '../../referentials/referential.service';
+import { MissionsService } from '../../shared/missions.service';
 
 interface BoardSlide {
   readonly board: Board;
@@ -55,6 +56,7 @@ export class BoardChoicePage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly alerts = inject(AlertController);
+  private readonly missions = inject(MissionsService);
 
   @ViewChild('pager') pager?: ElementRef<HTMLElement>;
 
@@ -65,6 +67,9 @@ export class BoardChoicePage implements OnInit {
   readonly playerDisposition = signal<ForceDisposition | undefined>(undefined);
   readonly opponentDisposition = signal<ForceDisposition | undefined>(undefined);
   readonly shapes = signal<ReadonlyMap<string, BaseShape>>(new Map());
+
+  /** RG_48: le bouton « Missions » n'est masqué que si aucune carte du couple n'est connue. */
+  readonly missionsAvailable = signal(false);
 
   /** Index du plateau visible dans le pager (RG_14). */
   readonly activeIndex = signal(0);
@@ -123,6 +128,17 @@ export class BoardChoicePage implements OnInit {
     return this.activeSlide()?.deployment?.note ?? '';
   });
 
+  /**
+   * RG_48: le couple n'est transmis qu'à la vue « Consulter » — le « plateau
+   * seul » s'ouvre depuis cet écran, qui porte déjà le bouton.
+   */
+  readonly viewerMissionPair = computed(() => {
+    const viewer = this.viewer();
+    const list = this.list();
+    if (!viewer || viewer.variant !== 'no-measurements' || !list || !this.missionsAvailable()) return undefined;
+    return { playerDispositionId: list.forceDispositionId, opponentDispositionId: this.opponentId() };
+  });
+
   async ngOnInit(): Promise<void> {
     this.listId.set(this.route.snapshot.paramMap.get('listId') ?? '');
     this.opponentId.set(this.route.snapshot.paramMap.get('opponentId') ?? '');
@@ -147,6 +163,7 @@ export class BoardChoicePage implements OnInit {
     this.opponentDisposition.set(opponent);
 
     this.boards.set(await this.referential.boardsForPair(list.forceDispositionId, opponent.id));
+    this.missionsAvailable.set(await this.missions.available(list.forceDispositionId, opponent.id));
 
     const shapes = await this.referential.allBaseShapes();
     this.shapes.set(new Map(shapes.map((shape) => [shape.id, shape])));
@@ -184,6 +201,23 @@ export class BoardChoicePage implements OnInit {
     const slide = this.activeSlide();
     if (!slide || !this.canConsult()) return;
     this.viewer.set({ variant: 'no-measurements', board: slide.board });
+  }
+
+  /**
+   * RG_48: missions primaires du couple. La colonne « Plateau » de la vue côte
+   * à côte montre le plateau affiché par le pager ; à la fermeture, le pager
+   * et les statuts sont laissés tels quels.
+   */
+  openMissions(): void {
+    const list = this.list();
+    if (!list) return;
+    const board = this.activeSlide()?.board;
+    void this.missions.open({
+      playerDispositionId: list.forceDispositionId,
+      opponentDispositionId: this.opponentId(),
+      board,
+      boardLabel: board ? this.boardLabel(board) : undefined,
+    });
   }
 
   closeViewer(): void {

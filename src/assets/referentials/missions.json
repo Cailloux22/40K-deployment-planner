@@ -1,0 +1,260 @@
+{
+  "source": {
+    "name": "gdmissions.app",
+    "attribution": "Primary mission cards (GDM 2026) via gdmissions.app",
+    "url": "https://gdmissions.app/11th/primary-missions"
+  },
+  "generatedAt": "2026-10-05T14:48:58.923Z",
+  "missions": [
+    {
+      "id": "take-and-hold/battlefield-dominance",
+      "name": "Battlefield Dominance",
+      "disposition": "take-and-hold",
+      "opponent": "take-and-hold",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/take-and-hold/battlefield-dominance.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/take-and-hold/battlefield-dominance.png"
+    },
+    {
+      "id": "take-and-hold/determined-acquisition",
+      "name": "Determined Acquisition",
+      "disposition": "take-and-hold",
+      "opponent": "disruption",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/take-and-hold/determined-acquisition.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/take-and-hold/determined-acquisition.png"
+    },
+    {
+      "id": "take-and-hold/immovable-object",
+      "name": "Immovable Object",
+      "disposition": "take-and-hold",
+      "opponent": "purge-the-foe",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/take-and-hold/immovable-object.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/take-and-hold/immovable-object.png"
+    },
+    {
+      "id": "take-and-hold/inescapable-dominion",
+      "name": "Inescapable Dominion",
+      "disposition": "take-and-hold",
+      "opponent": "priority-assets",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/take-and-hold/inescapable-dominion.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/take-and-hold/inescapable-dominion.png"
+    },
+    {
+      "id": "take-and-hold/purge-and-secure",
+      "name": "Purge and Secure",
+      "disposition": "take-and-hold",
+      "opponent": "reconnaissance",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/take-and-hold/purge-and-secure.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/take-and-hold/purge-and-secure.png"
+    },
+    {
+      "id": "purge-the-foe/consecrate",
+      "name": "Consecrate",
+      "disposition": "purge-the-foe",
+      "opponent": "reconnaissance",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/purge-the-foe/consecrate.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/purge-the-foe/consecrate.png"
+    },
+    {
+      "id": "purge-the-foe/destroyers-wrath",
+      "name": "Destroyer's Wrath",
+      "disposition": "purge-the-foe",
+      "opponent": "priority-assets",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/purge-the-foe/destroyers-wrath.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/purge-the-foe/destroyers-wrath.png"
+    },
+    {
+      "id": "purge-the-foe/meatgrinder",
+      "name": "Meatgrinder",
+      "disposition": "purge-the-foe",
+      "opponent": "purge-the-foe",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/purge-the-foe/meatgrinder.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/purge-the-foe/meatgrinder.png"
+    },
+    {
+      "id": "purge-the-foe/punishment",
+      "name": "Punishment",
+      "disposition": "purge-the-foe",
+      "opponent": "disruption",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/purge-the-foe/punishment.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/purge-the-foe/punishment.png"
+    },
+    {
+      "id": "purge-the-foe/unstoppable-force",
+      "name": "Unstoppable Force",
+      "disposition": "purge-the-foe",
+      "opponent": "take-and-hold",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/purge-the-foe/unstoppable-force.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/purge-the-foe/unstoppable-force.png"
+    },
+    {
+      "id": "reconnaissance/gather-intel",
+      "name": "Gather Intel",
+      "disposition": "reconnaissance",
+      "opponent": "reconnaissance",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/reconnaissance/gather-intel.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/gather-intel.png"
+    },
+    {
+      "id": "reconnaissance/reconnaissance-sweep",
+      "name": "Reconnaissance Sweep",
+      "disposition": "reconnaissance",
+      "opponent": "take-and-hold",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/reconnaissance/reconnaissance-sweep.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/reconnaissance-sweep.png"
+    },
+    {
+      "id": "reconnaissance/search-and-scour",
+      "name": "Search and Scour",
+      "disposition": "reconnaissance",
+      "opponent": "priority-assets",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/reconnaissance/search-and-scour.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/search-and-scour.png"
+    },
+    {
+      "id": "reconnaissance/surveil-the-foe",
+      "name": "Surveil the Foe",
+      "disposition": "reconnaissance",
+      "opponent": "disruption",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/reconnaissance/surveil-the-foe.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/surveil-the-foe.png"
+    },
+    {
+      "id": "reconnaissance/triangulation",
+      "name": "Triangulation",
+      "disposition": "reconnaissance",
+      "opponent": "purge-the-foe",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/reconnaissance/triangulation.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/triangulation.png"
+    },
+    {
+      "id": "priority-assets/extract-relic",
+      "name": "Extract Relic",
+      "disposition": "priority-assets",
+      "opponent": "disruption",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/priority-assets/extract-relic.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/extract-relic.png"
+    },
+    {
+      "id": "priority-assets/sabotage",
+      "name": "Sabotage",
+      "disposition": "priority-assets",
+      "opponent": "priority-assets",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/priority-assets/sabotage.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/sabotage.png"
+    },
+    {
+      "id": "priority-assets/secure-asset",
+      "name": "Secure Asset",
+      "disposition": "priority-assets",
+      "opponent": "take-and-hold",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/priority-assets/secure-asset.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/secure-asset.png"
+    },
+    {
+      "id": "priority-assets/vanguard-operation",
+      "name": "Vanguard Operation",
+      "disposition": "priority-assets",
+      "opponent": "reconnaissance",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/priority-assets/vanguard-operation.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/vanguard-operation.png"
+    },
+    {
+      "id": "priority-assets/vital-link",
+      "name": "Vital Link",
+      "disposition": "priority-assets",
+      "opponent": "purge-the-foe",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/priority-assets/vital-link.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/vital-link.png"
+    },
+    {
+      "id": "disruption/death-trap",
+      "name": "Death Trap",
+      "disposition": "disruption",
+      "opponent": "take-and-hold",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/disruption/death-trap.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/death-trap.png"
+    },
+    {
+      "id": "disruption/delaying-action",
+      "name": "Delaying Action",
+      "disposition": "disruption",
+      "opponent": "purge-the-foe",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/disruption/delaying-action.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/delaying-action.png"
+    },
+    {
+      "id": "disruption/locate-and-deny",
+      "name": "Locate and Deny",
+      "disposition": "disruption",
+      "opponent": "priority-assets",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/disruption/locate-and-deny.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/locate-and-deny.png"
+    },
+    {
+      "id": "disruption/outmanoeuvre",
+      "name": "Outmanoeuvre",
+      "disposition": "disruption",
+      "opponent": "disruption",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/disruption/outmanoeuvre.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/outmanoeuvre.png"
+    },
+    {
+      "id": "disruption/smoke-and-mirrors",
+      "name": "Smoke and Mirrors",
+      "disposition": "disruption",
+      "opponent": "reconnaissance",
+      "width": 1653,
+      "height": 2833,
+      "asset": "assets/referentials/missions/disruption/smoke-and-mirrors.png",
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/smoke-and-mirrors.png"
+    }
+  ]
+}

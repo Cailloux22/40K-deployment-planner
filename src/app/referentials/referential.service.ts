@@ -10,6 +10,8 @@ import {
   BoardTerrain,
   DispositionReferential,
   ForceDisposition,
+  MissionReferential,
+  PairMissions,
   ReferentialSource,
   TerrainReferential,
   UseModelFootprintReferential,
@@ -20,6 +22,7 @@ import {
   matchBaseVariant,
   normalizeName,
 } from './base-matching';
+import { missionsForPair } from './missions';
 
 /**
  * Accès aux référentiels statiques embarqués (RT_02, RT_12, RT_23).
@@ -39,6 +42,7 @@ export class ReferentialService {
   private boards?: Promise<BoardReferential>;
   private dispositions?: Promise<DispositionReferential>;
   private terrains?: Promise<TerrainReferential>;
+  private missions?: Promise<MissionReferential>;
 
   private load<T>(file: string): Promise<T> {
     return firstValueFrom(this.http.get<T>(`assets/referentials/${file}`));
@@ -239,6 +243,22 @@ export class ReferentialService {
   }
 
   // -------------------------------------------------------------------------
+  // RT_64 — missions primaires
+  // -------------------------------------------------------------------------
+
+  missionReferential(): Promise<MissionReferential> {
+    return (this.missions ??= this.load<MissionReferential>('missions.json'));
+  }
+
+  /** RG_48: mission du joueur et mission adverse du couple ordonné. */
+  async missionsForPair(
+    playerDispositionId: string,
+    opponentDispositionId: string,
+  ): Promise<PairMissions> {
+    return missionsForPair(await this.missionReferential(), playerDispositionId, opponentDispositionId);
+  }
+
+  // -------------------------------------------------------------------------
   // RT_20 — mentions des sources tierces
   // -------------------------------------------------------------------------
 
@@ -253,6 +273,9 @@ export class ReferentialService {
     const referentials = await Promise.all([
       this.baseReferential().then((r) => r.source),
       this.boardReferential().then((r) => r.source),
+      // RG_49/RT_64: crédit des cartes de mission, quelle que soit la
+      // provenance de l'image affichée.
+      this.missionReferential().then((r) => r.source),
     ]);
     // Une même source pourrait alimenter deux référentiels : on ne la cite
     // qu'une fois.

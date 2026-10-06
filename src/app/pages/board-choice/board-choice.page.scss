@@ -50,6 +50,20 @@
   }
 }
 
+/* RG_48: bouton « Missions », rattaché au bandeau des dispositions. */
+.missions {
+  display: flex;
+  justify-content: center;
+  padding: 0 16px 10px;
+  background: var(--app-surface-raised);
+
+  // RT_31: même remontée de la surface tactile que les actions de statut.
+  ion-button {
+    margin: 0;
+    height: var(--app-touch-min);
+  }
+}
+
 /* RG_14: bloc « Statut » unique, actions immédiatement à sa droite. */
 .status-bar {
   display: flex;
