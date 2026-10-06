@@ -1098,7 +1098,7 @@ Tant que ce téléchargement n'est pas terminé, un plateau **jamais affiché** 
 **État visible.** Le bloc « Application » des Réglages ([[RG_18]]) indique :
 
 - « Prêt pour le hors-ligne » une fois tous les plateaux téléchargés ;
-- sinon « Téléchargement des plateaux et missions : n / 127 » (90 images de plateau, puis les 25 rectos et 12 versos des cartes de mission de [[RG_49]]), avec la mention « en pause » hors-ligne.
+- sinon « Téléchargement des plateaux et missions : n / 126 » (90 images de plateau, puis les 25 rectos et 11 versos des cartes de mission de [[RG_49]]), avec la mention « en pause » hors-ligne.
 
 Le téléchargement reprend seul au retour du réseau ou au lancement suivant. Si l'appareil signale une connexion en mode économie de données, il n'est pas lancé automatiquement : le bloc propose alors « Télécharger les plateaux maintenant ».
 
@@ -1320,7 +1320,7 @@ Il est présenté dans la variante **avec repères de mesure** et **sans les pla
 
 **Couple miroir.** Les deux cartes étant identiques, la fenêtre n'affiche **pas de sélecteur** : une seule carte, titrée de son nom, accompagnée de la mention « Mission miroir : les deux joueurs jouent cette même carte ».
 
-**Recto et verso.** Certaines cartes portent au dos une règle complémentaire, à laquelle leur recto renvoie : par exemple l'action « Triangulate » de *Triangulation*. Au 2026-10-06, 12 cartes sur 25 sont dans ce cas ([[RT_64]]). La source imprime dans l'image un repère « 1/2 » ; ce n'est pas un contrôle de l'application. Pour chacune de ces cartes, la fenêtre propose un bouton qui **retourne la carte** :
+**Recto et verso.** Certaines cartes portent au dos une règle complémentaire, à laquelle leur recto renvoie : par exemple l'action « Triangulate » de *Triangulation*. Au 2026-10-06, 11 cartes sur 25 sont dans ce cas ([[RT_64]]). La source imprime dans l'image un repère « 1/2 » ; ce n'est pas un contrôle de l'application. Pour chacune de ces cartes, la fenêtre propose un bouton qui **retourne la carte** :
 
 - **Présence.** Le bouton n'existe que pour une carte dont le référentiel connaît le verso ; une carte sans verso n'en porte pas, plutôt qu'un bouton désactivé qui laisserait croire à un verso manquant.
 - **Emplacement.** Il est placé **hors de l'image**, au-dessus de la carte, pour ne recouvrir aucun contenu imprimé ([[RT_31]]) : sous le sélecteur d'onglets (ou sous la mention miroir) en présentation à onglets, dans l'en-tête de la colonne de la carte en vue côte à côte. Chaque colonne de carte a le sien ; la colonne « Plateau » n'en a pas.
@@ -1337,7 +1337,7 @@ Chaque carte garde la face choisie **tant que la fenêtre est ouverte**. Changer
 
 Les cartes de mission suivent la même politique que les images de plateau ([[RG_23]]) : la version affichée est **la plus récente obtenue en ligne** sur cet appareil, conservée pour le hors-ligne, et à défaut la version **livrée avec l'application**. Aucune carte n'est jamais bloquée faute de réseau dans l'application empaquetée.
 
-Dans le navigateur ([[EX_12]]), les cartes rejoignent le **téléchargement en arrière-plan** de [[RG_42]] : elles n'y sont pas exigées à la première ouverture, et tant que ce téléchargement n'est pas terminé, une carte jamais affichée sur cet appareil peut être indisponible hors-ligne. Son image est alors remplacée par le message « Mission non disponible hors-ligne », jamais par une image cassée, et l'onglet reste consultable (nom de la carte et disposition affichés). L'état visible du bloc « Application » des Réglages compte les cartes avec les plateaux (« Téléchargement des plateaux et missions : n / 127 » au 2026-10-06 : 90 images de plateau, 25 rectos et 12 versos).
+Dans le navigateur ([[EX_12]]), les cartes rejoignent le **téléchargement en arrière-plan** de [[RG_42]] : elles n'y sont pas exigées à la première ouverture, et tant que ce téléchargement n'est pas terminé, une carte jamais affichée sur cet appareil peut être indisponible hors-ligne. Son image est alors remplacée par le message « Mission non disponible hors-ligne », jamais par une image cassée, et l'onglet reste consultable (nom de la carte et disposition affichés). L'état visible du bloc « Application » des Réglages compte les cartes avec les plateaux (« Téléchargement des plateaux et missions : n / 126 » au 2026-10-06 : 90 images de plateau, 25 rectos et 11 versos).
 
 **Verso.** Le verso d'une carte suit la même politique que son recto, image par image : il peut être à jour en ligne, en cache ou embarqué indépendamment du recto. Un verso indisponible hors-ligne ne retire pas le bouton de [[RG_48]] : la face retournée affiche « Mission non disponible hors-ligne », et un nouvel appui ramène au recto.
 
@@ -1347,14 +1347,14 @@ Dans le navigateur ([[EX_12]]), les cartes rejoignent le **téléchargement en a
 
 **Source.** Les cartes sont les images statiques publiées par [gdmissions.app](https://gdmissions.app/11th/primary-missions) (pack de missions « GDM 2026 », 11ᵉ édition), sous `/assets/11th/primary-missions/{disposition}/{carte}.png`. La page de chaque carte, `/11th/primary-missions/{disposition}/{carte}`, indique la disposition adverse à laquelle elle s'applique (« Opponent · {disposition} ») ou la mention « Mirror · {disposition} » pour la carte miroir. Le segment `{disposition}` reprend **exactement** les 5 identifiants de [[RT_23]] (`take-and-hold`, `purge-the-foe`, `reconnaissance`, `priority-assets`, `disruption`), qui servent donc de clé de rapprochement sans table de correspondance. Constaté au 2026-10-05 : 25 cartes, 5 par disposition, toutes en PNG 1653 × 2833 (environ 200 ko l'une, 5 Mo au total), servies avec `Access-Control-Allow-Origin: *`.
 
-**Verso.** Le verso d'une carte est publié sous `/assets/11th/primary-missions/{disposition}/{carte}-back.png`. La page de la carte le **déclare** dans ses données (`"back":"/assets/…-back.png"`, et `"$undefined"` pour une carte sans verso) ; c'est cette déclaration qui fait foi, pas la présence d'un fichier à l'adresse attendue. Constaté au 2026-10-06 : 12 cartes ont un verso, toutes en PNG 1653 × 2833 comme leur recto (environ 2,1 Mo au total) :
+**Verso.** Le verso d'une carte est publié sous `/assets/11th/primary-missions/{disposition}/{carte}-back.png`. La page de la carte le **déclare** dans ses données (`"back":"/assets/…-back.png"`, et `"$undefined"` pour une carte sans verso) ; c'est cette déclaration qui fait foi, pas la présence d'un fichier à l'adresse attendue. Constaté au 2026-10-06 : 11 cartes ont un verso, toutes en PNG 1653 × 2833 comme leur recto (environ 1,9 Mo au total) :
 
 - Reconnaissance : *Gather Intel*, *Surveil the Foe*, *Triangulation* ;
 - Priority Assets : *Extract Relic*, *Sabotage*, *Secure Asset*, *Vanguard Operation*, *Vital Link* ;
 - Disruption : *Death Trap*, *Locate and Deny*, *Smoke and Mirrors* ;
 - aucune carte de Take and Hold ni de Purge the Foe.
 
-Le verso est déclaré pour exactement ces 12 cartes, et l'URL déclarée suit dans chaque cas la convention `{carte}-back.png`.
+Le verso est déclaré pour exactement ces 11 cartes, et l'URL déclarée suit dans chaque cas la convention `{carte}-back.png`.
 
 **Matrice constatée au 2026-10-05** (ligne : disposition du joueur, donc jeu de la carte ; colonne : disposition adverse) :
 
