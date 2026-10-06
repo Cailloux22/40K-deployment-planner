@@ -683,7 +683,7 @@ Un backend nodejs expose une API de synchronisation par différence (delta) des 
 
 ### RT_10 — Déclenchement de la synchronisation
 
-La synchronisation se déclenche à la reprise du réseau et/ou au retour au premier plan de l'application, jamais de façon bloquante pour l'interaction en cours, conformément à RG_09.
+La synchronisation se déclenche à la reprise du réseau et/ou au retour au premier plan de l'application, ainsi qu'à la sortie de l'écran de placement (quelle que soit la façon de le quitter : bouton retour de l'écran, retour système ou navigateur), une fois l'enregistrement en attente du déploiement écrit localement — pour que le déploiement qui vient d'être modifié parte vers le serveur sans attendre un autre déclencheur. Elle n'est jamais bloquante pour l'interaction en cours, conformément à RG_09 : la navigation hors de l'écran n'attend pas la passe.
 
 ### RT_20 — Génération de la liste de mentions tierces
 
