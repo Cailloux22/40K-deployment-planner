@@ -642,7 +642,7 @@ Aucune mesure ni calcul spécifique à chaque plateau n'est nécessaire au-delà
 
 Le joueur doit pouvoir associer un compte à ses données pour retrouver ses listes et déploiements sur un autre appareil (ex. bureau puis téléphone).
 
-Satisfait par : [[RG_10]], [[RG_11]], [[RG_18]], [[RG_19]], [[RG_50]], [[RG_51]], [[RG_52]], [[RG_53]], [[RG_54]], [[RT_09]], [[RT_10]], [[RT_20]], [[RT_21]], [[RT_67]], [[RT_68]], [[RT_69]], [[RT_70]], [[RT_71]]. Le contrat d'API est [openapi.yml](openapi.yml).
+Satisfait par : [[RG_10]], [[RG_11]], [[RG_18]], [[RG_19]], [[RG_50]], [[RG_51]], [[RG_52]], [[RG_53]], [[RG_54]], [[RT_09]], [[RT_10]], [[RT_20]], [[RT_21]], [[RT_67]], [[RT_68]], [[RT_69]], [[RT_70]], [[RT_71]], [[RT_72]]. Le contrat d'API est [openapi.yml](openapi.yml), le schéma de la base [schema.sql](schema.sql).
 
 ### RG_10 — Compte optionnel
 
@@ -774,6 +774,17 @@ Précise [[RT_09]] et [[RT_15]] ; le contrat est celui de [openapi.yml](openapi.
 - **Poussée découpée.** Au-delà de 200 enregistrements ou 5 Mo, le client découpe sa poussée en plusieurs requêtes, une liste et ses déploiements restant dans la même requête.
 - **Jeton trop ancien.** Le serveur conserve la trace des suppressions 90 jours. Au-delà, un pull reçoit `410` : le client refait un pull complet et supprime localement les enregistrements synchronisés que le compte n'a plus, sauf ceux modifiés localement, qui partent au push suivant.
 - **Idempotence.** Chaque poussée et chaque résolution de conflit porte une clé `Idempotency-Key`, réutilisée en cas de nouvelle tentative : une requête rejouée après une réponse perdue renvoie la réponse initiale au lieu de produire des conflits contre ses propres écritures.
+- **Précisions d'implémentation** (décidées par le porteur du produit à l'initialisation du serveur, le 2026-10-06) :
+  - une suppression d'un enregistrement déjà supprimé sur le serveur est acceptée sans effet ; une suppression **sans** jeton d'un enregistrement que le serveur porte encore est un conflit « supprimé ici, modifié ailleurs » ; une création dont l'identifiant existe déjà sur le serveur est un conflit « modifié des deux côtés » ;
+  - une écriture dont l'enregistrement n'existe plus sur le serveur (trace purgée, retour d'un `410`) est acceptée comme une création ; un déploiement dont la liste n'existe plus sur le serveur pour la même raison est rejeté (`UNKNOWN_LIST`) ;
+  - une suppression de liste qui laisse sur le serveur des déploiements de cette liste donne le conflit « liste supprimée ici », même si le jeton de la liste est aussi périmé ; les suppressions refusées de ses déploiements sont renvoyées comme conflits distincts ;
+  - « même plateau créé deux fois » ne compare qu'aux déploiements du triplet écrits après le `since` de la poussée et avant elle, par un autre appareil — deux créations du même triplet dans une même poussée ne se gênent pas ; s'il y en a plusieurs, le plus récent est présenté ;
+  - le `serverVersionToken` d'un conflit est la plus haute révision de son groupe — une liste et tous ses déploiements, ou un déploiement et sa liste. Une résolution est périmée dès que ce maximum a changé, y compris pour « garder la version serveur » ; le `409` porte le corps d'erreur commun, le client tire puis représente le conflit ;
+  - la date d'une suppression présentée dans un conflit est le `deletedAt` envoyé par l'appareil (colonne `client_deleted_at`, [[RT_70]]), à défaut la date serveur ;
+  - « garder la version serveur » d'un déploiement dont la liste a été supprimée renvoie à supprimer localement la liste et les déploiements de cette liste connus du serveur ; pour « même plateau créé deux fois », il renvoie le déploiement local comme supprimé et celui de l'autre appareil dans `relatedRecords` ;
+  - une poussée dont un élément est inexploitable (pas un objet, `id` qui n'est pas une chaîne, `resourceType` inconnu) est refusée en entier (`400`) ; seuls les champs du contrat sont conservés ; un déploiement reçu sans `note` est stocké avec une note vide ;
+  - le `lastChangeAt` du résumé ([[RG_51]]) est le plus récent `updatedAt` (heure de l'appareil) des enregistrements actifs ;
+  - le corps d'une requête autre que la poussée et la résolution est limité à 64 ko (`400` au-delà).
 
 ### RT_69 — Erreurs, limites et compatibilité
 
@@ -826,7 +837,7 @@ Exemple. Le compte est à la révision 41. Le téléphone pousse une liste nouve
 |---|---|---|
 | `users` | email (unique, normalisé), hash argon2id du mot de passe, compteur de révision, dates de création | `id` (UUID) |
 | `device_tokens` | compte, hash SHA-256 du jeton, identifiant, libellé et plateforme de l'appareil, date de création | hash du jeton ; unique (`user_id`, `device_id`) |
-| `records` | compte, type (`list`/`deployment`), identifiant, révision, supprimé (booléen), contenu complet en **JSONB**, `list_id` et triplet (`opponent_disposition_id`, `board_id`) extraits pour les déploiements, libellé de l'appareil auteur, date de suppression | (`user_id`, `resource_type`, `id`) ; index (`user_id`, `revision`) pour le pull ; index (`user_id`, `list_id`) pour la cascade et le triplet |
+| `records` | compte, type (`list`/`deployment`), identifiant, révision, supprimé (booléen), contenu complet en **JSONB**, `list_id` et triplet (`opponent_disposition_id`, `board_id`) extraits pour les déploiements, libellé de l'appareil auteur, date de suppression (serveur, pour la purge) et date de suppression fixée par l'appareil (affichée dans les conflits, [[RT_68]]) | (`user_id`, `resource_type`, `id`) ; index (`user_id`, `revision`) pour le pull ; index (`user_id`, `list_id`) pour la cascade et le triplet |
 | `idempotency_keys` | compte, clé, empreinte du corps, réponse renvoyée, date | (`user_id`, `key`) |
 
 Une suppression ne retire pas la ligne de `records` : elle la marque supprimée, vide son contenu et lui donne une révision — c'est la trace que le pull transmet aux autres appareils. Les traces de plus de 90 jours sont purgées, et le compte retient la plus haute révision purgée : un `since` inférieur reçoit `410` ([[RT_68]]). Les clés d'idempotence sont purgées après 24 heures.
@@ -856,6 +867,17 @@ Passer en production ne demande que de renseigner l'adresse de `environment.prod
 - en production : l'origine de la version web ([[RT_59]]) et `https://localhost`.
 
 Il autorise les en-têtes `Authorization`, `Content-Type`, `Idempotency-Key` et `X-Client-Version`, et expose `Retry-After`.
+
+### RT_72 — Version du serveur de synchronisation
+
+Le serveur de [[RT_09]] a son propre numéro de version, `MAJEUR.MINEUR.CORRECTIF`, indépendant de celui de l'application ([[RG_47]], [[RT_63]]) : le champ `version` du `package.json` du serveur, parti de `0.1.0`.
+
+- Chaque commit qui modifie le code ou la configuration du serveur incrémente son correctif dans ce même commit (`npm version patch --no-git-tag-version` dans le dépôt du serveur). Un commit qui ne touche que la spécification ou la documentation ne l'incrémente pas.
+- Un commit du serveur ne change jamais la version de l'application, et inversement.
+- La version est exposée par `GET /health` (hors `/v1`, non authentifié).
+- La version minimale de l'application que le serveur accepte (`426`, [[RT_69]]) est un réglage distinct (`MIN_CLIENT_VERSION`), sans lien avec la version du serveur.
+
+Les incréments mineur et majeur sont décidés par le porteur du produit.
 
 ---
 
@@ -1634,8 +1656,12 @@ Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_12]] (
   Ce navigateur n'émet pas `beforeinstallprompt` : le bouton d'installation et la fermeture du bandeau ont été vérifiés avec un évènement simulé. Le mode `ios-instructions` et la demande de stockage persistant n'ont été vérifiés que par les tests unitaires. **Aucune installation n'a été faite sur un iPhone ou un téléphone Android**, faute d'hébergement HTTPS ([[RT_59]], non tranché) ; la mention « en pause » n'a été vue qu'en test unitaire, l'état hors-ligne du navigateur n'ayant pu être que simulé.
 - **[[RT_59]] — hébergement non réalisé.** Aucun hébergeur ni domaine n'est choisi (voir « Suivi des décisions non tranchées ») : la version web installable n'est publiée nulle part. Tant que la synchronisation de compte ([[RT_09]]) n'est pas servie, rien ne permet de transférer ses données d'un onglet Safari vers l'application installée sur iPhone ([[RG_41]]), ni d'un appareil à l'autre.
 
-- **[[RT_09]] — backend de synchronisation non réalisé.** Le contrat d'API est spécifié ([openapi.yml](openapi.yml)) et le **client** est implémenté au complet contre ce contrat : authentification ([[RT_21]]), déclenchement ([[RT_10]]), pull/push delta, détection de conflit ([[RT_15]]) et écran d'arbitrage ([[RG_11]]). Aucun serveur ne l'expose en revanche : tant qu'un backend n'est pas déployé à l'URL configurée, [[EX_06]] reste non satisfaite de bout en bout. Conformément à [[RG_09]] et [[RG_10]], cette absence est non bloquante — l'application fonctionne intégralement en local, l'état affiché étant « Usage local uniquement » ([[RG_19]]) tant qu'aucun compte n'est connecté.
-- **[[RG_50]] à [[RG_54]] / [[RT_67]] à [[RT_71]] — contrat v1.1.0 spécifié, client resté sur le contrat v0.1, serveur inexistant.** [openapi.yml](openapi.yml) est en v1.1.0, validé par `redocly lint` avec deux avertissements assumés : pas de licence déclarée, et un serveur `localhost` ([[RT_71]]). Le client (`src/app/net/`, `src/app/models/sync.models.ts`, `src/environments/`) n'a pas été adapté :
+- **[[RT_09]] — serveur de synchronisation réalisé et vérifié en local, non déployé.** Le serveur est le dépôt `Windfall-Planner-api`, à côté de ce dépôt (Node.js 24, Express 5, Prisma 7, PostgreSQL 18 sous Docker), conforme à [openapi.yml](openapi.yml) v1.1.0 et à [schema.sql](schema.sql) ; ses copies de ces deux fichiers sont à tenir alignées sur celles-ci. Vérifié le 2026-10-06 :
+  - 112 tests (règles pures, et intégration contre une vraie base PostgreSQL), chaque réponse étant validée contre openapi.yml. Ils couvrent l'inscription, la connexion et l'échec indistinguable ([[RG_50]]), le 401 sur jeton inconnu, la reconnexion qui remplace le jeton ([[RT_67]]), la gestion du compte et sa suppression sans aucune ligne restante ([[RG_52]]), le pull paginé et le 410, la poussée acceptée, les cinq cas de conflit de [[RT_68]], la cascade ([[RG_21]]), l'ordre de traitement, les rejets, les limites (413), la résolution locale, serveur et périmée, le rejeu idempotent et la clé réutilisée, le 426, les cinq seuils du 429 ([[RT_69]]), CORS ([[RT_71]]), deux poussées concurrentes sans trou ni doublon de révision, et les purges.
+  - Un scénario `curl` de bout en bout contre le serveur compilé et la base Docker : inscription, poussée, pull, conflit « modifié des deux côtés » depuis un second appareil, résolution, puis suppression du compte (401 pour l'autre appareil).
+
+  Non vérifié ou non fait : aucun déploiement (adresse de production non tranchée, [[RT_71]]) ; la limitation de débit garde ses compteurs en mémoire, exacte pour une seule instance seulement ; la purge n'est planifiée nulle part ; aucun essai avec le client, resté sur le contrat v0.1 (entrée suivante). [[EX_06]] reste donc non satisfaite de bout en bout ; conformément à [[RG_09]] et [[RG_10]], l'application fonctionne intégralement en local.
+- **[[RG_50]] à [[RG_54]] / [[RT_67]] à [[RT_71]] — contrat v1.1.0 spécifié et servi par le serveur ([[RT_09]]), client resté sur le contrat v0.1.** [openapi.yml](openapi.yml) est en v1.1.0, validé par `redocly lint` avec deux avertissements assumés : pas de licence déclarée, et un serveur `localhost` ([[RT_71]]). Le client (`src/app/net/`, `src/app/models/sync.models.ts`, `src/environments/`) n'a pas été adapté :
   - **adresse ([[RT_71]])** : `syncApiBaseUrl` vaut `/v1`, relatif, dans les deux environnements ; ni `http://localhost:3000/v1` en développement, ni environnement de build Android de développement ;
   - **connexion ([[RT_67]], [[RG_53]])** : le client attend un couple access/refresh token et appelle `/auth/refresh`, qui n'existe plus ; il n'envoie pas `device` et n'a pas d'identifiant d'appareil ; le formulaire d'inscription n'avertit pas de l'absence de récupération de mot de passe ([[RG_50]]) ;
   - **première connexion ([[RG_51]])** : ni `GET /sync/summary` ni choix fusion/remplacement ; les données locales sont toujours versées dans le compte, y compris lors d'un changement de compte, avec les `versionToken` de l'ancien ;
@@ -1645,7 +1671,11 @@ Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_12]] (
   - **robustesse ([[RT_69]])** : ni traitement des réponses 410, 413, 426 et 429, ni `Idempotency-Key`, ni `X-Client-Version` ;
   - **compte ([[RG_52]])** : aucun écran de changement de mot de passe ou d'adresse, ni de suppression du compte.
 
-  Le contrat n'est pas rétrocompatible avec la v0.1 : un serveur conforme ne connectera ni ne synchronisera ce client tel quel, qui doit être aligné avant toute mise en service. Seul `/auth/me` est conservé, en alias déprécié de `GET /account`. Aucun serveur ([[RT_70]]) n'est écrit.
+  Le contrat n'est pas rétrocompatible avec la v0.1 : un serveur conforme ne connectera ni ne synchronisera ce client tel quel, qui doit être aligné avant toute mise en service. Seul `/auth/me` est conservé, en alias déprécié de `GET /account`. Le serveur ([[RT_09]]) implémente la v1.1.0 et l'alias.
+- **[[RT_68]] / [[RT_69]] — écarts du contrat relevés à l'écriture du serveur, non tranchés.**
+  - **Pull complet paginé après purge.** Un pull complet sans `since` renvoie les enregistrements actifs par révision croissante. Si le compte en compte plus d'une page dont la révision précède la plus haute trace purgée, le `nextToken` d'une page intermédiaire est inférieur à cette révision, et la page suivante reçoit `410` : le client boucle sur le pull complet. Le contrat ne permet pas d'y échapper (un seul `since` numérique, 500 enregistrements au plus par page). Pistes : laisser `since` vide sur toute la suite d'un pull complet et ajouter un curseur distinct, ou ne renvoyer `410` qu'à un `since` antérieur à une trace purgée qui concerne l'appareil. Le serveur applique le contrat à la lettre.
+  - **Garder la version serveur d'un déploiement jamais écrit sur le serveur, dont la liste a été supprimée.** Le contrat exclut `localRecord` d'une résolution `keepServer`, alors que seul ce dernier désigne alors la liste du déploiement. Le serveur accepte `localRecord` (ou `localList`) dans ce cas et répond `400` s'il manque.
+  - **Statuts non déclarés.** Le serveur contrôle `X-Client-Version` et limite le débit sur toutes les routes, comme l'énonce [[RT_69]] ; `426` et `429` ne sont pourtant pas déclarés sur `/auth/logout`, `GET /account`, `/auth/me` (`426` non plus sur `/account/*`), ni `400` sur `/account/delete`.
 - **[[RG_01]] — un seul format d'import.** Seul le roster JSON de [[RT_13]] est branché derrière [[RT_01]], ce qui satisfait le « à minima un export texte/JSON d'un list-builder tiers » de la règle. L'ajout d'un second format ne demande qu'une entrée supplémentaire dans la table des formats, sans toucher aux écrans.
 - **[[RG_03]] étape 3 — aucune zone de déploiement matérialisée.** Choix de périmètre déjà assumé par la règle ; l'implémentation borne simplement les tokens au rectangle du plateau mesuré ([[RT_05]]), sans validation des règles de zone du jeu.
 - **[[RT_26]] — 130 des 208 gabarits sont des estimations, pas des mesures.** La couverture des lignes `Use model` est complète (208/208) mais inégale : 78 entrées remontent à une mesure trouvée et citée — directement ou par un châssis partagé (Rhino, Predator, Land Raider, Leman Russ, Chimera, Baneblade, Drop Pod, Stompa, Thunderhawk, Manta, Trukk) — et les 130 autres sont des estimations, préfixées `estimation — ` dans leur `sourceNote`. Écart assumé et non bloquant — un gabarit approché reste exploitable pour planifier un déploiement — mais à résorber entrée par entrée : toute mesure réelle obtenue ultérieurement remplace l'estimation correspondante.

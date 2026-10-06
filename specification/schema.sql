@@ -96,6 +96,10 @@ CREATE TABLE records (
     author_device_platform   varchar(10)  NOT NULL,
     -- RT_70 : date (serveur) de la suppression, pour la purge à 90 jours.
     deleted_at               timestamptz,
+    -- RT_68/RG_54 : date de la suppression fixée par l'appareil (`deletedAt`
+    -- de la poussée), affichée dans les conflits ; NULL si l'appareil ne l'a
+    -- pas transmise ou pour un enregistrement vivant.
+    client_deleted_at        timestamptz,
 
     PRIMARY KEY (user_id, resource_type, id),
 
@@ -108,7 +112,8 @@ CREATE TABLE records (
     -- Supprimé ⇔ contenu vidé et date de suppression renseignée.
     CONSTRAINT records_deleted_consistency CHECK (
         (deleted AND content IS NULL AND deleted_at IS NOT NULL)
-        OR (NOT deleted AND content IS NOT NULL AND deleted_at IS NULL)
+        OR (NOT deleted AND content IS NOT NULL AND deleted_at IS NULL
+            AND client_deleted_at IS NULL)
     ),
     -- Seuls les déploiements portent une liste et un triplet ; un déploiement
     -- vivant les porte tous les trois.

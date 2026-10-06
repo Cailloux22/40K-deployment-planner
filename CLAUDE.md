@@ -39,7 +39,7 @@ Layout of the app-specific code:
 - `src/app/pages/` + `src/app/home/` — the screens; `src/app/shared/` — cross-screen components.
 - `scripts/` — the four offline referential ingestion scripts (see below), the app icon generator and a local server for the production build (PWA, see below).
 
-**The sync backend itself does not exist.** The contract is specified in [specification/openapi.yml](specification/openapi.yml), but no server serves it, so `EX_06` is not satisfied end-to-end. This is tracked in spec.md under "Suivi des écarts entre spécification et implémentation"; per `RG_09`/`RG_10` it is non-blocking — the app is fully usable locally. The contract is v1.1.0 (`RG_50`–`RG_54`, `RT_67`–`RT_71`): permanent per-device token with no expiry and no remote logout, account management with immediate hard deletion, first-connection merge/replace choice, every multi-device conflict arbitrated by the player with date and device shown, versioned deletions, paginated pull, PostgreSQL persistence with a per-account revision counter (`RT_70`), a local dev server at `http://localhost:3000/v1` (`RT_71`, production URL not chosen yet). The client still implements v0.1; the list of differences is under the `RG_50`–`RT_71` entry of "Suivi des écarts" and must be closed before any server goes live.
+**The sync backend exists locally but is not deployed, and the client does not speak its contract yet.** The contract is specified in [specification/openapi.yml](specification/openapi.yml) and served by the server repository (see "Server" below), but no server is deployed and the client is still on contract v0.1, so `EX_06` is not satisfied end-to-end. This is tracked in spec.md under "Suivi des écarts entre spécification et implémentation"; per `RG_09`/`RG_10` it is non-blocking — the app is fully usable locally. The contract is v1.1.0 (`RG_50`–`RG_54`, `RT_67`–`RT_71`): permanent per-device token with no expiry and no remote logout, account management with immediate hard deletion, first-connection merge/replace choice, every multi-device conflict arbitrated by the player with date and device shown, versioned deletions, paginated pull, PostgreSQL persistence with a per-account revision counter (`RT_70`), a local dev server at `http://localhost:3000/v1` (`RT_71`, production URL not chosen yet). The client still implements v0.1; the list of differences is under the `RG_50`–`RT_71` entry of "Suivi des écarts" and must be closed before any server goes live. Contract gaps found while writing the server are listed in the entry right after it.
 
 Architectural decisions previously marked unmade are now taken and recorded in spec.md (`RT_06`/`RT_08` storage, `RT_16` pan/zoom). Do not treat them as open.
 
@@ -139,7 +139,7 @@ Board images are the exception (`RT_12`/`RT_27`/`RG_23`): when online, `BoardIma
 
 In the browser, offline relies on the service worker (`RT_54`): app shell and JSON referentials are precached; the 90 board PNGs and the 36 mission-card images (25 fronts, 11 backs) are cached lazily (groups `boards`, `missions`) and filled in the background by `BoardPrefetchService` (`RT_56`, cards after boards). `BoardImageService`'s "bundled" step therefore checks, offline, that the service worker can actually serve the image, and otherwise returns an SVG "Plateau non disponible hors-ligne" placeholder (`RG_42`). Ionicons' `svg/` folder is **not** cached: every `<ion-icon name="…">` must be registered in `src/app/icons.ts`, or it will be missing offline.
 
-The sync client (`src/app/net/sync.service.ts`) pulls then pushes a delta, never overwrites a locally-modified record, and queues genuine conflicts for the player to arbitrate (`RG_11`) instead of resolving them. All failures are swallowed into a visible-but-non-blocking state (`RG_09`). No server implements the contract yet — see "Current state".
+The sync client (`src/app/net/sync.service.ts`) pulls then pushes a delta, never overwrites a locally-modified record, and queues genuine conflicts for the player to arbitrate (`RG_11`) instead of resolving them. All failures are swallowed into a visible-but-non-blocking state (`RG_09`). The server implements contract v1.1.0, not the v0.1 this client speaks — see "Current state" and "Server".
 
 ### Map/token rendering
 
@@ -156,3 +156,19 @@ The unit → base-size referential ([RT_02](specification/spec.md)) is generated
 The board referential ([RT_12](specification/spec.md)) is likewise generated offline by `scripts/ingest-boards.mjs` from the static images on [gdmissions.app](https://gdmissions.app/11th/layouts), which sources them from **Battlemaster** (battlemaster.online) — **that credit is equally required**. The primary-mission referential ([RT_64](specification/spec.md)) comes from the same site (`scripts/ingest-missions.mjs`); its attribution text is provisional until the decision listed open in spec.md is made.
 
 Attribution is **not hard-coded in any screen** ([RT_20](specification/spec.md)): each generated referential embeds its own source name and attribution text, and the Settings screen simply enumerates the referentials present in the build. A new third-party referential therefore shows up in the credits without touching screen code — provided its ingestion writes a `source` block and it is added to the enumeration in `src/app/referentials/referential.service.ts`.
+
+## Server
+
+The sync server (`RT_09`) is a **separate repository**, `../Windfall-Planner-api` (sibling of this one), with its own `CLAUDE.md`. It implements [specification/openapi.yml](specification/openapi.yml) v1.1.0 on [specification/schema.sql](specification/schema.sql); its `specification/` folder holds **copies** of both files — this repository is the source of truth: change them here (spec-commit rules above apply), then copy them over.
+
+- Stack: Node.js 24 LTS, TypeScript ESM, Express 5, Prisma 7 (`@prisma/adapter-pg`), PostgreSQL 18 in Docker, Zod 4, Vitest + Supertest.
+- Layers: `routes` → `adapter/controllers` → `adapter/usecases` (business rules, transactions) → `adapter/repositories` (only layer touching Prisma); pure decisions in `domains/models/*.rules.ts`. Path aliases are Node subpath imports (`#routes/*`, `#usecases/*`, `#repositories/*`, `#models/*`, …), resolved to `src/` under the `development` condition and to `dist/` otherwise.
+- Version: the server has its own `package.json` version (`RT_72`). A server commit never bumps this app's version (`RG_47`/`RT_63`), and vice versa.
+- Local dev server: `http://localhost:3000/v1` (`RT_71`).
+
+```bash
+cd ../Windfall-Planner-api
+npm run setup    # .env, PostgreSQL containers (5432 dev, 5433 test), migrations
+npm run dev      # http://localhost:3000/v1
+npm test         # unit + integration against the test database
+```
