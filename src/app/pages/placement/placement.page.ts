@@ -44,6 +44,7 @@ import { BaseShape, BaseShapeKind, Board, BoardReferential, BoardTerrain } from 
 import { UNIT_COLOR_FALLBACK } from '../../import/unit-colors';
 import { ReferentialService } from '../../referentials/referential.service';
 import { GameplanNoteService } from '../../shared/gameplan-note.service';
+import { SyncService } from '../../net/sync.service';
 
 /**
  * Un modèle individuel de l'unité courante restant à poser, tel que listé par
@@ -263,6 +264,7 @@ export class PlacementPage implements OnInit {
   private readonly toasts = inject(ToastController);
   private readonly notes = inject(GameplanNoteService);
   private readonly missions = inject(MissionsService);
+  private readonly sync = inject(SyncService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** RT_34: repère de positionnement du retour visuel du glisser. */
@@ -1211,10 +1213,7 @@ export class PlacementPage implements OnInit {
   async canLeave(): Promise<boolean> {
     if (!this.rulerMode()) return true;
     const left = await this.leaveRulerMode();
-    if (left) {
-      if (this.saveTimer) clearTimeout(this.saveTimer);
-      await this.save();
-    }
+    if (left) await this.flushSave();
     return left;
   }
 
@@ -2052,7 +2051,28 @@ export class PlacementPage implements OnInit {
     if (this.saveTimer) clearTimeout(this.saveTimer);
     // Léger regroupement des écritures pendant un glisser continu ; l'état
     // n'est jamais perdu, la sortie d'écran force l'enregistrement.
-    this.saveTimer = setTimeout(() => void this.save(), 250);
+    this.saveTimer = setTimeout(() => {
+      this.saveTimer = undefined;
+      void this.save();
+    }, 250);
+  }
+
+  /** Écrit aussitôt l'état courant, en annulant l'écriture programmée. */
+  private async flushSave(): Promise<void> {
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.saveTimer = undefined;
+    await this.save();
+  }
+
+  /**
+   * RT_10: la sortie de l'écran, quel qu'en soit le chemin (bouton retour,
+   * retour système ou navigateur), déclenche une synchronisation une fois
+   * l'écriture en attente faite. La navigation n'attend pas la passe (RG_09),
+   * qui reste muette hors connexion ou sans compte.
+   */
+  ionViewWillLeave(): void {
+    const pending = this.saveTimer ? this.flushSave() : Promise.resolve();
+    void pending.then(() => this.sync.synchronize());
   }
 
   private async save(): Promise<void> {
@@ -2076,8 +2096,7 @@ export class PlacementPage implements OnInit {
     const note = await this.notes.edit(deployment.note ?? '');
     if (note === undefined || !this.deployment()) return;
     this.deployment.set({ ...this.deployment()!, note: normalizeGameplanNote(note) });
-    if (this.saveTimer) clearTimeout(this.saveTimer);
-    await this.save();
+    await this.flushSave();
   }
 
   /**
@@ -2110,8 +2129,7 @@ export class PlacementPage implements OnInit {
     // RG_35: quitter mode « Règle » actif équivaut à le désactiver ; la garde
     // de route (RT_44) couvre aussi le retour système.
     if (!(await this.canLeave())) return;
-    if (this.saveTimer) clearTimeout(this.saveTimer);
-    await this.save();
+    await this.flushSave();
     await this.router.navigate([
       '/list',
       this.listId(),
