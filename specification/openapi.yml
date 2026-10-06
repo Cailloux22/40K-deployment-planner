@@ -38,7 +38,7 @@ openapi: 3.0.3
 #      puis tranchés par POST /sync/conflicts/resolve.
 
 info:
-  title: 40K Deployment Planner — Sync API
+  title: Windfall Planner — Sync API
   description: >-
     API de synchronisation par différence (delta) des listes d'armée et des
     déploiements entre les appareils d'un même joueur, et gestion du compte

@@ -1,4 +1,4 @@
-# Maquette Figma — 40K Deployment Planner
+# Maquette Figma — Windfall Planner
 
 > Lien : [figma.com/design/lbXUpOjjtr6xUeXIAWMToO/40K-deployment-planner](https://www.figma.com/design/lbXUpOjjtr6xUeXIAWMToO/40K-deployment-planner)
 >

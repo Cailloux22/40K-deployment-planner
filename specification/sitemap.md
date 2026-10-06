@@ -1,4 +1,4 @@
-# Site map — 40K Deployment Planner
+# Site map — Windfall Planner
 
 > Dérivé de [spec.md](spec.md) et de l'inventaire de frames Figma de [design-figma.md](design-figma.md). Aucun de ces écrans n'est implémenté à ce jour (voir « Current state » dans [CLAUDE.md](../CLAUDE.md)) : ce document sert de plan de navigation cible, pas d'inventaire de l'existant.
 >

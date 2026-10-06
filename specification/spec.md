@@ -1,4 +1,4 @@
-# Spécification — 40K Deployment Planner
+# Spécification — Windfall Planner
 
 > Périmètre de ce document : l'application de planification de déploiement Warhammer 40k décrite dans [CLAUDE.md](../CLAUDE.md) — import de liste d'armée, plan de déploiement sur plateau avec tokens de socles, bibliothèque des listes importées avec leurs déploiements sauvegardés, fonctionnement hors-ligne, compte utilisateur et synchronisation multi-appareils.
 >
@@ -1292,7 +1292,7 @@ Hors application Android empaquetée, les listes et les déploiements vivent dan
 
 **Manifeste.** Un fichier `src/manifest.webmanifest` est copié à la racine du build (`assets` de `angular.json`) et référencé par `<link rel="manifest">` dans `index.html`. Il déclare :
 
-- `name` « 40K Deployment Planner », `short_name` court (affiché sous l'icône) ;
+- `name` « Windfall Planner », `short_name` « Windfall » (affiché sous l'icône, repris par `apple-mobile-web-app-title`) ;
 - `id`, `start_url` et `scope` relatifs (`./`), pour suivre le `base href` de [[RT_59]] ;
 - `display: standalone` et `orientation: any`, le placement servant en portrait comme en paysage ;
 - `theme_color` et `background_color` : le fond de l'application du thème clair de [[RT_29]], le manifeste n'acceptant qu'une valeur ;
