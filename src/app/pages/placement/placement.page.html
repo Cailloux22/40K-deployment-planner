@@ -15,8 +15,8 @@
           <ion-icon name="document-text-outline" slot="icon-only"></ion-icon>
         </ion-button>
       }
-      <!-- RG_45/RT_61: note de plan de jeu, immédiatement à gauche de
-           l'enregistrement ; icône et nom accessible disent si elle existe
+      <!-- RG_45/RT_61: note de plan de jeu, immédiatement à gauche du menu
+           des unités ; icône et nom accessible disent si elle existe
            (RG_24). Deux boutons à libellé fixe plutôt qu'un `aria-label` lié :
            ion-button relit ses attributs aria-* avant d'être initialisé et
            lève alors une erreur (voir RT_43). -->
@@ -29,9 +29,8 @@
           <ion-icon name="clipboard-outline" slot="icon-only"></ion-icon>
         </ion-button>
       }
-      <ion-button (click)="saveAsNew()" aria-label="Enregistrer sous un nouveau nom">
-        <ion-icon name="save-outline" slot="icon-only"></ion-icon>
-      </ion-button>
+      <!-- RG_07: aucun bouton d'enregistrement — la sauvegarde est continue
+           (EX_04) et il n'existe qu'un déploiement par triplet. -->
       <!-- RG_16: menu burger en haut à droite de l'écran de placement. -->
       <ion-button (click)="menuOpen.set(true)" aria-label="Ouvrir le menu des unités">
         <ion-icon name="menu" slot="icon-only"></ion-icon>

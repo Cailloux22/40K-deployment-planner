@@ -2106,28 +2106,6 @@ export class PlacementPage implements OnInit {
     });
   }
 
-  /** RG_07: « enregistrer sous un nouveau nom » crée une entrée distincte. */
-  async saveAsNew(): Promise<void> {
-    const deployment = this.deployment();
-    if (!deployment) return;
-    const alert = await this.alerts.create({
-      header: 'Enregistrer sous un nouveau nom',
-      message: 'Le déploiement courant est conservé ; une copie indépendante sera créée.',
-      inputs: [{ name: 'name', type: 'text', value: `${deployment.name} (copie)` }],
-      buttons: [
-        { text: 'Annuler', role: 'cancel' },
-        {
-          text: 'Enregistrer',
-          handler: (data: { name?: string }) => {
-            const name = data.name?.trim();
-            if (name) void this.library.saveDeploymentAs(deployment, name);
-          },
-        },
-      ],
-    });
-    await alert.present();
-  }
-
   async back(): Promise<void> {
     // RG_35: quitter mode « Règle » actif équivaut à le désactiver ; la garde
     // de route (RT_44) couvre aussi le retour système.

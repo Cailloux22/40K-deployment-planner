@@ -24,7 +24,6 @@ import {
   personCircleOutline,
   returnUpBack,
   returnUpForward,
-  saveOutline,
   settingsOutline,
   shareOutline,
   syncOutline,
@@ -67,7 +66,6 @@ export function registerIcons(): void {
     'person-circle-outline': personCircleOutline,
     'return-up-back': returnUpBack,
     'return-up-forward': returnUpForward,
-    'save-outline': saveOutline,
     'settings-outline': settingsOutline,
     'share-outline': shareOutline,
     // RG_48/RT_66: retourner une carte de mission (recto/verso).

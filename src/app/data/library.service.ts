@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 
-import { ArmyList, ArmyUnit, Deployment, Placement } from '../models/domain.models';
+import { ArmyList, ArmyUnit, Deployment } from '../models/domain.models';
 import { remapAttachments } from '../deployment/attachments';
 import { normalizeGameplanNote } from '../deployment/gameplan-note';
 import {
@@ -86,9 +86,9 @@ export class LibraryService {
 
   /**
    * RG_07/RG_14: le déploiement du triplet (liste, disposition adverse,
-   * plateau). Il en existe au plus un « courant » par triplet : les actions
+   * plateau). Il en existe au plus un par triplet : les actions
    * « Nouveau »/« Éditer » le mettent à jour en place plutôt que d'empiler
-   * des entrées, sauf enregistrement explicite sous un nouveau nom.
+   * des entrées, et aucune copie n'est proposée.
    */
   deploymentFor(listId: string, opponentDispositionId: string, boardId: string): Deployment | undefined {
     return this.deployments().find(
@@ -199,8 +199,7 @@ export class LibraryService {
    * RG_07/RG_14: ouvre le déploiement du triplet — celui déjà enregistré, ou
    * un nouveau. `reset` correspond à l'action « Nouveau » : les placements
    * repartent de zéro mais l'identifiant du déploiement est conservé (mise à
-   * jour en place), une entrée distincte n'étant créée que par un
-   * enregistrement explicite sous un nouveau nom.
+   * jour en place).
    */
   async openDeployment(params: {
     listId: string;
@@ -229,25 +228,6 @@ export class LibraryService {
       placements: [],
       reservedUnitIds: [],
       note: '',
-      createdAt: now,
-      updatedAt: now,
-      versionToken: null,
-      dirty: true,
-    });
-  }
-
-  /** RG_07: « enregistrer sous un nouveau nom » — crée une entrée distincte. */
-  async saveDeploymentAs(deployment: Deployment, name: string): Promise<Deployment> {
-    const now = new Date().toISOString();
-    return this.saveDeployment({
-      ...deployment,
-      id: newId('depl'),
-      name,
-      placements: deployment.placements.map((p: Placement) => ({ ...p })),
-      // RG_25: la copie emporte la réserve au même titre que les placements.
-      reservedUnitIds: [...(deployment.reservedUnitIds ?? [])],
-      // RG_45: la copie reprend la note de plan de jeu du déploiement d'origine.
-      note: deployment.note,
       createdAt: now,
       updatedAt: now,
       versionToken: null,
