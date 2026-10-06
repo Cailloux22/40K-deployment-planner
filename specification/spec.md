@@ -846,6 +846,8 @@ Une suppression ne retire pas la ligne de `records` : elle la marque supprimée,
 
 **Suppression du compte ([[RG_52]]).** Une seule transaction supprime toutes les lignes du compte dans les quatre tables, puis le compte lui-même. Les journaux du serveur ne contiennent ni adresse email, ni jeton, ni contenu d'enregistrement.
 
+**Démarrage.** Le serveur vérifie que la base répond avant d'écouter sur son port. Si elle est injoignable — refus de connexion, identifiants refusés, ou aucune connexion établie en 5 secondes —, il journalise la cause (code d'erreur seulement, jamais l'adresse de connexion ni ses identifiants) et s'arrête avec un code de sortie non nul : il n'accepte jamais de requête sans base. Il ne réessaie pas ; le redémarrage relève de l'hébergeur. Une fois démarré, une base devenue injoignable ne l'arrête pas : `GET /health` répond alors `503`.
+
 La portée des identifiants d'enregistrement — uniques par compte, ce que suppose la clé de `records` — sera précisée ultérieurement (voir « Suivi des décisions non tranchées »).
 
 ### RT_71 — Adresse du serveur selon l'environnement
