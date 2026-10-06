@@ -48,7 +48,7 @@ The Android platform has been added (`android/`, debug APK builds); iOS has not.
 ## Stack
 
 - Angular 22 + Ionic Angular 9, packaged for mobile via Capacitor 8 (`@capacitor/core`, `@capacitor/app`, `@capacitor/haptics`, `@capacitor/keyboard`, `@capacitor/status-bar`), and installable from the browser as a PWA via `@angular/service-worker` (production build only, disabled inside the APK).
-- Capacitor `appId` in [capacitor.config.ts](capacitor.config.ts) is `fr.rocher.deploymentplanner` — it is baked into `android/` (package name), so changing it later means editing the Gradle/manifest files too, and it cannot change once published on the Play Store.
+- Capacitor `appId` in [capacitor.config.ts](capacitor.config.ts) is `fr.rocher.windfallplanner` — it is baked into `android/` (Gradle `namespace`/`applicationId`, the `MainActivity` package and its `java/fr/rocher/windfallplanner/` folder, `strings.xml`), so changing it later means editing all of those too, and it cannot change once published on the Play Store.
 - `android/` exists (`@capacitor/android`, checked in); `ios/` has not been added. Release signing (keystore, `assembleRelease`) is not set up — only debug APKs are built.
 
 ## Commands

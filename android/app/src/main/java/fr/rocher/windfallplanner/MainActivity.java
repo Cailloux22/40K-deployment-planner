@@ -1,4 +1,4 @@
-package fr.rocher.deploymentplanner;
+package fr.rocher.windfallplanner;
 
 import com.getcapacitor.BridgeActivity;
 

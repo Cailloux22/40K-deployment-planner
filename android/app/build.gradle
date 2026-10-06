@@ -5,10 +5,10 @@ def appVersion = new groovy.json.JsonSlurper().parse(file('../../package.json'))
 def appVersionParts = appVersion.tokenize('.').collect { it.toInteger() }
 
 android {
-    namespace = "fr.rocher.deploymentplanner"
+    namespace = "fr.rocher.windfallplanner"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "fr.rocher.deploymentplanner"
+        applicationId "fr.rocher.windfallplanner"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode appVersionParts[0] * 1000000 + appVersionParts[1] * 1000 + appVersionParts[2]

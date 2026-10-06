@@ -1,7 +1,7 @@
 ﻿import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'fr.rocher.deploymentplanner',
+  appId: 'fr.rocher.windfallplanner',
   appName: 'Windfall Planner',
   webDir: 'www'
 };
