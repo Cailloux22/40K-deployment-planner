@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 
 import { STORE_MISSION_IMAGES } from '../data/local-store.service';
-import { MissionCard } from '../models/referential.models';
+import { MissionCard, MissionFace } from '../models/referential.models';
 import { RemoteImageService, unavailableImage } from './remote-image.service';
 
 /**
@@ -13,16 +13,22 @@ import { RemoteImageService, unavailableImage } from './remote-image.service';
 export class MissionImageService {
   private readonly images = inject(RemoteImageService);
 
-  /** URL affichable (URL d'objet ou chemin d'asset) ; ne rejette jamais. */
-  imageUrl(card: MissionCard): Promise<string> {
+  /**
+   * URL affichable (URL d'objet ou chemin d'asset) ; ne rejette jamais.
+   * RT_65: une face `back` demandée sur une carte sans verso rend le recto.
+   */
+  imageUrl(card: MissionCard, face: MissionFace = 'front'): Promise<string> {
+    // RT_65: le verso est une image à part entière de la chaîne, sous sa
+    // propre clé de cache `{id}#back`, aux dimensions du recto (RT_64).
+    const back = face === 'back' ? card.back : undefined;
     return this.images.imageUrl({
       store: STORE_MISSION_IMAGES,
-      id: card.id,
-      remoteUrl: card.remoteAsset,
+      id: back ? `${card.id}#back` : card.id,
+      remoteUrl: back ? back.remoteAsset : card.remoteAsset,
       // RT_65: dimensions mesurées à l'ingestion (RT_64).
       width: card.width,
       height: card.height,
-      asset: card.asset,
+      asset: back ? back.asset : card.asset,
       unavailable: () => unavailableMissionImage(card),
     });
   }

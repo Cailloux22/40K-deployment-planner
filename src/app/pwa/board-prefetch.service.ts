@@ -118,8 +118,10 @@ export class BoardPrefetchService {
     for (const board of boards.boards) {
       for (const variant of boards.variants) paths.add(board.assets[variant]);
     }
-    // RT_65: les cartes après les plateaux, dans la même boucle séquentielle.
+    // RT_65: les cartes après les plateaux, dans la même boucle séquentielle :
+    // tous les rectos, puis les versos.
     for (const card of missions.missions) paths.add(card.asset);
+    for (const card of missions.missions) if (card.back) paths.add(card.back.asset);
     return [...paths];
   }
 }

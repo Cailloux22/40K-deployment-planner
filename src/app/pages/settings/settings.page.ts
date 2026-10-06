@@ -53,7 +53,7 @@ export class SettingsPage implements OnInit {
   readonly prefetchStatus = this.prefetch.status;
   readonly persisted = this.persistence.persisted;
 
-  /** RG_42/RG_49: « Prêt pour le hors-ligne » ou « Téléchargement des plateaux et missions : n / 115 ». */
+  /** RG_42/RG_49: « Prêt pour le hors-ligne » ou « Téléchargement des plateaux et missions : n / 126 ». */
   readonly offlineLabel = computed(() => {
     const progress = `Téléchargement des plateaux et missions : ${this.prefetch.present()} / ${this.prefetch.total()}`;
     switch (this.prefetch.status()) {

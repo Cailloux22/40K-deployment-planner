@@ -27,6 +27,7 @@ import {
   saveOutline,
   settingsOutline,
   shareOutline,
+  syncOutline,
   trashOutline,
 } from 'ionicons/icons';
 
@@ -69,6 +70,8 @@ export function registerIcons(): void {
     'save-outline': saveOutline,
     'settings-outline': settingsOutline,
     'share-outline': shareOutline,
+    // RG_48/RT_66: retourner une carte de mission (recto/verso).
+    'sync-outline': syncOutline,
     'trash-outline': trashOutline,
   });
 }

@@ -259,7 +259,15 @@ export interface MissionCard {
   readonly asset: string;
   /** RT_65: URL gdmissions.app appelée directement quand l'appareil est en ligne. */
   readonly remoteAsset: string;
+  /**
+   * RT_64: verso de la carte, aux dimensions du recto ; absent pour une carte
+   * sans verso (RG_48 : pas de bouton de retournement).
+   */
+  readonly back?: { readonly asset: string; readonly remoteAsset: string };
 }
+
+/** RG_48: face d'une carte de mission. */
+export type MissionFace = 'front' | 'back';
 
 export interface MissionReferential {
   readonly source: ReferentialSource;

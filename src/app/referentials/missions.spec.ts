@@ -65,4 +65,28 @@ describe('missions primaires (RT_64 / RG_48)', () => {
     }
     expect(referential.source.attribution).toBeTruthy();
   });
+
+  it('porte le verso des seules cartes qui en déclarent un, aux conventions de RT_64', () => {
+    const withBack = referential.missions.filter((m) => m.back).map((m) => m.id);
+    expect(withBack.sort()).toEqual(
+      [
+        'reconnaissance/gather-intel',
+        'reconnaissance/surveil-the-foe',
+        'reconnaissance/triangulation',
+        'priority-assets/extract-relic',
+        'priority-assets/sabotage',
+        'priority-assets/secure-asset',
+        'priority-assets/vanguard-operation',
+        'priority-assets/vital-link',
+        'disruption/death-trap',
+        'disruption/locate-and-deny',
+        'disruption/smoke-and-mirrors',
+      ].sort(),
+    );
+    for (const card of referential.missions) {
+      if (!card.back) continue;
+      expect(card.back.asset).toBe(`assets/referentials/missions/${card.id}-back.png`);
+      expect(card.back.remoteAsset).toBe(`https://gdmissions.app/assets/11th/primary-missions/${card.id}-back.png`);
+    }
+  });
 });

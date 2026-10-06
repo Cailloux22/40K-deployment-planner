@@ -130,4 +130,48 @@ describe('Missions primaires', () => {
     cy.get('ion-modal').should('not.exist');
     cy.get('app-board-viewer .viewer').should('be.visible');
   });
+
+  // RG_48: recto/verso. Reconnaissance contre Purge the Foe : Triangulation
+  // (ma mission) a un verso, Consecrate (mission adverse) n'en a pas.
+  it('retourne une carte qui a un verso, et garde sa face tant que la fenêtre est ouverte', () => {
+    openBoardChoice('Purge the Foe');
+    missionsButton().click();
+
+    cy.contains('ion-modal .face-bar', 'Triangulation').should('contain', 'Recto');
+    cy.contains('ion-modal ion-button', 'Voir le verso').click();
+    cy.contains('ion-modal .face-bar', 'Verso').should('be.visible');
+    cy.get('ion-modal img[alt$="— verso"]').should('be.visible');
+    cy.contains('ion-modal ion-button', 'Voir le recto').should('exist');
+
+    // RG_48: pas de bouton pour une carte sans verso.
+    cy.get('ion-modal ion-segment-button').eq(1).click();
+    cy.get('ion-modal img[alt^="Carte de mission primaire Consecrate"]').should('be.visible');
+    cy.get('ion-modal .face-bar').should('not.exist');
+
+    // RG_48: la face est conservée au retour sur l'onglet…
+    cy.get('ion-modal ion-segment-button').eq(0).click();
+    cy.get('ion-modal img[alt$="— verso"]').should('be.visible');
+
+    // … et la carte repart sur son recto à la réouverture.
+    closeMissions();
+    cy.get('ion-modal').should('not.exist');
+    missionsButton().click();
+    cy.contains('ion-modal .face-bar', 'Recto').should('be.visible');
+    cy.get('ion-modal img[alt$="— verso"]').should('not.exist');
+  });
+
+  it('sur écran large, ne propose le retournement que dans la colonne de la carte qui a un verso', () => {
+    cy.viewport(1024, 768);
+    openBoardChoice('Purge the Foe');
+    missionsButton().click();
+
+    cy.get('ion-modal .column').eq(0).find('.face-controls').should('not.exist');
+    cy.get('ion-modal .column').eq(2).find('.face-controls').should('not.exist');
+    cy.get('ion-modal .column').eq(1).within(() => {
+      cy.contains('.face', 'Recto');
+      cy.contains('ion-button', 'Voir le verso').click();
+      cy.contains('.face', 'Verso');
+      cy.get('img[alt$="— verso"]').should('be.visible');
+    });
+  });
 });

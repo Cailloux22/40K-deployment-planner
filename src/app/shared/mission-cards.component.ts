@@ -14,11 +14,15 @@ import {
   Board,
   ForceDisposition,
   MissionCard,
+  MissionFace,
   PairMissions,
 } from '../models/referential.models';
 
 /** RT_66: largeur CSS à partir de laquelle les colonnes passent côte à côte. */
 export const MISSIONS_SIDE_BY_SIDE_QUERY = '(min-width: 720px)';
+
+/** RT_66: durée d'une demi-rotation ; la face change à mi-course (~300 ms au total). */
+export const FLIP_HALF_MS = 150;
 
 type MissionTab = 'player' | 'opponent';
 
@@ -93,6 +97,7 @@ interface MissionPanel {
                     {{ panel.label }}
                   </span>
                   <span class="name">{{ panel.card?.name ?? 'Mission inconnue' }}</span>
+                  <ng-container *ngTemplateOutlet="faceControls; context: { $implicit: panel.card }"></ng-container>
                 </header>
                 <ng-container *ngTemplateOutlet="cardArea; context: { $implicit: panel, swipe: false }"></ng-container>
               </section>
@@ -134,6 +139,13 @@ interface MissionPanel {
             </ion-segment>
           }
           @if (activePanel(); as panel) {
+            <!-- RG_48: retournement placé hors de l'image, sous les onglets. -->
+            @if (panel.card?.back) {
+              <div class="face-bar" [style]="dispositionColors(panel)">
+                <span class="name">{{ panel.card.name }}</span>
+                <ng-container *ngTemplateOutlet="faceControls; context: { $implicit: panel.card }"></ng-container>
+              </div>
+            }
             <div class="single" [style]="dispositionColors(panel)">
               <ng-container *ngTemplateOutlet="cardArea; context: { $implicit: panel, swipe: !missions.mirror }"></ng-container>
             </div>
@@ -144,25 +156,60 @@ interface MissionPanel {
 
     <ng-template #cardArea let-panel let-swipe="swipe">
       @if (panel.card; as card) {
-        <app-pan-zoom
-          class="card-area"
-          [contentWidth]="card.width"
-          [contentHeight]="card.height"
-          [swipeAtFit]="swipe"
-          (swipe)="onSwipe($event)"
+        <!-- RT_66: rotation sur l'axe Y, la face change à mi-course. -->
+        <div
+          class="flip"
+          [class.flip-out]="flipPhase(card) === 'out'"
+          [class.flip-in]="flipPhase(card) === 'in'"
         >
-          <img
-            class="image"
-            [src]="card | missionImage | async"
-            [alt]="cardAlt(card)"
-            [style.width.px]="card.width"
-            [style.height.px]="card.height"
-            draggable="false"
-          />
-        </app-pan-zoom>
+          <!-- RT_66: une surface par face — changer de face recrée le
+               pan/zoom, donc rappelle son ajustement « contain » (RG_48 :
+               l'autre face s'affiche en entier). -->
+          @for (face of [faceOf(card)]; track face) {
+            <app-pan-zoom
+              class="card-area"
+              [contentWidth]="card.width"
+              [contentHeight]="card.height"
+              [swipeAtFit]="swipe"
+              (swipe)="onSwipe($event)"
+            >
+              <img
+                class="image"
+                [src]="card | missionImage: face | async"
+                [alt]="cardAlt(card, face)"
+                [style.width.px]="card.width"
+                [style.height.px]="card.height"
+                draggable="false"
+              />
+            </app-pan-zoom>
+          }
+        </div>
       } @else {
         <!-- RG_48: carte absente du référentiel pour ce sens du couple. -->
         <p class="card-area missing">Mission non disponible pour ce couple</p>
+      }
+    </ng-template>
+
+    <!-- RG_48: face affichée en toutes lettres (RG_24) et bouton de
+         retournement, seulement pour une carte qui a un verso. RT_66: deux
+         boutons à libellé fixe plutôt qu'un aria-label lié (RT_43) ; le nom
+         de la carte complète le nom accessible. -->
+    <ng-template #faceControls let-card>
+      @if (card?.back) {
+        <span class="face-controls">
+          <span class="face">{{ faceOf(card) === 'back' ? 'Verso' : 'Recto' }}</span>
+          @if (faceOf(card) === 'back') {
+            <ion-button size="small" fill="outline" [disabled]="flipPhase(card) !== null" (click)="flip(card)">
+              <ion-icon name="sync-outline" slot="start"></ion-icon>
+              Voir le recto<span class="visually-hidden"> de {{ card.name }}</span>
+            </ion-button>
+          } @else {
+            <ion-button size="small" fill="outline" [disabled]="flipPhase(card) !== null" (click)="flip(card)">
+              <ion-icon name="sync-outline" slot="start"></ion-icon>
+              Voir le verso<span class="visually-hidden"> de {{ card.name }}</span>
+            </ion-button>
+          }
+        </span>
       }
     </ng-template>
   `,
@@ -202,6 +249,79 @@ interface MissionPanel {
       }
       .card-area {
         flex: 1;
+      }
+      .flip {
+        flex: 1;
+        display: flex;
+        min-width: 0;
+        min-height: 0;
+      }
+      /* RT_66: demi-rotation sortante, puis entrante avec la nouvelle face. */
+      .flip-out {
+        animation: flip-out 150ms ease-in forwards; /* = FLIP_HALF_MS */
+      }
+      .flip-in {
+        animation: flip-in 150ms ease-out; /* = FLIP_HALF_MS */
+      }
+      @keyframes flip-out {
+        from {
+          transform: perspective(1600px) rotateY(0deg);
+        }
+        to {
+          transform: perspective(1600px) rotateY(90deg);
+        }
+      }
+      @keyframes flip-in {
+        from {
+          transform: perspective(1600px) rotateY(-90deg);
+        }
+        to {
+          transform: perspective(1600px) rotateY(0deg);
+        }
+      }
+      /* RG_48: réduction des animations demandée — changement sans transition. */
+      @media (prefers-reduced-motion: reduce) {
+        .flip-out,
+        .flip-in {
+          animation: none;
+        }
+      }
+      /* RG_48: bloc de face sous les onglets, sur la couleur de la disposition. */
+      .face-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 6px 12px;
+        background: var(--dispo-bg, var(--app-surface-raised));
+        color: var(--dispo-on, var(--app-text));
+      }
+      .face-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .face {
+        font-size: var(--app-font-sm);
+        font-weight: 600;
+      }
+      /* RT_31: cible tactile minimale ; le contour suit le texte posé sur la
+         couleur de disposition (contrôlé par check-contrast, RT_29). */
+      .face-controls ion-button {
+        margin: 0;
+        height: var(--app-touch-min);
+        --color: currentColor;
+        --border-color: currentColor;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
       }
       .card-area.neutral {
         background: var(--app-surface-stage);
@@ -293,6 +413,17 @@ export class MissionCardsComponent implements OnInit {
   readonly tab = signal<MissionTab>('player');
   readonly sideBySide = signal(false);
 
+  /**
+   * RG_48/RT_66: face affichée de chaque carte, par identifiant. Vide à la
+   * création : le composant étant recréé à chaque ouverture de la modale,
+   * toutes les cartes repartent sur leur recto. Le changement d'onglet ou de
+   * présentation ne recrée pas le composant, la face est donc conservée.
+   */
+  private readonly faces = signal<ReadonlyMap<string, MissionFace>>(new Map());
+  /** RT_66: retournement en cours — bouton inactif jusqu'à la fin. */
+  private readonly flipping = signal<{ readonly id: string; readonly phase: 'out' | 'in' } | null>(null);
+  private readonly timers = new Set<ReturnType<typeof setTimeout>>();
+
   readonly panels = computed<readonly MissionPanel[]>(() => {
     const player: MissionPanel = {
       tab: 'player',
@@ -313,6 +444,10 @@ export class MissionCardsComponent implements OnInit {
   );
 
   readonly columnCount = computed(() => this.panels().length + (this.board ? 1 : 0));
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.timers.forEach((timer) => clearTimeout(timer)));
+  }
 
   ngOnInit(): void {
     // RT_66: la présentation suit la largeur disponible, rotation comprise ;
@@ -335,6 +470,46 @@ export class MissionCardsComponent implements OnInit {
     this.tab.set(direction < 0 ? 'opponent' : 'player');
   }
 
+  faceOf(card: MissionCard): MissionFace {
+    return this.faces().get(card.id) ?? 'front';
+  }
+
+  flipPhase(card: MissionCard): 'out' | 'in' | null {
+    const flipping = this.flipping();
+    return flipping?.id === card.id ? flipping.phase : null;
+  }
+
+  /**
+   * RG_48: retourne la carte. Seul le bouton y mène — jamais le balayage, qui
+   * reste attaché au changement d'onglet.
+   */
+  flip(card: MissionCard): void {
+    if (!card.back || this.flipping()) return;
+    const next: MissionFace = this.faceOf(card) === 'front' ? 'back' : 'front';
+    const setFace = () => this.faces.update((faces) => new Map(faces).set(card.id, next));
+
+    // RG_48: réduction des animations demandée — l'image change directement.
+    if (globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setFace();
+      return;
+    }
+    // RT_66: la face change à mi-course, quand la carte est vue par la tranche.
+    this.flipping.set({ id: card.id, phase: 'out' });
+    this.later(() => {
+      setFace();
+      this.flipping.set({ id: card.id, phase: 'in' });
+      this.later(() => this.flipping.set(null));
+    });
+  }
+
+  private later(action: () => void): void {
+    const timer = setTimeout(() => {
+      this.timers.delete(timer);
+      action();
+    }, FLIP_HALF_MS);
+    this.timers.add(timer);
+  }
+
   /** RT_66: fond et texte de la disposition de la carte (tokens RT_29). */
   dispositionColors(panel: MissionPanel | undefined): Record<string, string> {
     const id = panel?.card?.disposition ?? panel?.disposition?.id;
@@ -346,8 +521,10 @@ export class MissionCardsComponent implements OnInit {
   }
 
   /** RT_66: « Carte de mission primaire {nom} — {disposition} contre {adverse} ». */
-  cardAlt(card: MissionCard): string {
-    return `Carte de mission primaire ${card.name} — ${this.label(card.disposition)} contre ${this.label(card.opponent)}`;
+  cardAlt(card: MissionCard, face: MissionFace = 'front'): string {
+    const alt = `Carte de mission primaire ${card.name} — ${this.label(card.disposition)} contre ${this.label(card.opponent)}`;
+    // RT_66: le texte alternatif du verso est celui de la carte suffixé.
+    return face === 'back' ? `${alt} — verso` : alt;
   }
 
   close(): Promise<boolean> {

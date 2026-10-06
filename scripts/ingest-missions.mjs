@@ -101,7 +101,26 @@ function parseCardPage(html, deck, slug) {
   if (match[1] === 'Mirror' && opponent !== deck) {
     fail(`${deck}/${slug}: carte miroir d'une autre disposition (${opponent})`);
   }
-  return { name, opponent };
+  return { name, opponent, back: declaredBack(html) };
+}
+
+/**
+ * RT_64: chemin du verso tel que la page le déclare dans ses données
+ * (`"back":"/assets/…-back.png"`, `"$undefined"` sans verso). C'est cette
+ * déclaration qui fait foi : un verso non déclaré n'est jamais recherché.
+ */
+function declaredBack(html) {
+  // Les données de la page sont des chaînes JSON échappées dans un script.
+  const data = html.split('\\').join('');
+  const back = data.match(/"back":"([^"]+)"/)?.[1];
+  return back && back.startsWith('/assets/') ? back : null;
+}
+
+async function fetchPng(url) {
+  const res = await fetch(url);
+  if (!res.ok) fail(`${url}: HTTP ${res.status}`);
+  const buffer = Buffer.from(await res.arrayBuffer());
+  return { buffer, ...pngDimensions(buffer, url) };
 }
 
 function pngDimensions(buffer, label) {
@@ -127,7 +146,7 @@ async function main() {
 
     const opponents = new Set();
     for (const slug of slugs) {
-      const { name, opponent } = parseCardPage(
+      const { name, opponent, back } = parseCardPage(
         await fetchText(`${SITE}/11th/primary-missions/${deck}/${slug}`),
         deck,
         slug,
@@ -136,12 +155,27 @@ async function main() {
       opponents.add(opponent);
 
       const remoteAsset = `${SITE}/assets/11th/primary-missions/${deck}/${slug}.png`;
-      const res = await fetch(remoteAsset);
-      if (!res.ok) fail(`${remoteAsset}: HTTP ${res.status}`);
-      const buffer = Buffer.from(await res.arrayBuffer());
-      const { width, height } = pngDimensions(buffer, remoteAsset);
-
+      const { buffer, width, height } = await fetchPng(remoteAsset);
       images.push({ path: join(assetDir, deck, `${slug}.png`), buffer });
+
+      // RT_64: verso déclaré -> téléchargé et vérifié aux dimensions du recto.
+      let backEntry;
+      if (back) {
+        const backRemote = `${SITE}${back}`;
+        const backPng = await fetchPng(backRemote);
+        if (backPng.width !== width || backPng.height !== height) {
+          fail(
+            `${backRemote}: verso ${backPng.width}x${backPng.height}, ` +
+              `recto ${width}x${height} — dimensions différentes`,
+          );
+        }
+        images.push({ path: join(assetDir, deck, `${slug}-back.png`), buffer: backPng.buffer });
+        backEntry = {
+          asset: `assets/referentials/missions/${deck}/${slug}-back.png`,
+          remoteAsset: backRemote,
+        };
+      }
+
       missions.push({
         id: `${deck}/${slug}`,
         name,
@@ -152,6 +186,8 @@ async function main() {
         height,
         asset: `assets/referentials/missions/${deck}/${slug}.png`,
         remoteAsset,
+        // RT_64: absent pour une carte sans verso.
+        ...(backEntry ? { back: backEntry } : {}),
       });
     }
   }

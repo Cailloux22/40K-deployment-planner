@@ -4,7 +4,7 @@
     "attribution": "Primary mission cards (GDM 2026) via gdmissions.app",
     "url": "https://gdmissions.app/11th/primary-missions"
   },
-  "generatedAt": "2026-10-05T14:48:58.923Z",
+  "generatedAt": "2026-10-06T08:11:03.522Z",
   "missions": [
     {
       "id": "take-and-hold/battlefield-dominance",
@@ -114,7 +114,11 @@
       "width": 1653,
       "height": 2833,
       "asset": "assets/referentials/missions/reconnaissance/gather-intel.png",
-      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/gather-intel.png"
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/gather-intel.png",
+      "back": {
+        "asset": "assets/referentials/missions/reconnaissance/gather-intel-back.png",
+        "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/gather-intel-back.png"
+      }
     },
     {
       "id": "reconnaissance/reconnaissance-sweep",
@@ -144,7 +148,11 @@
       "width": 1653,
       "height": 2833,
       "asset": "assets/referentials/missions/reconnaissance/surveil-the-foe.png",
-      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/surveil-the-foe.png"
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/surveil-the-foe.png",
+      "back": {
+        "asset": "assets/referentials/missions/reconnaissance/surveil-the-foe-back.png",
+        "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/surveil-the-foe-back.png"
+      }
     },
     {
       "id": "reconnaissance/triangulation",
@@ -154,7 +162,11 @@
       "width": 1653,
       "height": 2833,
       "asset": "assets/referentials/missions/reconnaissance/triangulation.png",
-      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/triangulation.png"
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/triangulation.png",
+      "back": {
+        "asset": "assets/referentials/missions/reconnaissance/triangulation-back.png",
+        "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/reconnaissance/triangulation-back.png"
+      }
     },
     {
       "id": "priority-assets/extract-relic",
@@ -164,7 +176,11 @@
       "width": 1653,
       "height": 2833,
       "asset": "assets/referentials/missions/priority-assets/extract-relic.png",
-      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/extract-relic.png"
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/extract-relic.png",
+      "back": {
+        "asset": "assets/referentials/missions/priority-assets/extract-relic-back.png",
+        "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/extract-relic-back.png"
+      }
     },
     {
       "id": "priority-assets/sabotage",
@@ -174,7 +190,11 @@
       "width": 1653,
       "height": 2833,
       "asset": "assets/referentials/missions/priority-assets/sabotage.png",
-      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/sabotage.png"
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/sabotage.png",
+      "back": {
+        "asset": "assets/referentials/missions/priority-assets/sabotage-back.png",
+        "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/sabotage-back.png"
+      }
     },
     {
       "id": "priority-assets/secure-asset",
@@ -184,7 +204,11 @@
       "width": 1653,
       "height": 2833,
       "asset": "assets/referentials/missions/priority-assets/secure-asset.png",
-      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/secure-asset.png"
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/secure-asset.png",
+      "back": {
+        "asset": "assets/referentials/missions/priority-assets/secure-asset-back.png",
+        "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/secure-asset-back.png"
+      }
     },
     {
       "id": "priority-assets/vanguard-operation",
@@ -194,7 +218,11 @@
       "width": 1653,
       "height": 2833,
       "asset": "assets/referentials/missions/priority-assets/vanguard-operation.png",
-      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/vanguard-operation.png"
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/vanguard-operation.png",
+      "back": {
+        "asset": "assets/referentials/missions/priority-assets/vanguard-operation-back.png",
+        "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/vanguard-operation-back.png"
+      }
     },
     {
       "id": "priority-assets/vital-link",
@@ -204,7 +232,11 @@
       "width": 1653,
       "height": 2833,
       "asset": "assets/referentials/missions/priority-assets/vital-link.png",
-      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/vital-link.png"
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/vital-link.png",
+      "back": {
+        "asset": "assets/referentials/missions/priority-assets/vital-link-back.png",
+        "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/priority-assets/vital-link-back.png"
+      }
     },
     {
       "id": "disruption/death-trap",
@@ -214,7 +246,11 @@
       "width": 1653,
       "height": 2833,
       "asset": "assets/referentials/missions/disruption/death-trap.png",
-      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/death-trap.png"
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/death-trap.png",
+      "back": {
+        "asset": "assets/referentials/missions/disruption/death-trap-back.png",
+        "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/death-trap-back.png"
+      }
     },
     {
       "id": "disruption/delaying-action",
@@ -234,7 +270,11 @@
       "width": 1653,
       "height": 2833,
       "asset": "assets/referentials/missions/disruption/locate-and-deny.png",
-      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/locate-and-deny.png"
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/locate-and-deny.png",
+      "back": {
+        "asset": "assets/referentials/missions/disruption/locate-and-deny-back.png",
+        "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/locate-and-deny-back.png"
+      }
     },
     {
       "id": "disruption/outmanoeuvre",
@@ -254,7 +294,11 @@
       "width": 1653,
       "height": 2833,
       "asset": "assets/referentials/missions/disruption/smoke-and-mirrors.png",
-      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/smoke-and-mirrors.png"
+      "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/smoke-and-mirrors.png",
+      "back": {
+        "asset": "assets/referentials/missions/disruption/smoke-and-mirrors-back.png",
+        "remoteAsset": "https://gdmissions.app/assets/11th/primary-missions/disruption/smoke-and-mirrors-back.png"
+      }
     }
   ]
 }

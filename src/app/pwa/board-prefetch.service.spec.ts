@@ -11,8 +11,11 @@ const PATHS = [
   'assets/b/with/1.png',
   'assets/b/no/2.png',
   'assets/b/with/2.png',
-  // RT_65: une carte de mission, parcourue après les plateaux.
+  // RT_65: deux cartes de mission, parcourues après les plateaux…
+  'assets/m/reconnaissance/triangulation.png',
   'assets/m/purge-the-foe/meatgrinder.png',
+  // … puis les versos, après tous les rectos.
+  'assets/m/reconnaissance/triangulation-back.png',
 ];
 
 const referential = {
@@ -23,7 +26,7 @@ const referential = {
   ],
 };
 
-const missions = { missions: [{ asset: PATHS[4] }] };
+const missions = { missions: [{ asset: PATHS[4], back: { asset: PATHS[6] } }, { asset: PATHS[5] }] };
 
 describe('BoardPrefetchService (RT_56 / RG_42 / RT_65)', () => {
   let online: ReturnType<typeof signal<boolean>>;
@@ -89,9 +92,9 @@ describe('BoardPrefetchService (RT_56 / RG_42 / RT_65)', () => {
 
     await service.start();
 
-    expect(downloaded).toEqual([PATHS[1], PATHS[2], PATHS[3], PATHS[4]]);
-    expect(service.present()).toBe(5);
-    expect(service.total()).toBe(5);
+    expect(downloaded).toEqual(PATHS.slice(1));
+    expect(service.present()).toBe(7);
+    expect(service.total()).toBe(7);
     expect(service.status()).toBe('ready');
   });
 
@@ -115,7 +118,7 @@ describe('BoardPrefetchService (RT_56 / RG_42 / RT_65)', () => {
     reconnections.update((n) => n + 1);
     TestBed.tick();
     await vi.waitFor(() => expect(service.status()).toBe('ready'));
-    expect(downloaded).toHaveLength(5);
+    expect(downloaded).toHaveLength(7);
   });
 
   it('une image en échec est sautée et laisse le téléchargement incomplet', async () => {
@@ -123,8 +126,8 @@ describe('BoardPrefetchService (RT_56 / RG_42 / RT_65)', () => {
 
     await service.start();
 
-    expect(downloaded).toEqual([PATHS[1], PATHS[2], PATHS[3], PATHS[4]]);
-    expect(service.present()).toBe(4);
+    expect(downloaded).toEqual(PATHS.slice(1));
+    expect(service.present()).toBe(6);
     expect(service.status()).toBe('incomplete');
   });
 
@@ -142,7 +145,7 @@ describe('BoardPrefetchService (RT_56 / RG_42 / RT_65)', () => {
     expect(service.status()).toBe('awaiting-consent');
 
     await service.downloadNow();
-    expect(downloaded).toEqual([PATHS[0], PATHS[1], PATHS[3], PATHS[4]]);
+    expect(downloaded).toEqual([PATHS[0], PATHS[1], ...PATHS.slice(3)]);
     expect(service.status()).toBe('ready');
   });
 
