@@ -24,9 +24,9 @@ export const STORE_BOARD_IMAGES = 'boardImages';
 /** RT_65: cache des images de carte de mission obtenues par le réseau (RT_64). */
 export const STORE_MISSION_IMAGES = 'missionImages';
 
-const DB_NAME = '40k-deployment-planner';
+const DB_NAME = 'windfall-planner';
 const DB_VERSION = 5;
-const CONFIG_PREFIX = '40kdp.';
+const CONFIG_PREFIX = 'wfp.';
 
 export interface Tombstone {
   readonly id: string;

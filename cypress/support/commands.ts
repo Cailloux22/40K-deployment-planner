@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 // Nom de la base IndexedDB de l'application (src/app/data/local-store.service.ts).
-const DB_NAME = '40k-deployment-planner';
+const DB_NAME = 'windfall-planner';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace

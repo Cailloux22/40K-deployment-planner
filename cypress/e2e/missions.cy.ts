@@ -2,7 +2,7 @@
 // plateau, de l'écran de placement et du visualiseur « Consulter » (RG_48),
 // onglets à l'étroit, vue côte à côte à partir de 720 px (RT_66).
 const RECO_LIST = 'cypress/fixtures/lists/reconnaissance.json';
-const DB_NAME = '40k-deployment-planner';
+const DB_NAME = 'windfall-planner';
 
 // Ionic garde l'écran précédent dans le DOM, masqué : seul le bouton visible compte.
 const missionsButton = () => cy.get('button[aria-label="Voir les missions primaires"]').filter(':visible');

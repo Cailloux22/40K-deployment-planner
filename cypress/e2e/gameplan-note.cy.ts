@@ -2,7 +2,7 @@
 // conservation par « Nouveau » (RG_14/RT_60), lecture seule dans « Consulter »
 // (RG_46).
 const RECO_LIST = 'cypress/fixtures/lists/reconnaissance.json';
-const DB_NAME = '40k-deployment-planner';
+const DB_NAME = 'windfall-planner';
 const NOTE = 'Tour 1 : tenir le centre.\nTour 2 : réserves sur le flanc gauche.';
 
 const noteButton = (label: string) => cy.get(`button[aria-label="${label}"]`);
