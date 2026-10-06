@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "40K Deployment Planner",
-  "short_name": "Déploiement 40K",
+  "name": "Windfall Planner",
+  "short_name": "Windfall",
   "description": "Planifiez le déploiement de votre armée Warhammer 40,000 sur le plateau, même hors-ligne.",
   "lang": "fr",
   "start_url": "./",

@@ -2,7 +2,7 @@
 
 const config: CapacitorConfig = {
   appId: 'fr.rocher.deploymentplanner',
-  appName: '40K Deployment Planner',
+  appName: 'Windfall Planner',
   webDir: 'www'
 };
 
