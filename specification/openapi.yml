@@ -3,22 +3,43 @@ openapi: 3.0.3
 # Contrat d'API du backend de synchronisation (RT_09).
 #
 # Portée : ce backend ne sert QUE ce que EX_05/EX_06 exigent comme dépendant
-# du réseau — compte utilisateur (EX_06) et synchronisation delta des listes
-# et déploiements (RT_09, RT_10, RG_11, RT_15). Le parsing d'import (RT_01),
-# le référentiel de socles (RT_02) et le référentiel de plateaux (RT_12) sont
-# des données/traitements embarqués côté client, générés hors-ligne au build :
-# ils ne sont volontairement PAS exposés ici (cf. RT_02/RT_12 : "jamais par
-# appel réseau à l'exécution de l'application").
+# du réseau — compte utilisateur (EX_06, RG_10, RG_50, RG_52), appareils
+# connectés (RG_53, RT_67) et synchronisation delta des listes et déploiements
+# (RT_09, RT_10, RG_11, RT_15, RG_51, RT_68). Le parsing d'import (RT_01), le
+# référentiel de socles (RT_02) et le référentiel de plateaux (RT_12) sont des
+# données/traitements embarqués côté client, générés hors-ligne au build : ils
+# ne sont volontairement PAS exposés ici (cf. RT_02/RT_12 : "jamais par appel
+# réseau à l'exécution de l'application").
 #
 # Le blocage de l'import hors-ligne (RG_13/RT_14) est un gate purement côté
 # client (détection de connectivité) : il ne correspond à aucune route ici.
+#
+# Hors périmètre, par décision du product owner (RG_50) : vérification de
+# l'adresse email, récupération d'un mot de passe oublié, connexion par un
+# fournisseur tiers (OAuth), partage de données entre comptes différents. Un
+# export des données n'est pas nécessaire : un pull complet (GET /sync/changes
+# sans `since`) renvoie l'intégralité des enregistrements du compte.
+#
+# Parcours inter-appareils de référence :
+#   1. Appareil A : POST /auth/register (ou /auth/login) avec son `device`.
+#   2. GET /sync/summary ; si A a des données locales ET le compte aussi, le
+#      joueur choisit fusion ou remplacement (RG_51).
+#   3. GET /sync/changes (paginé, `hasMore`) puis POST /sync/changes.
+#   4. Appareil B : mêmes étapes 1 à 3 — il retrouve les listes et
+#      déploiements de A.
+#   5. Ensuite, à chaque reprise réseau / retour au premier plan (RT_10) :
+#      pull puis push ; les conflits (RG_11) sont tranchés par
+#      POST /sync/conflicts/resolve.
+#   6. Access token expiré : POST /auth/refresh (rotation, RT_67).
 
 info:
   title: 40K Deployment Planner — Sync API
   description: >-
     API de synchronisation par différence (delta) des listes d'armée et des
-    déploiements, et gestion du compte utilisateur optionnel (RG_10).
-  version: 0.1.0
+    déploiements entre les appareils d'un même joueur, et gestion du compte
+    utilisateur optionnel (RG_10) : inscription, connexion, sessions par
+    appareil, gestion et suppression du compte.
+  version: 1.0.0
 
 servers:
   - url: /v1
@@ -28,51 +49,82 @@ security:
 
 tags:
   - name: auth
-    description: Compte utilisateur optionnel (RG_10, EX_06).
+    description: Inscription, connexion, renouvellement et fermeture de session (RG_50, RT_21, RT_67).
+  - name: account
+    description: Gestion du compte connecté (RG_52).
+  - name: sessions
+    description: Appareils connectés au compte (RG_53, RT_67).
   - name: sync
-    description: Synchronisation delta (RT_09), déclenchement (RT_10), conflits (RG_11, RT_15).
+    description: >-
+      Synchronisation delta (RT_09, RT_68), déclenchement (RT_10), première
+      connexion d'un appareil (RG_51), conflits (RG_11, RT_15).
 
 paths:
   # ---------------------------------------------------------------------
   # RG_10 : le compte est optionnel — ces routes ne sont appelées que si le
   # joueur choisit explicitement de synchroniser vers un second appareil.
+  # RT_21/RT_14 : le client ne les propose qu'en ligne.
   # ---------------------------------------------------------------------
   /auth/register:
     post:
       tags: [auth]
-      summary: Créer un compte (RG_10, EX_06)
+      operationId: register
+      summary: Créer un compte et ouvrir une session sur cet appareil (RG_50, RT_67)
+      description: >-
+        RG_50 : email normalisé par le serveur (espaces retirés, minuscules)
+        avant le contrôle d'unicité. Aucune vérification de l'adresse n'est
+        faite et aucun mécanisme de récupération de mot de passe n'existe : le
+        client en avertit le joueur sur le formulaire. Le compte est
+        utilisable et synchronisable immédiatement.
       security: []
+      parameters:
+        - $ref: '#/components/parameters/ClientVersion'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Credentials'
+              $ref: '#/components/schemas/RegisterRequest'
       responses:
         '201':
-          description: Compte créé et session ouverte.
+          description: Compte créé et session ouverte pour l'appareil fourni.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthSession'
+        '400':
+          $ref: '#/components/responses/ValidationError'
         '409':
-          description: Un compte existe déjà pour cet email.
+          description: Un compte existe déjà pour cet email (`EMAIL_TAKEN`).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '426':
+          $ref: '#/components/responses/UpgradeRequired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /auth/login:
     post:
       tags: [auth]
-      summary: Authentifier un compte existant
+      operationId: login
+      summary: Authentifier un compte existant et ouvrir une session sur cet appareil (RG_50, RT_67)
+      description: >-
+        RG_50 : un email inconnu et un mot de passe erroné produisent la même
+        réponse (`INVALID_CREDENTIALS`), pour ne pas révéler l'existence d'un
+        compte. RT_69 : tentatives limitées par email et par adresse IP (429).
+        RT_67 : si une session existe déjà pour ce `device.id`, elle est
+        remplacée (une session par appareil).
       security: []
+      parameters:
+        - $ref: '#/components/parameters/ClientVersion'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Credentials'
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
           description: Session ouverte.
@@ -80,54 +132,91 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthSession'
+        '400':
+          $ref: '#/components/responses/ValidationError'
         '401':
-          description: Identifiants invalides.
+          description: Identifiants invalides (`INVALID_CREDENTIALS`).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '426':
+          $ref: '#/components/responses/UpgradeRequired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /auth/refresh:
     post:
       tags: [auth]
-      summary: Renouveler un access token à partir du refresh token
+      operationId: refreshTokens
+      summary: Renouveler le couple de jetons (rotation, RT_67)
+      description: >-
+        RT_67 : le refresh token présenté est invalidé et remplacé par un
+        nouveau (rotation). Présenter un refresh token déjà tourné révoque
+        toute la session de l'appareil (`SESSION_REVOKED`) : le client repasse
+        en usage local (RG_10), sans perte de données (RG_19).
       security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [refreshToken]
-              properties:
-                refreshToken:
-                  type: string
+              $ref: '#/components/schemas/RefreshRequest'
       responses:
         '200':
-          description: Nouveau couple de tokens.
+          description: Nouveau couple de jetons.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthTokens'
         '401':
-          description: Refresh token invalide ou expiré.
+          description: >-
+            Refresh token invalide ou expiré (`REFRESH_INVALID`), ou session
+            révoquée à distance, par changement de mot de passe ou suppression
+            du compte (`SESSION_REVOKED`).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /auth/logout:
     post:
       tags: [auth]
-      summary: Invalider la session courante
+      operationId: logout
+      summary: Fermer la session de cet appareil (RG_19, RT_67)
+      description: >-
+        Idempotent. RT_67 : authentifié par l'access token s'il est encore
+        valide, sinon par le refresh token du corps — une déconnexion reste
+        possible avec un access token expiré. RG_19 : la déconnexion ne
+        supprime aucune donnée locale ; côté client, elle est effective même
+        si cet appel échoue (RG_09).
+      security:
+        - bearerAuth: []
+        - {}
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
       responses:
         '204':
-          description: Session fermée.
+          description: Session fermée (ou déjà fermée).
 
-  /auth/me:
+  # ---------------------------------------------------------------------
+  # RG_52 : gestion du compte connecté, depuis le bloc Compte des Réglages
+  # (RG_18). Toute action sensible exige le mot de passe courant.
+  # ---------------------------------------------------------------------
+  /account:
     get:
-      tags: [auth]
-      summary: Profil du compte connecté
+      tags: [account]
+      operationId: getAccount
+      summary: Profil du compte connecté (RG_19)
       responses:
         '200':
           description: Profil courant.
@@ -136,14 +225,206 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
         '401':
-          description: Non authentifié.
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags: [account]
+      operationId: getMe
+      deprecated: true
+      summary: Alias déprécié de GET /account (contrat v0.1)
+      description: >-
+        Conservé pour les clients encore conformes au contrat v0.1 (voir
+        « Suivi des écarts » de spec.md). Même réponse que GET /account.
+      responses:
+        '200':
+          description: Profil courant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /account/password:
+    put:
+      tags: [account]
+      operationId: changePassword
+      summary: Changer le mot de passe (RG_52)
+      description: >-
+        RG_52 : le mot de passe courant est exigé. Les sessions de tous les
+        autres appareils sont révoquées (ils repassent en usage local à leur
+        prochain appel, sans perte de données) ; la session courante reçoit un
+        nouveau couple de jetons.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Mot de passe changé ; nouveaux jetons de la session courante.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          description: >-
+            Mot de passe courant erroné (`INVALID_CREDENTIALS`) ou non
+            authentifié (`UNAUTHENTICATED`, `ACCESS_TOKEN_EXPIRED`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /account/email:
+    put:
+      tags: [account]
+      operationId: changeEmail
+      summary: Changer l'adresse email du compte (RG_52)
+      description: >-
+        RG_52 : le mot de passe courant est exigé. Comme à l'inscription
+        (RG_50), la nouvelle adresse est normalisée et n'est pas vérifiée. Les
+        sessions existantes restent ouvertes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeEmailRequest'
+      responses:
+        '200':
+          description: Profil mis à jour.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          description: Mot de passe erroné (`INVALID_CREDENTIALS`) ou non authentifié.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Adresse déjà utilisée par un autre compte (`EMAIL_TAKEN`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /account/delete:
+    post:
+      tags: [account]
+      operationId: deleteAccount
+      summary: Supprimer définitivement le compte et toutes ses données serveur (RG_52)
+      description: >-
+        RG_52 : action confirmée explicitement par le joueur côté client, et
+        mot de passe exigé ici. Supprime le compte, toutes ses listes et
+        déploiements côté serveur, et révoque toutes ses sessions. Les données
+        locales de chaque appareil sont conservées (RG_10) : l'appareil
+        courant repasse immédiatement en usage local, les autres à leur
+        prochain appel (`SESSION_REVOKED`). Exposé en POST plutôt qu'en DELETE
+        parce que le corps (mot de passe) d'un DELETE n'est pas garanti par
+        tous les intermédiaires HTTP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteAccountRequest'
+      responses:
+        '204':
+          description: Compte supprimé.
+        '401':
+          description: Mot de passe erroné (`INVALID_CREDENTIALS`) ou non authentifié.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  # ---------------------------------------------------------------------
+  # RG_53/RT_67 : une session par appareil, listable et révocable depuis
+  # n'importe quel appareil connecté au compte.
+  # ---------------------------------------------------------------------
+  /account/sessions:
+    get:
+      tags: [sessions]
+      operationId: listSessions
+      summary: Lister les appareils connectés au compte (RG_53)
+      responses:
+        '200':
+          description: >-
+            Sessions actives, la plus récemment active en premier ; celle de
+            l'appareil appelant porte `current: true`.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeviceSession'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      tags: [sessions]
+      operationId: revokeOtherSessions
+      summary: Déconnecter tous les autres appareils (RG_53)
+      parameters:
+        - name: scope
+          in: query
+          required: true
+          description: >-
+            Seule valeur admise : `others` — la session de l'appareil appelant
+            est conservée. Paramètre obligatoire pour qu'un appel nu ne puisse
+            pas être pris pour « tout révoquer ».
+          schema:
+            type: string
+            enum: [others]
+      responses:
+        '204':
+          description: Toutes les autres sessions sont révoquées.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /account/sessions/{sessionId}:
+    delete:
+      tags: [sessions]
+      operationId: revokeSession
+      summary: Déconnecter un appareil à distance (RG_53)
+      description: >-
+        L'appareil concerné repasse en usage local à son prochain appel
+        (`SESSION_REVOKED`), sans perte de ses données locales. Révoquer sa
+        propre session équivaut à POST /auth/logout.
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Session révoquée.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Aucune session de ce compte ne porte cet identifiant (`NOT_FOUND`).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
   # ---------------------------------------------------------------------
-  # RT_09 : API de synchronisation delta des enregistrements créés / modifiés
+  # RT_09/RT_68 : synchronisation delta des enregistrements créés / modifiés
   # / supprimés depuis le dernier jeton de version connu du client.
   # RT_10 : déclenchée par le client à la reprise réseau et/ou au retour au
   # premier plan — jamais bloquante (voir RG_09), donc toujours asynchrone
@@ -151,44 +432,117 @@ paths:
   # EX_06 : couvre à la fois les listes importées et les déploiements, pour
   # qu'un second appareil retrouve "ses listes et déploiements".
   # ---------------------------------------------------------------------
+  /sync/summary:
+    get:
+      tags: [sync]
+      operationId: getSyncSummary
+      summary: Résumé du contenu du compte, pour la première connexion d'un appareil (RG_51)
+      description: >-
+        RG_51 : appelé juste après login/register, avant toute synchronisation.
+        Si l'appareil a des données locales et que le compte n'est pas vide,
+        le client demande au joueur de fusionner ou de remplacer ; sinon il
+        synchronise directement.
+      parameters:
+        - $ref: '#/components/parameters/ClientVersion'
+      responses:
+        '200':
+          description: Comptes d'enregistrements actifs (hors suppressions).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '426':
+          $ref: '#/components/responses/UpgradeRequired'
+
   /sync/changes:
     get:
       tags: [sync]
-      summary: Récupérer les changements serveur depuis un jeton de version (RT_09)
+      operationId: pullChanges
+      summary: Récupérer les changements serveur depuis un jeton de version (RT_09, RT_68)
+      description: >-
+        RT_68 : réponse paginée. Tant que `hasMore` est vrai, le client
+        rappelle immédiatement avec `since = nextToken`, et ne mémorise
+        `nextToken` comme jeton de l'appareil (RT_15) qu'une fois une page
+        appliquée localement — une interruption reprend donc là où elle s'est
+        arrêtée. Un enregistrement modifié plusieurs fois n'apparaît qu'une
+        fois, dans son dernier état.
       parameters:
+        - $ref: '#/components/parameters/ClientVersion'
         - name: since
           in: query
           description: >-
             Jeton de version renvoyé par la dernière synchronisation réussie.
             Omis (ou vide) lors de la toute première synchronisation d'un
-            appareil, auquel cas le serveur renvoie l'intégralité des
-            enregistrements du compte.
+            appareil (RG_51), ou après un 410 : le serveur renvoie alors
+            l'intégralité des enregistrements actifs du compte, sans
+            suppressions.
           schema:
             type: string
+        - name: limit
+          in: query
+          description: Nombre maximal d'enregistrements (listes + déploiements + suppressions) par page.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 200
       responses:
         '200':
-          description: Delta des enregistrements modifiés côté serveur depuis `since`.
+          description: Une page du delta des enregistrements modifiés côté serveur depuis `since`.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SyncPullResult'
         '401':
-          description: Non authentifié.
+          $ref: '#/components/responses/Unauthorized'
+        '410':
+          description: >-
+            `SYNC_TOKEN_EXPIRED` — `since` est antérieur à la rétention des
+            suppressions par le serveur (au moins 90 jours, RT_68). Le client
+            refait un pull complet sans `since`, puis supprime localement les
+            enregistrements synchronisés absents de ce pull qui ne sont pas
+            modifiés localement ; ses modifications locales en attente ne sont
+            jamais perdues et partent au push suivant.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '426':
+          $ref: '#/components/responses/UpgradeRequired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
     post:
       tags: [sync]
-      summary: Pousser les changements locaux depuis un jeton de version (RT_09)
+      operationId: pushChanges
+      summary: Pousser les changements locaux (RT_09, RT_68)
       description: >-
-        Le serveur applique chaque enregistrement dont le jeton de version
-        local (RT_15) correspond encore au jeton courant côté serveur.
-        Pour tout enregistrement où les jetons divergent, aucune écriture
-        n'est effectuée : l'enregistrement est renvoyé dans `conflicts`
-        (RG_11) plutôt qu'écrasé, sans bloquer l'acceptation des autres
-        enregistrements non conflictuels de la même requête.
+        RT_68 : chaque enregistrement porte son `versionToken` de base —
+        celui reçu à sa dernière synchronisation (RT_15), absent pour une
+        création. Le serveur traite chaque enregistrement indépendamment :
+
+        - jeton de base égal au jeton courant serveur (ou création d'un
+          identifiant inconnu) : écrit, renvoyé dans `accepted` avec son
+          nouveau jeton ;
+
+        - jetons divergents, ou enregistrement supprimé côté serveur : rien
+          n'est écrit, l'enregistrement est renvoyé dans `conflicts` (RG_11) ;
+
+        - enregistrement invalide : rien n'est écrit, renvoyé dans `rejected`.
+
+        Un conflit ou un rejet ne bloque jamais l'acceptation des autres
+        enregistrements de la même requête. Les listes sont traitées avant les
+        déploiements, si bien qu'un déploiement peut référencer une liste créée
+        dans la même requête. RG_21 : supprimer une liste supprime aussi ses
+        déploiements côté serveur ; ceux-ci reviennent au pull suivant dans
+        `deletedDeploymentIds`. Requête idempotente par `Idempotency-Key` :
+        rejouée après une réponse perdue, elle renvoie la réponse initiale au
+        lieu de produire des conflits contre ses propres écritures.
+      parameters:
+        - $ref: '#/components/parameters/ClientVersion'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -197,26 +551,55 @@ paths:
               $ref: '#/components/schemas/SyncPushRequest'
       responses:
         '200':
-          description: Résultat de la synchronisation (accepté / en conflit).
+          description: Résultat par enregistrement (accepté / en conflit / rejeté).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SyncPushResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
         '401':
-          description: Non authentifié.
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: >-
+            `BATCH_TOO_LARGE` — plus de 200 enregistrements (listes,
+            déploiements et suppressions confondus) ou corps de plus de 5 Mo.
+            Le client découpe sa poussée en plusieurs requêtes (RT_68).
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '422':
+          description: >-
+            `IDEMPOTENCY_KEY_REUSED` — la clé a déjà servi pour un corps
+            différent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '426':
+          $ref: '#/components/responses/UpgradeRequired'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
 
   /sync/conflicts/resolve:
     post:
       tags: [sync]
-      summary: Trancher explicitement un conflit de synchronisation (RG_11)
+      operationId: resolveConflict
+      summary: Trancher explicitement un conflit de synchronisation (RG_11, RT_68)
       description: >-
         Le joueur a comparé la version locale et la version serveur (avec
         leurs horodatages respectifs) et choisi laquelle conserver ; ce choix
         écrase l'autre version pour cet enregistrement précis uniquement.
+        `serverVersionToken` est le jeton de la version serveur présentée au
+        joueur : si le serveur a de nouveau changé depuis, la résolution est
+        refusée (409) plutôt que d'écraser une version que le joueur n'a pas
+        vue. Une version « supprimée » se choisit comme une autre : garder une
+        suppression locale supprime l'enregistrement serveur, garder une
+        suppression serveur supprime l'enregistrement local.
+      parameters:
+        - $ref: '#/components/parameters/ClientVersion'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -225,26 +608,26 @@ paths:
               $ref: '#/components/schemas/ConflictResolution'
       responses:
         '200':
-          description: Enregistrement résolu et nouveau jeton de version.
+          description: Enregistrement résolu et son nouvel état.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ConflictResolutionResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
         '401':
-          description: Non authentifié.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/Unauthorized'
         '409':
           description: >-
-            L'enregistrement a de nouveau changé côté serveur entre la
-            détection du conflit et cette résolution ; le client doit
-            relancer /sync/changes avant de retenter.
+            `CONFLICT_STALE` — l'enregistrement a de nouveau changé côté
+            serveur entre la détection du conflit et cette résolution ; le
+            client relance /sync/changes, puis présente à nouveau le conflit.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '426':
+          $ref: '#/components/responses/UpgradeRequired'
 
 components:
   securitySchemes:
@@ -252,32 +635,220 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: >-
+        RT_67 : access token JWT de 15 minutes, obtenu par /auth/register,
+        /auth/login ou /auth/refresh. Expiré : 401 `ACCESS_TOKEN_EXPIRED`, le
+        client appelle /auth/refresh puis rejoue la requête une fois.
+
+  parameters:
+    ClientVersion:
+      name: X-Client-Version
+      in: header
+      required: false
+      description: >-
+        RT_69/RG_47 : version de l'application (`MAJEUR.MINEUR.CORRECTIF`,
+        `version` de package.json). Permet au serveur de refuser (426) un
+        client trop ancien pour le schéma qu'il sert. Absente : le client est
+        tenu pour compatible.
+      schema:
+        type: string
+        pattern: '^\d+\.\d+\.\d+$'
+        example: 0.0.5
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: >-
+        RT_68 : identifiant unique (UUID) généré par le client pour une
+        tentative logique ; réutilisé tel quel en cas de nouvelle tentative
+        après une erreur réseau. Le serveur conserve la réponse 24 heures.
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    ValidationError:
+      description: >-
+        `VALIDATION_FAILED` — corps ou paramètres non conformes au schéma ;
+        `details` liste les champs fautifs.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: >-
+        `UNAUTHENTICATED` (jeton absent ou invalide), `ACCESS_TOKEN_EXPIRED`
+        (à renouveler par /auth/refresh) ou `SESSION_REVOKED` (session fermée
+        à distance ou compte supprimé : retour à l'usage local, RG_10).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: >-
+        `RATE_LIMITED` — RT_69 : trop de requêtes. Le client attend au moins
+        `Retry-After` secondes avant de retenter, sans bloquer le joueur (RG_09).
+      headers:
+        Retry-After:
+          description: Délai d'attente en secondes.
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UpgradeRequired:
+      description: >-
+        `CLIENT_TOO_OLD` — RT_69 : la version de l'application (en-tête
+        `X-Client-Version`) ne peut plus synchroniser avec ce serveur. Le
+        client suspend la synchronisation, garde ses données locales et
+        invite le joueur à mettre l'application à jour (RG_19).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
 
   # Note d'implémentation : le client conserve, en plus des champs décrits
   # ici, un indicateur local « modifié depuis le dernier sync réussi »
   # (RT_15). C'est un état d'appareil, pas une donnée partagée : il n'est
   # jamais transmis et n'apparaît donc dans aucun schéma ci-dessous.
   schemas:
+    # RT_69 : un corps d'erreur unique pour toutes les routes ; le client
+    # décide sur `code`, jamais sur `message` (destiné à l'affichage).
     Error:
       type: object
-      required: [message]
+      required: [code, message]
       properties:
+        code:
+          $ref: '#/components/schemas/ErrorCode'
         message:
           type: string
-        code:
-          type: string
+          description: Message lisible, en français, affichable tel quel au joueur.
+        details:
+          type: array
+          description: Pour `VALIDATION_FAILED` — un élément par champ fautif.
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field:
+                type: string
+                description: Chemin du champ, ex. `password` ou `deployments[3].listId`.
+              message:
+                type: string
 
-    Credentials:
+    ErrorCode:
+      type: string
+      enum:
+        - VALIDATION_FAILED
+        - INVALID_CREDENTIALS
+        - EMAIL_TAKEN
+        - UNAUTHENTICATED
+        - ACCESS_TOKEN_EXPIRED
+        - REFRESH_INVALID
+        - SESSION_REVOKED
+        - NOT_FOUND
+        - RATE_LIMITED
+        - BATCH_TOO_LARGE
+        - SYNC_TOKEN_EXPIRED
+        - CONFLICT_STALE
+        - IDEMPOTENCY_KEY_REUSED
+        - CLIENT_TOO_OLD
+        - INTERNAL_ERROR
+
+    # RG_50 : règles de saisie communes à l'inscription et au changement.
+    Email:
+      type: string
+      format: email
+      maxLength: 254
+      description: Normalisé par le serveur (espaces retirés, minuscules) ; jamais vérifié (RG_50).
+
+    Password:
+      type: string
+      format: password
+      minLength: 8
+      maxLength: 128
+      description: RG_50 — 8 à 128 caractères, aucune autre contrainte de composition.
+
+    # RT_67 : identité de l'appareil, générée une fois par le client et
+    # conservée dans sa configuration légère (RT_08). Une session par appareil.
+    Device:
       type: object
-      required: [email, password]
+      required: [id, name, platform]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifiant stable de l'installation de l'application sur cet appareil.
+        name:
+          type: string
+          maxLength: 80
+          description: Libellé affiché dans la liste des appareils (RG_53), ex. « Chrome — Windows ».
+        platform:
+          type: string
+          enum: [android, ios, web]
+          description: >-
+            `android` : application empaquetée ; `ios`/`web` : version web,
+            installée (EX_12) ou dans un onglet.
+
+    RegisterRequest:
+      type: object
+      required: [email, password, device]
       properties:
         email:
-          type: string
-          format: email
+          $ref: '#/components/schemas/Email'
+        password:
+          $ref: '#/components/schemas/Password'
+        device:
+          $ref: '#/components/schemas/Device'
+
+    LoginRequest:
+      type: object
+      required: [email, password, device]
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
         password:
           type: string
           format: password
-          minLength: 8
+        device:
+          $ref: '#/components/schemas/Device'
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+          format: password
+        newPassword:
+          $ref: '#/components/schemas/Password'
+
+    ChangeEmailRequest:
+      type: object
+      required: [newEmail, password]
+      properties:
+        newEmail:
+          $ref: '#/components/schemas/Email'
+        password:
+          type: string
+          format: password
+
+    DeleteAccountRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+          format: password
 
     User:
       type: object
@@ -285,27 +856,66 @@ components:
       properties:
         id:
           type: string
+          description: >-
+            Identifiant stable du compte. RG_51 : le client le compare à celui
+            du dernier compte synchronisé sur l'appareil pour détecter un
+            changement de compte.
         email:
+          $ref: '#/components/schemas/Email'
+        createdAt:
           type: string
-          format: email
+          format: date-time
 
     AuthTokens:
       type: object
-      required: [accessToken, refreshToken]
+      required: [accessToken, refreshToken, accessTokenExpiresAt]
       properties:
         accessToken:
           type: string
+          description: JWT, 15 minutes (RT_67).
         refreshToken:
           type: string
+          description: Opaque, 90 jours glissants, à usage unique — remplacé à chaque /auth/refresh (RT_67).
+        accessTokenExpiresAt:
+          type: string
+          format: date-time
+          description: Permet au client de renouveler avant l'expiration plutôt qu'après un 401.
 
     AuthSession:
       allOf:
         - $ref: '#/components/schemas/AuthTokens'
         - type: object
-          required: [user]
+          required: [user, sessionId]
           properties:
             user:
               $ref: '#/components/schemas/User'
+            sessionId:
+              type: string
+              description: Identifiant de la session de cet appareil (RG_53).
+
+    # RG_53 : un appareil connecté au compte.
+    DeviceSession:
+      type: object
+      required: [id, deviceName, platform, createdAt, lastSeenAt, current]
+      properties:
+        id:
+          type: string
+        deviceName:
+          type: string
+        platform:
+          type: string
+          enum: [android, ios, web]
+        createdAt:
+          type: string
+          format: date-time
+          description: Ouverture de la session (connexion sur cet appareil).
+        lastSeenAt:
+          type: string
+          format: date-time
+          description: Dernier appel authentifié, à la minute près.
+        current:
+          type: boolean
+          description: Vrai pour la session de l'appareil appelant.
 
     # RG_04/RT_04 : un placement = un modèle, jamais une unité entière.
     # Champs identiques à RT_04 pour une traçabilité directe.
@@ -363,10 +973,12 @@ components:
           properties:
             widthMm:
               type: number
-              exclusiveMinimum: 0
+              minimum: 0
+              exclusiveMinimum: true
             lengthMm:
               type: number
-              exclusiveMinimum: 0
+              minimum: 0
+              exclusiveMinimum: true
 
     # RG_02/RT_13 : unité importée, résolue vers un ou plusieurs socles via le
     # référentiel RT_02 (le référentiel lui-même reste embarqué, non exposé
@@ -415,7 +1027,7 @@ components:
     # être retrouvée sur un second appareil (EX_06).
     ArmyList:
       type: object
-      required: [id, name, forceDispositionId, units, updatedAt, versionToken]
+      required: [id, name, forceDispositionId, units, updatedAt]
       properties:
         id:
           type: string
@@ -438,7 +1050,12 @@ components:
           format: date-time
         versionToken:
           type: string
-          description: Jeton de version pour la détection de conflit (RT_15).
+          nullable: true
+          description: >-
+            RT_15/RT_68 : jeton de version. Toujours présent dans les réponses
+            du serveur. Dans une poussée, jeton de base — celui reçu à la
+            dernière synchronisation de cet enregistrement — absent ou `null`
+            pour un enregistrement jamais synchronisé (création).
 
     # RG_07/RT_04 : un déploiement sauvegardé — nom, liaison à la liste,
     # plateau/disposition adverse retenus, l'ensemble des placements, les
@@ -455,7 +1072,6 @@ components:
         - reservedUnitIds
         - note
         - updatedAt
-        - versionToken
       properties:
         id:
           type: string
@@ -495,18 +1111,46 @@ components:
           format: date-time
         versionToken:
           type: string
-          description: Jeton de version pour la détection de conflit (RT_15).
+          nullable: true
+          description: >-
+            RT_15/RT_68 : jeton de version. Toujours présent dans les réponses
+            du serveur. Dans une poussée, jeton de base — celui reçu à la
+            dernière synchronisation de cet enregistrement — absent ou `null`
+            pour un enregistrement jamais synchronisé (création).
+
+    ResourceType:
+      type: string
+      enum: [list, deployment]
+
+    # RG_51 : contenu du compte, présenté au joueur avant fusion/remplacement.
+    SyncSummary:
+      type: object
+      required: [listCount, deploymentCount, lastChangeAt]
+      properties:
+        listCount:
+          type: integer
+          minimum: 0
+        deploymentCount:
+          type: integer
+          minimum: 0
+        lastChangeAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Dernière écriture sur le compte, depuis n'importe quel appareil ; `null` si le compte est vide.
 
     SyncPullResult:
       type: object
-      required: [lists, deployments, deletedListIds, deletedDeploymentIds, nextToken]
+      required: [lists, deployments, deletedListIds, deletedDeploymentIds, nextToken, hasMore]
       properties:
         lists:
           type: array
+          description: Listes créées ou modifiées, chacune avec son `versionToken` courant.
           items:
             $ref: '#/components/schemas/ArmyList'
         deployments:
           type: array
+          description: Déploiements créés ou modifiés, chacun avec son `versionToken` courant.
           items:
             $ref: '#/components/schemas/Deployment'
         deletedListIds:
@@ -515,81 +1159,163 @@ components:
             type: string
         deletedDeploymentIds:
           type: array
+          description: Inclut les déploiements supprimés en cascade avec leur liste (RG_21).
           items:
             type: string
         nextToken:
           type: string
-          description: Jeton à conserver localement (RT_15) pour le prochain appel.
+          description: >-
+            Jeton à conserver localement (RT_15) une fois cette page appliquée,
+            et à passer en `since` à l'appel suivant.
+        hasMore:
+          type: boolean
+          description: RT_68 — vrai s'il reste des changements ; le client rappelle aussitôt avec `nextToken`.
+
+    # RT_68 : une suppression locale porte, comme une modification, le jeton
+    # de la version qu'elle supprime — un enregistrement modifié ailleurs
+    # entre-temps produit un conflit `deletedLocally` au lieu d'être perdu.
+    Deletion:
+      type: object
+      required: [resourceType, id]
+      properties:
+        resourceType:
+          $ref: '#/components/schemas/ResourceType'
+        id:
+          type: string
+        versionToken:
+          type: string
+          nullable: true
+          description: >-
+            Jeton de base de l'enregistrement supprimé. Absent pour un
+            enregistrement jamais synchronisé (la suppression est alors sans
+            effet côté serveur et acceptée).
 
     SyncPushRequest:
       type: object
-      required: [since]
       properties:
-        since:
-          type: string
-          description: Jeton de version local avant cette poussée (RT_15).
         lists:
           type: array
+          description: >-
+            Listes créées ou modifiées localement, chacune avec son
+            `versionToken` de base (absent pour une création).
           items:
             $ref: '#/components/schemas/ArmyList'
         deployments:
           type: array
+          description: Idem pour les déploiements.
           items:
             $ref: '#/components/schemas/Deployment'
-        deletedListIds:
+        deletions:
           type: array
+          description: RG_08/RG_21 — suppressions confirmées explicitement par le joueur.
           items:
-            type: string
-          description: RG_08 — suppressions confirmées explicitement par le joueur.
-        deletedDeploymentIds:
-          type: array
-          items:
-            type: string
+            $ref: '#/components/schemas/Deletion'
 
-    # RG_11/RT_15 : un enregistrement en conflit n'est jamais écrasé
+    AcceptedRecord:
+      type: object
+      required: [resourceType, id, deleted]
+      properties:
+        resourceType:
+          $ref: '#/components/schemas/ResourceType'
+        id:
+          type: string
+        deleted:
+          type: boolean
+          description: Vrai pour une suppression acceptée.
+        versionToken:
+          type: string
+          description: >-
+            Nouveau jeton de l'enregistrement, que le client conserve comme
+            jeton de base (RT_15). Absent quand `deleted` est vrai.
+
+    RejectedRecord:
+      type: object
+      required: [resourceType, id, code, message]
+      properties:
+        resourceType:
+          $ref: '#/components/schemas/ResourceType'
+        id:
+          type: string
+        code:
+          type: string
+          enum: [INVALID_RECORD, UNKNOWN_LIST, LIST_MISMATCH]
+          description: >-
+            `INVALID_RECORD` : enregistrement non conforme à son schéma.
+            `UNKNOWN_LIST` : déploiement dont la `listId` n'existe ni sur le
+            serveur ni dans la requête (RT_07). `LIST_MISMATCH` : déploiement
+            existant dont la `listId` changerait — la liaison est immuable.
+        message:
+          type: string
+          description: >-
+            Le client conserve l'enregistrement localement (jamais supprimé
+            pour un rejet) et le signale dans l'état de synchronisation (RG_19).
+
+    # RG_11/RT_15/RT_68 : un enregistrement en conflit n'est jamais écrasé
     # automatiquement — la version serveur est renvoyée telle quelle pour
     # être présentée au joueur à côté de la version locale qu'il a soumise.
     Conflict:
       type: object
-      required: [resourceType, id, serverRecord]
+      required: [resourceType, id, kind, serverRecord, serverVersionToken, serverUpdatedAt]
       properties:
         resourceType:
-          type: string
-          enum: [list, deployment]
+          $ref: '#/components/schemas/ResourceType'
         id:
           type: string
+        kind:
+          type: string
+          enum: [bothModified, deletedOnServer, deletedLocally]
+          description: >-
+            `bothModified` : modifié des deux côtés. `deletedOnServer` :
+            modifié localement, supprimé par un autre appareil.
+            `deletedLocally` : supprimé localement, modifié par un autre
+            appareil.
         serverRecord:
-          description: Version serveur courante (ArmyList ou Deployment selon resourceType).
+          description: >-
+            Version serveur courante (ArmyList ou Deployment selon
+            resourceType) ; `null` quand `kind` vaut `deletedOnServer`.
+          type: object
+          nullable: true
           oneOf:
             - $ref: '#/components/schemas/ArmyList'
             - $ref: '#/components/schemas/Deployment'
+        serverVersionToken:
+          type: string
+          description: Jeton de la version serveur présentée, à renvoyer à la résolution.
+        serverUpdatedAt:
+          type: string
+          format: date-time
+          description: RG_11 — horodatage de la version serveur (de sa suppression pour `deletedOnServer`).
 
     SyncPushResult:
       type: object
-      required: [acceptedListIds, acceptedDeploymentIds, conflicts, nextToken]
+      required: [accepted, conflicts, rejected]
+      description: >-
+        RT_68 : la poussée ne renvoie pas de jeton d'appareil. Seul le pull
+        fait avancer `since` : un jeton renvoyé ici sauterait les écritures
+        d'autres appareils survenues entre le pull et le push. Le pull suivant
+        renvoie donc aussi les propres écritures acceptées de l'appareil ; le
+        client les reconnaît à leur `versionToken`, identique à celui reçu
+        dans `accepted`, et n'a rien à y appliquer.
       properties:
-        acceptedListIds:
+        accepted:
           type: array
           items:
-            type: string
-        acceptedDeploymentIds:
-          type: array
-          items:
-            type: string
+            $ref: '#/components/schemas/AcceptedRecord'
         conflicts:
           type: array
           items:
             $ref: '#/components/schemas/Conflict'
-        nextToken:
-          type: string
+        rejected:
+          type: array
+          items:
+            $ref: '#/components/schemas/RejectedRecord'
 
     ConflictResolution:
       type: object
-      required: [resourceType, id, resolution]
+      required: [resourceType, id, resolution, serverVersionToken]
       properties:
         resourceType:
-          type: string
-          enum: [list, deployment]
+          $ref: '#/components/schemas/ResourceType'
         id:
           type: string
         resolution:
@@ -598,26 +1324,36 @@ components:
           description: >-
             keepLocal : la version locale soumise écrase la version serveur.
             keepServer : la version locale est abandonnée au profit du serveur.
+        serverVersionToken:
+          type: string
+          description: Jeton reçu dans `Conflict.serverVersionToken` ; refusé (409) s'il n'est plus courant.
         localRecord:
           description: >-
-            Requis quand resolution = keepLocal. Version locale du joueur
-            (ArmyList ou Deployment selon resourceType) à faire prévaloir.
+            Requis quand resolution = keepLocal et que la version locale n'est
+            pas une suppression (`kind` ≠ `deletedLocally`). Absent sinon.
           oneOf:
             - $ref: '#/components/schemas/ArmyList'
             - $ref: '#/components/schemas/Deployment'
 
     ConflictResolutionResult:
       type: object
-      required: [resourceType, id, record, versionToken]
+      required: [resourceType, id, deleted]
       properties:
         resourceType:
-          type: string
-          enum: [list, deployment]
+          $ref: '#/components/schemas/ResourceType'
         id:
           type: string
+        deleted:
+          type: boolean
+          description: >-
+            Vrai si la version retenue est une suppression : le client
+            supprime alors l'enregistrement localement (et, pour une liste,
+            ses déploiements, RG_21).
         record:
+          description: Version retenue ; absente quand `deleted` est vrai.
           oneOf:
             - $ref: '#/components/schemas/ArmyList'
             - $ref: '#/components/schemas/Deployment'
         versionToken:
           type: string
+          description: Nouveau jeton de l'enregistrement ; absent quand `deleted` est vrai.
