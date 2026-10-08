@@ -48,7 +48,7 @@
   <div #layout class="layout">
     <!-- RG_17/RT_19: le plateau occupe tout l'espace restant, à un zoom de base
          calculé par ajustement « contenir ». Les gestes natifs de zoom/pan sont
-         neutralisés en CSS ; seuls l'agrandissement ×2 (RG_38) et le
+         neutralisés en CSS ; seuls les agrandissements ×2 et ×4 (RG_38) et le
          déplacement de vue (RG_39) sont offerts, par leurs contrôles.
          RT_19: l'affichage est rogné au rectangle de jeu mesuré (`playArea`)
          — bandeau de titre, pied de légende et marges latérales exclus. -->
@@ -232,21 +232,32 @@
         >
           <ion-icon src="assets/icons/ruler.svg" aria-hidden="true"></ion-icon>
         </button>
-        <!-- RG_38: bascule ×1 / ×2, sans autre niveau ; l'icône change avec l'état.
+        <!-- RG_38: cycle ×1 → ×2 → ×4 → ×1 ; l'icône annonce l'appui suivant,
+             le libellé le niveau courant (RG_24, second canal).
              RT_49: `data-view-control` laisse la mesure de RG_33 en place. -->
         <button
           type="button"
-          class="board-tool"
+          class="board-tool zoom-toggle"
           data-view-control
-          [class.active]="zoom() === 2"
-          [attr.aria-pressed]="zoom() === 2"
-          [attr.aria-label]="zoom() === 2 ? 'Revenir à la taille d’origine' : 'Agrandir le plateau ×2'"
+          [class.active]="zoom() > 1"
+          [attr.aria-pressed]="zoom() > 1"
+          [attr.aria-label]="
+            zoom() === 1
+              ? 'Agrandir le plateau ×2'
+              : zoom() === 2
+                ? 'Agrandir le plateau ×4'
+                : 'Revenir à la taille d’origine'
+          "
           (click)="toggleZoom()"
         >
           <ion-icon
-            [src]="zoom() === 2 ? 'assets/icons/zoom-out.svg' : 'assets/icons/zoom-in.svg'"
+            [src]="zoom() === 4 ? 'assets/icons/zoom-out.svg' : 'assets/icons/zoom-in.svg'"
             aria-hidden="true"
           ></ion-icon>
+          @if (zoom() > 1) {
+            <!-- RT_49: le nom accessible porte déjà le niveau. -->
+            <span class="zoom-level" aria-hidden="true">×{{ zoom() }}</span>
+          }
         </button>
         <!-- RG_39: mode « Déplacement », désactivé au zoom de base. -->
         <button

@@ -269,6 +269,20 @@
   }
 }
 
+/* RG_38/RT_49: le libellé « ×2 » / « ×4 » élargit le bouton, dont la cible
+   tactile (RT_31) l'englobe ; taille de RT_30. */
+.zoom-toggle {
+  width: auto;
+  min-width: var(--app-touch-min);
+  padding: 0 10px;
+  gap: 2px;
+}
+
+.zoom-level {
+  font-size: var(--app-font-sm);
+  font-weight: 600;
+}
+
 /* RG_33/RT_43: le mode « Règle » garde la couleur de son tracé. */
 .ruler-toggle.active {
   background: var(--app-ruler-stroke);

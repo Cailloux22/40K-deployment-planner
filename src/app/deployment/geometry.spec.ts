@@ -1,4 +1,4 @@
-import { clampViewOffset, formatInches, measureInches } from './geometry';
+import { clampViewOffset, formatInches, measureInches, nextZoomLevel, zoomViewOffset } from './geometry';
 
 describe('ruler measure (RG_33, RT_42)', () => {
   it('converts an asset-pixel distance to inches with the board scale', () => {
@@ -40,5 +40,30 @@ describe('view offset bounds (RG_38, RG_39, RT_47)', () => {
   it('bounds each axis independently', () => {
     // Plus large que la zone, mais pas plus haute : seul dx peut varier.
     expect(clampViewOffset({ dx: 90, dy: 40 }, { width: 800, height: 500 }, area)).toEqual({ dx: 90, dy: 0 });
+  });
+});
+
+describe('zoom levels (RG_38, RT_47)', () => {
+  it('cycles base → ×2 → ×4 → base', () => {
+    expect(nextZoomLevel(1)).toBe(2);
+    expect(nextZoomLevel(2)).toBe(4);
+    expect(nextZoomLevel(4)).toBe(1);
+  });
+
+  it('keeps the point under the area centre when zooming in', () => {
+    expect(zoomViewOffset({ dx: 0, dy: 0 }, 1, 2)).toEqual({ dx: 0, dy: 0 });
+    expect(zoomViewOffset({ dx: 120, dy: -45 }, 2, 4)).toEqual({ dx: 240, dy: -90 });
+  });
+
+  it('resets the offset when returning to the base zoom', () => {
+    expect(zoomViewOffset({ dx: 300, dy: -200 }, 4, 1)).toEqual({ dx: 0, dy: 0 });
+  });
+
+  it('stays within the ×4 bounds after doubling a ×2 offset at its bound', () => {
+    // Plateau 300 × 500 au zoom de base, zone 400 × 600.
+    const area = { width: 400, height: 600 };
+    const atTwo = clampViewOffset({ dx: 1e6, dy: -1e6 }, { width: 600, height: 1000 }, area);
+    const doubled = zoomViewOffset(atTwo, 2, 4);
+    expect(clampViewOffset(doubled, { width: 1200, height: 2000 }, area)).toEqual(doubled);
   });
 });

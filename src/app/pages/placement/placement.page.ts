@@ -33,7 +33,15 @@ import {
   tokenSize,
 } from '../../deployment/token-geometry';
 import { clusterLayout } from '../../deployment/cluster';
-import { BaseFootprint, clampViewOffset, formatInches, measureInches } from '../../deployment/geometry';
+import {
+  BaseFootprint,
+  clampViewOffset,
+  formatInches,
+  measureInches,
+  nextZoomLevel,
+  ZoomLevel,
+  zoomViewOffset,
+} from '../../deployment/geometry';
 import { SelectionRect, idsTouchedByRect, isDoubleTap, soleSelectedUnit } from '../../deployment/selection';
 import { CoherencyBase, coherencyBase, detachedAfterRemoval, isCoherent } from '../../deployment/unit-coherency';
 import { prepareTerrain, visibilityBase, visibleZone, visibleZonePath } from '../../deployment/visibility';
@@ -241,7 +249,7 @@ interface MarqueeState {
  * RG_17/RT_19: le plateau occupe la plus grande taille possible dans l'espace
  * disponible, à un zoom de base calculé par ajustement « contenir ». Ce zoom
  * n'est pas réglable librement : aucun pincer-zoomer, aucun zoom à la
- * molette. RG_38/RG_39: seuls un agrandissement unique ×2, par son bouton, et
+ * molette. RG_38/RG_39: seuls les agrandissements ×2 et ×4, par leur bouton, et
  * le déplacement de la vue agrandie sont offerts au joueur.
  * RT_03: plateau et tokens sont rendus en SVG, pour un drag-and-drop tactile
  * précis sans perte de précision de positionnement.
@@ -344,13 +352,16 @@ export class PlacementPage implements OnInit {
   /** RT_19: facteur de base, recalculé sur changement d'espace disponible. */
   private readonly baseScale = signal(0);
   /**
-   * RG_38/RT_47: niveau d'agrandissement — 1 (zoom de base) ou 2. Local à
+   * RG_38/RT_47: niveau d'agrandissement — 1 (zoom de base), 2 ou 4. Local à
    * l'écran, ni persisté ni synchronisé : l'écran s'ouvre toujours à 1.
    */
-  readonly zoom = signal<1 | 2>(1);
+  readonly zoom = signal<ZoomLevel>(1);
   /** RT_47: décalage de vue de la surface, en pixels CSS, borné par `clampViewOffset`. */
   readonly viewOffset = signal<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
-  /** RG_39/RT_48: mode « Déplacement » — local, remis à faux au retour au zoom de base. */
+  /**
+   * RG_39/RT_48: mode « Déplacement » — local, activé à chaque entrée dans un
+   * niveau agrandi et remis à faux au retour au zoom de base.
+   */
   readonly panMode = signal(false);
   /** RT_48: un déplacement de vue est en cours (mode actif ou bouton du milieu). */
   readonly panning = signal(false);
@@ -794,23 +805,35 @@ export class PlacementPage implements OnInit {
   }
 
   // -------------------------------------------------------------------------
-  // RG_38/RG_39 — agrandissement ×2 et déplacement de la vue
+  // RG_38/RG_39 — agrandissement ×2 / ×4 et déplacement de la vue
   // -------------------------------------------------------------------------
 
   /**
-   * RG_38: bascule entre le zoom de base et ×2 — aucun autre niveau. Le
-   * passage à ×2 part du décalage nul (RT_47) : la surface étant centrée, le
-   * point sous le centre de la zone y reste. Le retour au zoom de base rétablit
-   * le cadrage de RG_17 et quitte le mode « Déplacement » (RG_39). Rien n'est
-   * écrit : seul l'affichage change.
+   * RG_38: cycle zoom de base → ×2 → ×4 → zoom de base. Chaque montée garde
+   * sous le centre de la zone le point qui s'y trouvait (RT_47 : décalage
+   * multiplié par le rapport des niveaux, puis reborné) ; le retour au zoom de
+   * base rétablit le cadrage de RG_17. Rien n'est écrit : seul l'affichage change.
    */
   toggleZoom(): void {
-    this.zoom.set(this.zoom() === 1 ? 2 : 1);
-    this.viewOffset.set({ dx: 0, dy: 0 });
-    if (this.zoom() === 1) this.panMode.set(false);
+    const from = this.zoom();
+    const to = nextZoomLevel(from);
+    const offset = zoomViewOffset(this.viewOffset(), from, to);
+    this.zoom.set(to);
+    // RT_47: borné à l'échelle du nouveau niveau, que `scale` reflète déjà.
+    this.setViewOffset(offset);
+    // RG_38/RG_39/RT_48: le mode « Déplacement » s'active à chaque entrée dans
+    // un niveau agrandi, quelle que soit sa valeur précédente, et se désactive
+    // au retour au zoom de base.
+    this.panMode.set(to !== 1);
+    // RT_48: un maintien du bouton du milieu en cours est clos, son décalage
+    // de départ ne valant plus au nouveau niveau.
+    if (this.panDrag) {
+      this.panDrag = null;
+      this.panning.set(false);
+    }
   }
 
-  /** RG_39: le mode « Déplacement » n'est disponible qu'à ×2. */
+  /** RG_39: le mode « Déplacement » n'est disponible qu'à ×2 et ×4. */
   togglePanMode(): void {
     if (this.zoom() === 1) return;
     this.panMode.set(!this.panMode());

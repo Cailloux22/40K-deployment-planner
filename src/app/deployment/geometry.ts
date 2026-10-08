@@ -180,3 +180,28 @@ export function clampViewOffset(
     dy: bound(offset.dy, surface.height - area.height),
   };
 }
+
+/** RG_38/RT_47: niveaux d'agrandissement de l'écran de placement. */
+export type ZoomLevel = 1 | 2 | 4;
+
+/** RG_38/RT_47: cycle du bouton d'agrandissement — 1 → 2 → 4 → 1. */
+export function nextZoomLevel(zoom: ZoomLevel): ZoomLevel {
+  return zoom === 1 ? 2 : zoom === 2 ? 4 : 1;
+}
+
+/**
+ * RG_38/RT_47: décalage de vue après un changement de niveau, avant bornage.
+ * La surface étant centrée, multiplier le décalage par le rapport des niveaux
+ * garde sous le centre de la zone le point qui s'y trouvait ; le retour au
+ * zoom de base remet le décalage à zéro (cadrage de RG_17).
+ */
+export function zoomViewOffset(
+  offset: { readonly dx: number; readonly dy: number },
+  from: ZoomLevel,
+  to: ZoomLevel,
+): { dx: number; dy: number } {
+  if (to === 1) return { dx: 0, dy: 0 };
+  const ratio = to / from;
+  // `+ 0` ramène un éventuel -0 à 0.
+  return { dx: offset.dx * ratio + 0, dy: offset.dy * ratio + 0 };
+}
