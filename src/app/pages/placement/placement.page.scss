@@ -221,8 +221,8 @@
 }
 
 /* RG_33/RT_43, RG_38/RG_39/RT_49: rangée de contrôles ancrée dans l'angle
-   haut-gauche de la zone du plateau — superposée (RT_33), à l'opposé de la
-   barre d'actions de token (angle bas-droit), et fixe quand la vue se déplace
+   haut-gauche de la zone du plateau — superposée (RT_33), à l'opposé du
+   bouton de retrait de la sélection (angle haut-droit), et fixe quand la vue se déplace
    (RT_47). RT_31: 44 px au moins ; RT_29: bordure contrastée face à la scène
    sombre, seul délimiteur en thème sombre. */
 .board-tools {
@@ -232,6 +232,16 @@
   z-index: 2;
   display: flex;
   gap: 8px;
+}
+
+/* RG_55/RT_73: bouton de retrait de la sélection, symétrique de la rangée
+   ci-dessus dans l'angle haut-droit ; même rendu que les boutons de vue. */
+.selection-tools {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
 }
 
 .board-tool {
@@ -332,48 +342,29 @@
   cursor: grab;
 }
 
-// RG_20/RT_33: barre d'actions du token sélectionné, superposée à la zone du
-// plateau. Ancrée dans l'angle bas-droit, hors du centre où se fait la
-// manipulation, elle ne prend aucune place dans le flux : sa venue et son
-// départ au fil des sélections ne modifient plus l'espace disponible, donc
-// plus l'échelle d'affichage du plateau (RG_17/RT_19).
-.token-actions {
+// RG_30/RG_29/RT_73: indications textuelles de la sélection, superposées à
+// l'angle bas-droit de la zone du plateau (RT_33). Elles ne prennent aucune
+// place dans le flux : leur venue au fil des sélections ne modifie pas
+// l'échelle d'affichage du plateau (RG_17/RT_19). Texte seul, sans contrôle.
+.selection-status {
   position: absolute;
   right: 8px;
   bottom: 8px;
   // Au-dessus du plateau et de ses tokens, sous le panneau d'unités (RT_24).
   z-index: 2;
   display: flex;
-  align-items: center;
-  gap: var(--app-touch-gap);
-  padding: 2px 6px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 6px 12px;
   border-radius: var(--app-radius-pill);
   background: var(--app-surface-raised);
   // RT_29: flottant sur la scène sombre, la surface surélevée ne suffit pas à
-  // délimiter le contrôle en thème sombre (#1e1e1e sur #11131a) — la bordure
-  // est ici le seul délimiteur et porte le 3:1 de WCAG 1.4.11 face à la
-  // scène, pas seulement face à sa propre surface.
+  // délimiter la pastille en thème sombre (#1e1e1e sur #11131a) — la bordure
+  // porte le 3:1 de WCAG 1.4.11 face à la scène.
   border: 1px solid var(--app-border-interactive);
-
-  span {
-    padding-inline-start: 6px;
-    font-size: var(--app-font-sm);
-    font-variant-numeric: tabular-nums;
-    color: var(--app-text-secondary);
-  }
-
-  // RT_31: ces boutons (size="small") mesuraient 28 px de côté.
-  ion-button {
-    margin: 0;
-    min-width: var(--app-touch-min);
-    min-height: var(--app-touch-min);
-  }
-
-  // RT_31: le retrait est destructif et voisine la rotation — il est écarté
-  // d'un cran supplémentaire pour qu'une frappe imprécise ne l'atteigne pas.
-  .remove {
-    margin-inline-start: var(--app-touch-gap);
-  }
+  font-size: var(--app-font-sm);
+  color: var(--app-text-secondary);
 }
 
 /* RG_15: bandeau ancré en bas de l'écran. */

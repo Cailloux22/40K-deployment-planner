@@ -860,14 +860,14 @@ export class PlacementPage implements OnInit {
   /**
    * RT_48: cet appui commence-t-il un déplacement de vue ? Mode « Déplacement »
    * actif et appui sur le plateau, ou bouton du milieu — quel que soit le mode.
-   * Les contrôles superposés au plateau (RT_49, barre d'actions de RT_33) en
-   * sont exclus.
+   * Les contrôles superposés au plateau (RT_49, bouton de retrait de RT_73)
+   * en sont exclus.
    */
   private startsViewPan(event: PointerEvent): boolean {
     const area = this.boardArea?.nativeElement;
     const target = event.target as Element | null;
     if (!area || !target || !area.contains(target)) return false;
-    if (target.closest('[data-view-control], .token-actions')) return false;
+    if (target.closest('[data-view-control], .selection-status')) return false;
     return event.button === 1 || this.panMode();
   }
 
@@ -1987,53 +1987,45 @@ export class PlacementPage implements OnInit {
     return Math.round(((angle % 360) + 360) % 360);
   }
 
-  /** RG_20: rotation au pas fixe, complément tactile de la poignée. */
-  rotateSelected(delta: number): void {
-    const id = this.selectedPlacementId();
-    const placement = id ? this.placements().find((p) => p.idModele === id) : undefined;
-    if (!placement) return;
-    const rotation = this.normalizeAngle(placement.rotation + delta);
-    // RG_26/RT_36: même contrôle que la poignée de rotation, sur une unité en
-    // cohésion avant le geste.
-    const placements = this.placements();
-    const rotated = placements.map((p) => (p === placement ? { ...p, rotation } : p));
-    const groupId = this.groupIdOf(placement.idUnite);
-    if (this.groupCoherent(groupId, placements) && !this.groupCoherent(groupId, rotated)) {
-      void this.announceRefusal('Rotation refusée : l’unité ne serait plus en cohésion.');
-      return;
-    }
-    this.updatePlacement(placement.idModele, { rotation });
-  }
-
   /**
-   * Retire un token du plateau (le modèle repasse « en attente », RG_05).
+   * RG_55: retire du plateau tous les tokens sélectionnés (les modèles
+   * repassent « en attente », RG_05).
    *
-   * RG_26/RT_36: si ce retrait coupe la chaîne de contiguïté d'une unité qui
-   * était en cohésion, les tokens des groupes détachés sont retirés avec lui
-   * — le groupe le plus nombreux reste sur le plateau. Retirant plus que le
-   * token choisi, l'opération est confirmée (même principe que RG_08) ;
-   * l'annuler ne retire rien.
+   * RG_26/RT_36: pour chaque unité touchée qui était en cohésion, si le
+   * retrait coupe sa chaîne de contiguïté, les tokens des groupes détachés
+   * sont retirés aussi — le groupe le plus nombreux reste sur le plateau.
+   * Retirant plus que la sélection, l'opération est confirmée une seule fois
+   * (même principe que RG_08) ; l'annuler ne retire rien et garde la sélection.
    */
   async removeSelected(): Promise<void> {
-    const id = this.selectedPlacementId();
+    const selected = this.selection();
+    if (selected.size === 0) return;
     const placements = this.placements();
-    const placement = placements.find((p) => p.idModele === id);
-    if (!placement) return;
-
-    const remaining = placements.filter((p) => p !== placement);
+    const remaining = placements.filter((p) => !selected.has(p.idModele));
     // RG_37: le plus grand groupe conservé est celui de l'unité attachée entière.
-    const groupId = this.groupIdOf(placement.idUnite);
-    const detached = this.groupCoherent(groupId, placements)
-      ? detachedAfterRemoval(this.groupBases(groupId, remaining))
-      : [];
+    const touched = new Set(
+      placements.filter((p) => selected.has(p.idModele)).map((p) => this.groupIdOf(p.idUnite)),
+    );
+    const groups = this.groups();
+    const detached: string[] = [];
+    const trimmed: string[] = [];
+    for (const groupId of touched) {
+      if (!this.groupCoherent(groupId, placements)) continue;
+      const ids = detachedAfterRemoval(this.groupBases(groupId, remaining));
+      if (ids.length === 0) continue;
+      detached.push(...ids);
+      const name = groups.find((group) => group.id === groupId)?.name ?? groupId;
+      trimmed.push(`« ${name} » : ${ids.length} token(s)`);
+    }
 
     if (detached.length > 0) {
       const alert = await this.alerts.create({
-        header: 'Retirer ce token ?',
+        header: selected.size === 1 ? 'Retirer ce token ?' : `Retirer ces ${selected.size} tokens ?`,
         message:
-          `Ce retrait coupe l'unité en plusieurs groupes. Pour qu'elle reste en ` +
-          `cohésion, ${detached.length} token(s) supplémentaire(s) seront retirés ` +
-          `du plateau ; le groupe le plus nombreux est conservé.`,
+          `Ce retrait coupe des unités en plusieurs groupes. Pour qu'elles restent ` +
+          `en cohésion, ${detached.length} token(s) supplémentaire(s) seront retirés ` +
+          `du plateau (${trimmed.join(', ')}) ; le groupe le plus nombreux de chaque ` +
+          `unité est conservé.`,
         buttons: [
           { text: 'Annuler', role: 'cancel' },
           { text: 'Retirer', role: 'destructive' },
@@ -2044,8 +2036,8 @@ export class PlacementPage implements OnInit {
       if (role !== 'destructive') return;
     }
 
-    // RT_36: token choisi et groupes détachés disparaissent dans la même écriture.
-    const removed = new Set([placement.idModele, ...detached]);
+    // RT_73: sélection et groupes détachés disparaissent dans la même écriture.
+    const removed = new Set([...selected, ...detached]);
     this.mutatePlacements((current) => current.filter((p) => !removed.has(p.idModele)));
     this.selection.set(new Set());
   }

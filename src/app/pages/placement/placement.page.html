@@ -275,38 +275,36 @@
       </div>
       <span class="visually-hidden" aria-live="polite">{{ measureAnnouncement() }}</span>
 
-      <!-- RG_20: rotation également accessible au pas fixe, et retrait du token.
-           RT_33: superposée à la zone du plateau et non insérée dans le flux —
-           son apparition à la sélection ne consomme aucune hauteur et ne
-           re-cadre donc pas le plateau (RG_17/RT_19). -->
-      @if (selectedToken(); as token) {
-        <div class="token-actions" role="toolbar" aria-label="Actions sur le token sélectionné">
-          <!-- RG_29: sans terrain décrit, colorer le plateau entier ferait croire
-               qu'aucun obstacle ne s'y trouve — on le dit plutôt. -->
-          @if (visibleZoneUnavailable()) {
-            <span class="visibility-unavailable">Zone visible indisponible pour ce plateau</span>
-          }
-          <span>{{ token.placement.rotation }}°</span>
-          <ion-button size="small" fill="clear" (click)="rotateSelected(-15)" aria-label="Pivoter de -15 degrés">
-            <ion-icon name="return-up-back" slot="icon-only"></ion-icon>
-          </ion-button>
-          <ion-button size="small" fill="clear" (click)="rotateSelected(15)" aria-label="Pivoter de +15 degrés">
-            <ion-icon name="return-up-forward" slot="icon-only"></ion-icon>
-          </ion-button>
-          <ion-button
-            class="remove"
-            size="small"
-            fill="clear"
-            color="danger"
+      <!-- RG_55/RT_73: seule commande propre à la sélection, dans l'angle
+           haut-droit, au rendu des boutons de vue. RT_33: superposé à la zone
+           du plateau, son apparition ne re-cadre pas le plateau (RG_17/RT_19).
+           RT_73: `data-view-control` laisse la mesure de RG_33 en place. -->
+      @if (selectedCount() > 0) {
+        <div class="selection-tools">
+          <button
+            type="button"
+            class="board-tool"
+            data-view-control
+            [attr.aria-label]="
+              selectedCount() === 1 ? 'Retirer le modèle sélectionné' : 'Retirer les ' + selectedCount() + ' modèles sélectionnés'
+            "
             (click)="removeSelected()"
-            aria-label="Retirer ce token"
           >
-            <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
-          </ion-button>
+            <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
+          </button>
+        </div>
+      }
+
+      <!-- RT_73: indications textuelles de la sélection, sans contrôle. -->
+      @if (selectedToken() && visibleZoneUnavailable()) {
+        <!-- RG_29: sans terrain décrit, colorer le plateau entier ferait croire
+             qu'aucun obstacle ne s'y trouve — on le dit plutôt. -->
+        <div class="selection-status" role="status">
+          <span>Zone visible indisponible pour ce plateau</span>
         </div>
       } @else if (selectedCount() > 1) {
         <!-- RG_30/RG_24: l'appartenance à la sélection est aussi énoncée. -->
-        <div class="token-actions" role="status">
+        <div class="selection-status" role="status">
           <span>{{ selectedCount() }} modèles sélectionnés</span>
         </div>
       }
