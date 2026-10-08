@@ -45,7 +45,7 @@ export class AuthService {
   readonly user = computed<AuthUser | null>(() => this.session()?.user ?? null);
   readonly signedIn = computed(() => this.session() !== null);
 
-  /** RT_71: aucun serveur n'est configuré pour ce build (adresse de production non tranchée). */
+  /** RT_71: aucun serveur n'est configuré pour ce build (`syncApiBaseUrl` à `null`). */
   readonly available = SYNC_API_BASE_URL !== null;
 
   /** RT_21/RT_14: les actions de compte ne sont proposées qu'en ligne. */
