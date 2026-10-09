@@ -65,8 +65,8 @@ Traçabilité : [[RG_14]], [[RT_16]], [[RT_12]].
 Traçabilité : [[RG_48]], [[RG_03]] (étape 3), [[RG_04]], [[RG_05]], [[RG_06]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_24]].
 
 ### 7. Visualiseur plein écran — déploiement (no-measurements + placements)
-Ouvert par un tap depuis l'action « Consulter » de l'écran 4 (statut orange/vert), ou depuis une entrée de la bibliothèque intégrée à l'accueil (écran 1). Vue plateau (variante sans mesures) avec les placements existants superposés en lecture seule, pinch-to-zoom, croix en haut à gauche pour sortir. En haut à droite, le bouton des missions primaires du couple, à gauche de celui du plan de jeu.
-Traçabilité : [[RG_14]], [[RT_16]], [[RG_48]].
+Ouvert par un tap depuis l'action « Consulter » de l'écran 4 (statut orange/vert), ou depuis une entrée de la bibliothèque intégrée à l'accueil (écran 1). Vue plateau (variante sans mesures) avec les placements existants superposés en lecture seule, pinch-to-zoom, croix en haut à gauche pour sortir. En haut à droite, de gauche à droite : le bouton « Partager » (image PNG ou JPG du déploiement envoyée à une autre application), le bouton des missions primaires du couple, puis celui du plan de jeu.
+Traçabilité : [[RG_14]], [[RT_16]], [[RG_48]], [[RG_56]].
 
 ### Fenêtre des missions primaires (modale, pas un écran)
 Fenêtre plein écran ouverte depuis les écrans 4, 6 et 7, qu'elle recouvre sans les quitter : la fermer ramène à l'écran d'origine dans l'état où le joueur l'avait laissé. Elle présente la carte de mission primaire du joueur et celle de l'adversaire pour le couple de dispositions en cours (une seule carte pour un couple miroir), chacune sur la couleur de sa disposition. Sur un écran étroit, les deux cartes sont dans deux onglets « Ma mission » / « Mission adverse » ; sur un écran d'au moins 720 px de large (tablette, téléphone en paysage), le plateau avec mesures, la mission du joueur et la mission adverse sont affichés côte à côte, chacun zoomable. Ce n'est pas une route : comme la fenêtre « Plan de jeu », elle ne figure pas dans la numérotation des écrans.

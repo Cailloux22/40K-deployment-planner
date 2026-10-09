@@ -215,7 +215,7 @@ Le plateau affiché est par ailleurs **identifié une seule fois** par cet écra
 
 - **« Nouveau »** : toujours disponible, y compris quand un déploiement existe déjà (orange ou vert). Écrase le déploiement existant du triplet (remise à zéro des placements et des unités en réserve de [[RG_25]] ; la note de plan de jeu de [[RG_45]] est en revanche **conservée**) et ouvre l'écran de placement ([[RG_03]] étape 3) vide. Une action destructrice de ce type est confirmée explicitement par le joueur avant d'écraser quoi que ce soit, sur le même principe que [[RG_08]]. L'identifiant du déploiement du triplet ([[RT_07]]) est conservé (mise à jour en place, cf. [[RG_07]]) ; il n'existe jamais qu'un déploiement par triplet.
 - **« Éditer »** : disponible uniquement quand un déploiement existe déjà pour ce triplet (statut orange ou vert) ; masqué/désactivé au statut rouge. Ouvre l'écran de placement préchargé avec les placements existants. Ce bouton est affiché en **orange** lorsque le déploiement existant est non fini, pour renforcer le signal donné par le statut du plateau.
-- **« Consulter »** : disponible uniquement quand le déploiement de ce triplet est **terminé** (statut vert) ; masqué/désactivé aux statuts rouge et orange — un déploiement encore en cours de remplissage se reprend via « Éditer », pas via cette vue en lecture seule. Affiche en plein écran, zoomable, le plateau avec les placements du joueur superposés, en lecture seule (aucune édition possible), en utilisant cette fois la variante du plateau **sans** repères de mesure (« no-measurements » de [[RT_12]]). La note de plan de jeu du déploiement y est consultable en lecture seule ([[RG_46]]).
+- **« Consulter »** : disponible uniquement quand le déploiement de ce triplet est **terminé** (statut vert) ; masqué/désactivé aux statuts rouge et orange — un déploiement encore en cours de remplissage se reprend via « Éditer », pas via cette vue en lecture seule. Affiche en plein écran, zoomable, le plateau avec les placements du joueur superposés, en lecture seule (aucune édition possible), en utilisant cette fois la variante du plateau **sans** repères de mesure (« no-measurements » de [[RT_12]]). La note de plan de jeu du déploiement y est consultable en lecture seule ([[RG_46]]). Ce visualiseur permet aussi de partager le déploiement en image PNG ou JPG vers une autre application ([[RG_56]]).
 
 ### RG_04 — Un token = un modèle
 
@@ -1649,6 +1649,59 @@ Chaque image — carte ou plateau — est rendue par le pan/zoom de [[RT_16]], *
 
 ---
 
+## EX_15 — Partage d'un déploiement terminé en image
+
+Une fois un déploiement **terminé**, le joueur doit pouvoir **l'envoyer sous forme d'image** (PNG ou JPG, au choix) **à une autre application** de son appareil — messagerie, réseau social, galerie, stockage de fichiers… — pour le montrer à un partenaire de jeu ou le conserver hors de l'application. L'image reproduit le plateau et les placements tels que le visualiseur « Consulter » les montre ; elle est produite sur l'appareil, sans serveur, et donc aussi hors-ligne ([[EX_05]]).
+
+Satisfait par : [[RG_56]], [[RT_74]], [[RT_75]].
+
+### RG_56 — Bouton « Partager » dans le visualiseur « Consulter » et choix du format
+
+**Accès.** Le visualiseur plein écran ouvert par l'action **« Consulter »** de [[RG_14]] — déploiement terminé, placements superposés au plateau sans repères de mesure — porte un bouton **« Partager »**, en haut à droite de l'écran, **à gauche du bouton des missions primaires** ([[RG_48]]), lui-même à gauche de celui du plan de jeu ([[RG_46]]) lorsqu'il est présent. Le bouton est toujours affiché dans ce visualiseur : seul un déploiement terminé y est consultable ([[RG_14]]). Le visualiseur « plateau seul » de [[RG_14]], qui ne montre aucun déploiement, ne le porte pas ; l'écran de placement ([[RG_03]] étape 3) non plus — un déploiement en cours ne se partage pas.
+
+**Choix du format.** Un appui ouvre un choix entre deux formats, puis « Annuler » :
+
+- **« Image PNG »** — sans perte, fichier plus lourd ;
+- **« Image JPG »** — compressé, fichier plus léger, adapté aux messageries.
+
+Le libellé de chaque choix énonce cette différence en texte, la couleur n'y portant aucune information ([[RG_24]]). « Annuler » (ou le geste/bouton retour du système) referme le choix sans rien produire.
+
+**Contenu de l'image.** L'image représente le **plateau entier** dans sa variante sans repères de mesure, avec **tous les tokens posés**, à leur position, orientation, forme, taille et couleur d'unité ([[RG_04]], [[RG_06]], [[RG_20]], [[EX_03]]), exactement comme le visualiseur les superpose. Elle est indépendante de l'agrandissement et du cadrage courants du visualiseur : le joueur n'a pas à dézoomer pour partager le plateau en entier. Elle ne contient **aucun élément d'interface** (boutons, croix de fermeture, zone visible de [[RG_29]], règle de [[RG_33]]) ni la note de plan de jeu ([[RG_46]]), qui reste privée. Un bandeau en pied d'image ajoute, en texte : le nom de la liste d'armée, la disposition du joueur puis celle de l'adversaire (dans l'ordre de lecture de [[RG_14]]), le nom du plateau, et les **mentions de source** des référentiels dont l'image est tirée ([[RT_20]] — au minimum Battlemaster pour le plateau, Wahapedia pour les socles), l'image étant destinée à circuler hors de l'application.
+
+**Envoi.** Une fois l'image produite, l'application ouvre la **feuille de partage du système**, qui liste les applications capables de recevoir une image ; le joueur y choisit la destination. Là où le système n'offre pas de partage de fichier (navigateur de bureau notamment), l'image est **enregistrée** dans les téléchargements de l'appareil à la place, et un message bref l'indique.
+
+**Hors-ligne et échecs ([[RG_09]]).** Le partage ne dépend pas du réseau : l'image est composée sur l'appareil à partir du plateau déjà affiché ([[RG_23]]). Si le plateau n'est pas disponible (image de remplacement « Plateau non disponible hors-ligne » de [[RG_42]]), le bouton reste visible mais **inactif**, et son nom accessible le dit. Pendant la production de l'image, le bouton est inactif et un indicateur d'attente est affiché ; un abandon du joueur dans la feuille de partage ne produit aucun message ; un échec de composition ou d'envoi produit un message bref, non bloquant, et laisse le visualiseur dans son état.
+
+**État préservé.** Le partage ne modifie pas le déploiement (aucune écriture, aucune synchronisation déclenchée), ni l'agrandissement et le cadrage du visualiseur.
+
+### RT_74 — Composition de l'image du déploiement
+
+**Surface.** L'image est composée dans un `canvas` hors écran aux **dimensions natives de l'image du plateau** (`width`/`height` de l'entrée du référentiel, [[RT_12]]), c'est-à-dire dans l'espace de pixels où sont stockés les placements ([[RT_04]]) : aucune conversion d'échelle d'écran n'intervient, et le résultat est identique quel que soit l'appareil, l'orientation ou le zoom ([[RT_19]], [[RT_47]]). Le bandeau de pied de [[RG_56]] est ajouté **sous** cette zone, en agrandissant le `canvas` d'autant, pour ne recouvrir ni le plateau ni la légende imprimée par la source ([[RG_14]]).
+
+**Plateau.** L'image du plateau est celle que le visualiseur affiche, obtenue par la même chaîne que le pipe `boardImage` ([[RT_27]]) — URL d'objet d'un blob local ou asset embarqué de même origine —, si bien que le `canvas` n'est jamais « teinté » par une ressource d'une autre origine et que son export est autorisé. L'image de remplacement SVG de [[RG_42]] est détectée par le service et désactive le bouton ([[RG_56]]).
+
+**Tokens.** Le calque SVG des tokens du visualiseur, dont le `viewBox` est déjà l'espace de pixels du plateau, est **sérialisé** (`XMLSerializer`) puis dessiné sur le `canvas` (`drawImage` d'une image SVG chargée depuis une URL d'objet), plutôt que redessiné par un second code de rendu : la géométrie ([[RT_05]]), les couleurs et le texte lisible ([[RT_32]]) restent écrits une seule fois. Les couleurs portées par des variables CSS de thème ([[RT_29]]) sont résolues en valeurs littérales avant sérialisation, une image SVG isolée ne recevant pas la feuille de style de l'application ; la police est la police système de repli, une image SVG ne chargeant aucune ressource externe. Ni la zone visible ([[RT_39]]) ni aucun élément d'interface ne figurent dans ce calque à la sérialisation.
+
+**Bandeau.** Le bandeau de pied est dessiné par `fillText` sur un fond opaque, à une taille de texte proportionnelle à la largeur du plateau (lisible une fois l'image affichée en pleine largeur sur un téléphone). Les mentions de source sont lues dans le bloc `source` des référentiels ([[RT_20]]), jamais écrites en dur dans le code de composition. Les noms de liste et de plateau sont du texte du joueur et du référentiel, dessinés tels quels et tronqués avec « … » s'ils dépassent la largeur.
+
+**Export.** `canvas.toBlob('image/png')` pour le PNG ; `canvas.toBlob('image/jpeg', 0.9)` pour le JPG, le fond étant déjà opaque. La composition est une fonction asynchrone isolée (`src/app/deployment/share-image.ts` pour la logique pure — dimensions, bandeau, nom de fichier — et un service dans `src/app/shared/` pour le dessin), testable sans l'écran.
+
+**Nom de fichier.** `windfall-{liste}-{disposition joueur}-vs-{disposition adverse}-{plateau}.{png|jpg}`, chaque partie réduite à des minuscules ASCII sans accent, les autres caractères remplacés par `-`, l'ensemble borné à 100 caractères avant l'extension.
+
+### RT_75 — Transmission de l'image aux autres applications
+
+**Bouton.** Un bouton rond positionné comme ceux de [[RT_62]] et [[RT_66]] — en absolu dans l'angle supérieur droit, hors de la transformation `translate` + `scale` du pan/zoom, `pointerdown` non transmis au pan/zoom, cible tactile de [[RT_31]], délimiteur contrasté de [[RT_43]] —, à gauche du bouton des missions. Le visualiseur de [[RT_16]] le rend lorsqu'il reçoit en entrée les données du déploiement à partager (absentes pour le « plateau seul »). L'icône est `share-social-outline` d'Ionicons, enregistrée dans `src/app/icons.ts`, faute de quoi elle manquerait hors-ligne ([[RT_54]]) ; le nom accessible est « Partager le déploiement en image » (« Partage indisponible : plateau non chargé » lorsqu'il est inactif), porté par deux boutons à libellé fixe plutôt que par un `aria-label` lié, pour la raison donnée sous [[RT_43]].
+
+**Choix du format.** Un `ion-action-sheet` ouvert par son contrôleur, titré « Partager le déploiement », avec les deux choix de [[RG_56]] et un bouton de rôle `cancel`. Tant qu'il est ouvert, puis pendant la composition, les gestes du visualiseur ne reçoivent aucun évènement.
+
+**Natif (APK, Capacitor).** Le blob est écrit en base64 dans le répertoire de cache de l'application par `@capacitor/filesystem` (`Directory.Cache`, sous le nom de fichier de [[RT_74]]), puis son URI est transmise à `Share.share({ files: [uri] })` de `@capacitor/share`, qui ouvre la feuille de partage Android. Ces deux plugins sont deux nouvelles dépendances, ajoutées à `package.json` et synchronisées dans `android/` (`npx cap sync android`). Le fichier de cache est écrasé au partage suivant de même nom ; le système peut purger ce répertoire, l'application n'en garde aucune trace.
+
+**Web (PWA et navigateur).** Le blob est enveloppé dans un `File` du type MIME du format ; si `navigator.canShare?.({ files: [file] })` est vrai, `navigator.share({ files: [file], title })` ouvre la feuille de partage du système (Android, iOS/iPadOS en PWA, certains navigateurs de bureau). Sinon, l'image est téléchargée par un lien `<a download>` sur une URL d'objet, révoquée aussitôt après, et un `ion-toast` « Image enregistrée dans les téléchargements » est affiché. L'appel à `navigator.share` est fait directement dans la chaîne de promesses issue de l'appui (composition comprise), l'API exigeant une activation utilisateur récente ; s'il est refusé pour cette raison (`NotAllowedError`), le repli par téléchargement s'applique.
+
+**Erreurs.** Une annulation dans la feuille de partage (`AbortError` en web, rejet « canceled » du plugin en natif) est ignorée sans message. Toute autre erreur est remontée par un `ion-toast` bref « Le partage a échoué », sans détail technique ([[RG_09]]). L'URL d'objet du SVG des tokens et celle du téléchargement sont révoquées dans tous les cas.
+
+---
+
 ## Suivi des décisions non tranchées
 
 Les règles techniques suivantes contiennent un choix encore ouvert et doivent être mises à jour dès que la décision est prise :
@@ -1660,6 +1713,8 @@ Les règles techniques suivantes contiennent un choix encore ouvert et doivent �
 Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_71]] (serveur de production auto-hébergé à `https://api.windfallplanner.pokepuller.fr/v1` ; l'origine de la version web reste à ajouter aux origines CORS une fois [[RT_59]] tranchée), [[RT_12]] (appel direct du client vers gdmissions.app, sans relais serveur, version embarquée en dernier recours), [[RT_05]] (`playArea` mesuré à l'ingestion, image distante acceptée seulement à dimensions identiques), [[RT_27]] (store IndexedDB dédié aux blobs), [[RT_16]] (pan/zoom implémenté sans librairie tierce, sur les évènements `Pointer` et une transformation CSS), [[RT_06]]/[[RT_08]] (IndexedDB pour les enregistrements métier, stockage de configuration léger séparé) [[RT_26]] (fichier JSON versionné avec l'application, alimenté entrée par entrée par l'assistant IA du projet) et [[RT_37]] (terrain extrait des images de plateau par un script hors-ligne plutôt que saisi à la main).
 
 ## Suivi des écarts entre spécification et implémentation
+
+- **[[EX_15]] / [[RG_56]] / [[RT_74]] / [[RT_75]] — spécifiées, non implémentées.** Ni le bouton « Partager » du visualiseur « Consulter », ni la composition de l'image, ni les dépendances `@capacitor/share` et `@capacitor/filesystem` n'existent encore.
 
 - **[[EX_14]] / [[RG_48]] / [[RG_49]] / [[RT_64]] / [[RT_65]] / [[RT_66]] — implémentées, vérifiées en navigateur par Cypress.** `scripts/ingest-missions.mjs` a produit `missions.json` et les 25 cartes (5,1 Mo) le 2026-10-06, matrice identique à celle de [[RT_64]]. La résolution des couples (`src/app/referentials/missions.ts`) est couverte par des tests unitaires sur le référentiel livré, et le téléchargement en arrière-plan compte les cartes après les plateaux. La chaîne réseau → cache → embarquée est désormais `src/app/referentials/remote-image.service.ts`, que `BoardImageService` et `MissionImageService` paramètrent. Le pan/zoom est `src/app/shared/pan-zoom.component.ts`, consommé par le visualiseur et par la fenêtre (`mission-cards.component.ts`, ouverte par `missions.service.ts`). Le test `cypress/e2e/missions.cy.ts` contrôle les onglets à l'étroit, le couple miroir, la vue côte à côte en 1024 × 768, et l'accès depuis le placement et « Consulter », absent du « plateau seul ». Restent des écarts :
   - **Texte d'attribution provisoire.** Le script écrit « Primary mission cards (GDM 2026) via gdmissions.app », en attendant la décision ouverte ci-dessus.
