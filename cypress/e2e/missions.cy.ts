@@ -124,7 +124,9 @@ describe('Missions primaires', () => {
     cy.get('app-board-viewer').should('not.exist');
 
     cy.contains('ion-button', 'Consulter').click();
-    cy.get('app-board-viewer .corner-actions ion-button').should('have.length', 1).click();
+    // RG_56: le bouton « Partager » le précède dans « Consulter ».
+    cy.get('app-board-viewer .corner-actions ion-button').should('have.length', 2);
+    cy.get('app-board-viewer').find('button[aria-label="Voir les missions primaires"]').click();
     cy.contains('ion-modal', 'Consecrate').should('be.visible');
     closeMissions();
     cy.get('ion-modal').should('not.exist');

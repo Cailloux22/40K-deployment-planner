@@ -1,15 +1,23 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   EventEmitter,
   Input,
+  OnChanges,
   Output,
+  SimpleChanges,
+  ViewChild,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { ToastController } from '@ionic/angular/lazy';
 
 import { normalizeGameplanNote } from '../deployment/gameplan-note';
+import { DeploymentShareInfo } from '../deployment/share-image';
+import { BoardImageService, isUnavailableBoardImage } from '../referentials/board-image.service';
+import { DeploymentShareService } from './deployment-share.service';
 import { GameplanNoteService } from './gameplan-note.service';
 import { MissionsService } from './missions.service';
 
@@ -62,6 +70,52 @@ interface PlacementView {
       </ion-button>
 
       <div class="corner-actions">
+        <!-- RG_56/RT_75: partage du déploiement en image JPG, à gauche des
+             missions ; seule la vue « Consulter » reçoit shareInfo. Deux
+             boutons à libellé fixe plutôt qu'un aria-label lié (RT_43). -->
+        @if (shareInfo) {
+          @switch (shareState()) {
+            @case ('ready') {
+              <ion-button
+                class="corner"
+                fill="solid"
+                color="dark"
+                shape="round"
+                aria-label="Partager le déploiement en image"
+                (click)="share()"
+              >
+                <ion-icon name="share-social-outline" slot="icon-only"></ion-icon>
+              </ion-button>
+            }
+            @case ('busy') {
+              <!-- RG_56: inactif, avec indicateur d'attente, pendant la production. -->
+              <ion-button
+                class="corner"
+                fill="solid"
+                color="dark"
+                shape="round"
+                disabled="true"
+                aria-label="Préparation de l'image en cours"
+              >
+                <ion-spinner name="crescent" slot="icon-only"></ion-spinner>
+              </ion-button>
+            }
+            @default {
+              <!-- RG_56: plateau non disponible hors-ligne (RG_42) — visible mais inactif. -->
+              <ion-button
+                class="corner"
+                fill="solid"
+                color="dark"
+                shape="round"
+                disabled="true"
+                aria-label="Partage indisponible : plateau non chargé"
+              >
+                <ion-icon name="share-social-outline" slot="icon-only"></ion-icon>
+              </ion-button>
+            }
+          }
+        }
+
         <!-- RG_48/RT_66: missions primaires du couple, à gauche du plan de jeu ;
              seule la vue « Consulter » reçoit le couple. -->
         @if (missionPair) {
@@ -112,6 +166,7 @@ interface PlacementView {
                de déplacement n'est branché ici). -->
           @if (placementViews().length) {
             <svg
+              #overlay
               class="overlay"
               [attr.viewBox]="'0 0 ' + board.width + ' ' + board.height"
               [attr.width]="board.width"
@@ -168,6 +223,12 @@ interface PlacementView {
       }
 
       <div class="hint">Pincez pour zoomer · glissez pour déplacer</div>
+
+      <!-- RT_75: pendant la composition, les gestes du visualiseur ne
+           reçoivent aucun évènement. -->
+      @if (sharing()) {
+        <div class="busy-shield"></div>
+      }
     </div>
   `,
   styles: [
@@ -225,6 +286,11 @@ interface PlacementView {
         text-align: center;
         pointer-events: none;
       }
+      .busy-shield {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+      }
       .hint {
         position: absolute;
         bottom: max(12px, env(safe-area-inset-bottom));
@@ -239,7 +305,7 @@ interface PlacementView {
     `,
   ],
 })
-export class BoardViewerComponent {
+export class BoardViewerComponent implements OnChanges {
   @Input() board?: Board;
   /** RT_16: `with-measurements` pour le plateau seul, `no-measurements` sinon. */
   @Input() variant: BoardVariant = 'with-measurements';
@@ -265,9 +331,72 @@ export class BoardViewerComponent {
    */
   @Input() missionPair?: { readonly playerDispositionId: string; readonly opponentDispositionId: string };
 
+  /**
+   * RG_56/RT_75: identification du déploiement partagé. Seule la vue
+   * « Consulter » (déploiement terminé) la reçoit ; sans elle, pas de bouton.
+   */
+  @Input() shareInfo?: DeploymentShareInfo;
+
   @Output() readonly closed = new EventEmitter<void>();
 
+  @ViewChild('overlay') private overlay?: ElementRef<SVGSVGElement>;
+
   private readonly missions = inject(MissionsService);
+  private readonly boardImages = inject(BoardImageService);
+  private readonly sharer = inject(DeploymentShareService);
+  private readonly toasts = inject(ToastController);
+
+  /** RT_74: URL de l'image du plateau affiché — `undefined` tant qu'elle n'est pas résolue. */
+  private readonly boardUrl = signal<string | undefined>(undefined);
+  readonly sharing = signal(false);
+
+  /** RG_56: prêt, en cours de production, ou plateau indisponible (RG_42). */
+  readonly shareState = computed<'ready' | 'busy' | 'unavailable'>(() => {
+    const url = this.boardUrl();
+    if (this.sharing() || url === undefined) return 'busy';
+    return isUnavailableBoardImage(url) ? 'unavailable' : 'ready';
+  });
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!changes['board'] && !changes['variant'] && !changes['shareInfo']) return;
+    const board = this.board;
+    this.boardUrl.set(undefined);
+    if (!board || !this.shareInfo) return;
+    // RT_74: même chaîne que le pipe `boardImage` (RT_27) — même URL, déjà
+    // résolue pour l'affichage, sans second appel réseau dans la session.
+    const variant = this.variant;
+    void this.boardImages.imageUrl(board, variant).then((url) => {
+      if (this.board === board && this.variant === variant) this.boardUrl.set(url);
+    });
+  }
+
+  /**
+   * RG_56: compose l'image JPG et ouvre l'envoi. Le déploiement n'est pas
+   * modifié, ni le zoom et le cadrage du visualiseur.
+   */
+  async share(): Promise<void> {
+    const board = this.board;
+    const info = this.shareInfo;
+    const url = this.boardUrl();
+    if (!board || !info || !url || this.shareState() !== 'ready') return;
+
+    this.sharing.set(true);
+    try {
+      const outcome = await this.sharer.share(board, url, this.overlay?.nativeElement ?? null, info);
+      // RT_75: repli par téléchargement — un message bref l'indique.
+      if (outcome === 'downloaded') await this.toast('Image enregistrée dans les téléchargements');
+    } catch {
+      // RG_09/RT_75: message bref, non bloquant, sans détail technique.
+      await this.toast('Le partage a échoué');
+    } finally {
+      this.sharing.set(false);
+    }
+  }
+
+  private async toast(message: string): Promise<void> {
+    const toast = await this.toasts.create({ message, duration: 2500, position: 'bottom' });
+    await toast.present();
+  }
 
   private readonly notes = inject(GameplanNoteService);
   private readonly noteText = signal('');

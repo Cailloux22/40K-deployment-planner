@@ -14,6 +14,7 @@ import { AlertController } from '@ionic/angular/lazy';
 import { LibraryService } from '../../data/library.service';
 import { boardStatus } from '../../deployment/deployment-status';
 import { hasGameplanNote } from '../../deployment/gameplan-note';
+import { DeploymentShareInfo } from '../../deployment/share-image';
 import { ArmyList, BoardDeploymentStatus, Deployment } from '../../models/domain.models';
 import { BaseShape, Board, ForceDisposition } from '../../models/referential.models';
 import { ReferentialService } from '../../referentials/referential.service';
@@ -137,6 +138,24 @@ export class BoardChoicePage implements OnInit {
     const list = this.list();
     if (!viewer || viewer.variant !== 'no-measurements' || !list || !this.missionsAvailable()) return undefined;
     return { playerDispositionId: list.forceDispositionId, opponentDispositionId: this.opponentId() };
+  });
+
+  /**
+   * RG_56: le partage n'est offert que par la vue « Consulter » — déploiement
+   * terminé —, jamais par le « plateau seul ».
+   */
+  readonly viewerShareInfo = computed<DeploymentShareInfo | undefined>(() => {
+    const viewer = this.viewer();
+    const list = this.list();
+    const player = this.playerDisposition();
+    const opponent = this.opponentDisposition();
+    if (!viewer || viewer.variant !== 'no-measurements' || !list || !player || !opponent) return undefined;
+    return {
+      listName: list.name,
+      playerDispositionLabel: player.label,
+      opponentDispositionLabel: opponent.label,
+      boardIndex: viewer.board.index,
+    };
   });
 
   async ngOnInit(): Promise<void> {

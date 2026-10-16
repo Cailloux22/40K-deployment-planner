@@ -24,6 +24,7 @@ import {
   personCircleOutline,
   settingsOutline,
   shareOutline,
+  shareSocialOutline,
   syncOutline,
   trashOutline,
 } from 'ionicons/icons';
@@ -64,6 +65,8 @@ export function registerIcons(): void {
     'person-circle-outline': personCircleOutline,
     'settings-outline': settingsOutline,
     'share-outline': shareOutline,
+    // RT_75: partage du déploiement en image dans le visualiseur « Consulter ».
+    'share-social-outline': shareSocialOutline,
     // RG_48/RT_66: retourner une carte de mission (recto/verso).
     'sync-outline': syncOutline,
     'trash-outline': trashOutline,

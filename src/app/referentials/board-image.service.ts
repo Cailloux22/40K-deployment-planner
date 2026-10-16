@@ -40,6 +40,14 @@ export class BoardImageService {
 }
 
 /**
+ * RG_56/RT_74: reconnaît l'image de remplacement de RG_42 parmi les URL
+ * rendues par `imageUrl` — un plateau qu'on ne peut pas partager.
+ */
+export function isUnavailableBoardImage(url: string): boolean {
+  return url.startsWith('data:image/svg+xml') && url.includes('data-unavailable');
+}
+
+/**
  * RG_42: image de remplacement d'un plateau non disponible hors-ligne, aux
  * dimensions de l'asset — les écrans la cadrent et la rognent comme l'image
  * réelle. Le message est centré sur le plateau mesuré (`playArea`, RT_05),

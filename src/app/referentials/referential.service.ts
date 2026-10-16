@@ -285,4 +285,17 @@ export class ReferentialService {
     }
     return [...byName.values()];
   }
+
+  /**
+   * RG_56/RT_74: mentions des référentiels dont l'image partagée d'un
+   * déploiement est tirée — plateau (RT_12) et socles (RT_02). Le texte vient
+   * du bloc `source` de chacun (RT_20), jamais du code de composition.
+   */
+  async shareImageAttributions(): Promise<readonly string[]> {
+    const sources = await Promise.all([
+      this.boardReferential().then((r) => r.source),
+      this.baseReferential().then((r) => r.source),
+    ]);
+    return [...new Set(sources.map((source) => source?.attribution).filter((text): text is string => !!text))];
+  }
 }

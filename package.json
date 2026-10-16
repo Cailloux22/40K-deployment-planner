@@ -1,6 +1,6 @@
 {
   "name": "40K-deployment-planner",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "author": "Ionic Framework",
   "homepage": "https://ionicframework.com/",
   "scripts": {
@@ -31,8 +31,10 @@
     "@capacitor/android": "^8.5.1",
     "@capacitor/app": "8.1.1",
     "@capacitor/core": "8.5.1",
+    "@capacitor/filesystem": "8.1.4",
     "@capacitor/haptics": "8.0.2",
     "@capacitor/keyboard": "8.0.5",
+    "@capacitor/share": "8.0.3",
     "@capacitor/status-bar": "8.0.3",
     "@ionic/angular": "^9.0.0",
     "ionicons": "^8.1.0",
