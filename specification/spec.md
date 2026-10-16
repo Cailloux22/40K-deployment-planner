@@ -1752,7 +1752,7 @@ Satisfait par : [[RG_57]], [[RG_58]], [[RT_77]], [[RT_78]].
 
 **Retour au contrôle.** Lorsque le joueur désactive à nouveau l'option, les unités laissées hors cohésion entre-temps sont traitées comme les unités déjà hors cohésion de [[RG_26]] (déploiements enregistrés avant cette règle) : chargées telles quelles, leurs gestes restent permis jusqu'à ce que le joueur les corrige, et le refus ne s'applique à nouveau qu'une fois leur cohésion rétablie.
 
-**Information du joueur.** Tant que l'option est activée, l'écran de placement l'indique par une mention brève et non bloquante en texte (« Cohésion non contrôlée »), pour qu'un joueur qui a oublié l'avoir activée sache pourquoi ses gestes ne sont plus refusés.
+**Aucune mention à l'écran de placement.** L'écran de placement n'affiche aucune indication de l'état de l'option : il se consulte uniquement dans le sous-menu de [[RG_57]].
 
 ### RT_77 — Stockage des options d'accessibilité et écran du sous-menu
 
@@ -1771,8 +1771,6 @@ Satisfait par : [[RG_57]], [[RG_58]], [[RT_77]], [[RT_78]].
 **Mode « Règle ».** Lorsque l'option est activée à l'activation du mode, l'instantané de [[RT_44]] est vide ; la désactivation du mode ne calcule donc aucun retaillage. Si l'option change pendant que le mode est actif, l'instantané déjà pris est conservé, mais il n'est pas évalué à la sortie du mode si l'option est alors activée.
 
 **Exemption des unités hors cohésion.** Lorsque l'option est de nouveau désactivée, l'exemption des unités déjà hors cohésion de [[RT_36]] (évaluée au début du geste) couvre les unités laissées hors cohésion pendant que l'option était activée : aucun état supplémentaire n'est conservé.
-
-**Mention.** La mention « Cohésion non contrôlée » de [[RG_58]] est rendue en texte dans l'en-tête de l'écran de placement tant que le signal est vrai ; elle ne capte aucun geste du plateau.
 
 ---
 
