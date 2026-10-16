@@ -12,6 +12,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { AlertController, ToastController } from '@ionic/angular/lazy';
 
+import { AccessibilityService } from '../../data/accessibility.service';
 import { LibraryService } from '../../data/library.service';
 import {
   UnitMenuView,
@@ -182,6 +183,7 @@ interface DragState {
    * RG_26: l'unité était-elle en cohésion au début du geste ? Seul un geste
    * qui ferait perdre la cohésion est refusé : sur une unité déjà hors
    * cohésion (déploiement antérieur à la règle), tout geste reste permis.
+   * RG_58/RT_78: toujours faux quand le joueur a désactivé le contrôle.
    */
   readonly wasCoherent: boolean;
   /** RT_34: métriques du retour visuel, relevées une fois pour toutes ici. */
@@ -273,6 +275,7 @@ export class PlacementPage implements OnInit {
   private readonly notes = inject(GameplanNoteService);
   private readonly missions = inject(MissionsService);
   private readonly sync = inject(SyncService);
+  private readonly accessibility = inject(AccessibilityService);
   private readonly destroyRef = inject(DestroyRef);
 
   /** RT_34: repère de positionnement du retour visuel du glisser. */
@@ -632,6 +635,10 @@ export class PlacementPage implements OnInit {
    */
   readonly rulerBrokenUnits = computed<ReadonlySet<string>>(() => {
     if (!this.rulerMode()) return new Set();
+    // RG_58/RT_78: contrôle désactivé — aucune unité n'est retaillée à la
+    // sortie du mode, ni signalée « hors cohésion », même si l'option a changé
+    // depuis l'instantané.
+    if (this.accessibility.coherencyCheckDisabled()) return new Set();
     const placements = this.placements();
     return new Set([...this.rulerCoherentUnits()].filter((groupId) => !this.groupCoherent(groupId, placements)));
   });
@@ -1131,6 +1138,16 @@ export class PlacementPage implements OnInit {
   }
 
   /**
+   * RG_26: la cohésion de ce groupe est-elle à préserver ? Seul un groupe en
+   * cohésion l'est. RG_58/RT_78: aucun ne l'est quand le joueur a désactivé le
+   * contrôle — la valeur est relevée au début de chaque geste, et une unité
+   * laissée hors cohésion relève ensuite de l'exemption de RG_26.
+   */
+  private coherencyControlled(groupId: string, placements: readonly Placement[]): boolean {
+    return !this.accessibility.coherencyCheckDisabled() && this.groupCoherent(groupId, placements);
+  }
+
+  /**
    * RG_26: le geste en cours, s'il aboutissait avec `candidate` comme
    * placement du modèle saisi, laisserait-il l'unité en cohésion ? Une unité
    * déjà hors cohésion au début du geste n'est pas contrôlée.
@@ -1158,11 +1175,12 @@ export class PlacementPage implements OnInit {
       return;
     }
     // RT_44: instantané des unités en cohésion à l'activation — seules
-    // candidates au rétablissement de la sortie du mode.
+    // candidates au rétablissement de la sortie du mode. RG_58/RT_78: vide
+    // quand le contrôle de cohésion est désactivé.
     const placements = this.placements();
     const coherent = this.groups()
       .map((group) => group.id)
-      .filter((groupId) => this.groupCoherent(groupId, placements));
+      .filter((groupId) => this.coherencyControlled(groupId, placements));
     this.rulerCoherentUnits.set(new Set(coherent));
     this.rulerMode.set(true);
   }
@@ -1409,7 +1427,7 @@ export class PlacementPage implements OnInit {
     const placements = this.placements();
     // RG_37/RT_46: la cohésion se contrôle par groupe de déploiement.
     const groupIds = new Set(placements.filter((p) => ids.has(p.idModele)).map((p) => this.groupIdOf(p.idUnite)));
-    const coherentUnits = new Set([...groupIds].filter((groupId) => this.groupCoherent(groupId, placements)));
+    const coherentUnits = new Set([...groupIds].filter((groupId) => this.coherencyControlled(groupId, placements)));
     const point = this.toAssetCoords(event);
     this.drag = {
       kind: 'group',
@@ -1512,7 +1530,7 @@ export class PlacementPage implements OnInit {
       idUnite: model.unit.id,
       groupId: deploymentGroup.id,
       startPosition: { x: 0, y: 0 },
-      wasCoherent: this.groupCoherent(deploymentGroup.id, this.placements()),
+      wasCoherent: this.coherencyControlled(deploymentGroup.id, this.placements()),
       // RT_34: le token provisoire est celui qui sera posé — même forme (RT_26),
       // même couleur de composante (RG_06/RG_37), même taille à l'écran (RT_05).
       ghost: this.ghostMetrics(size.width, size.height, model.shape.shape, model.color, 0, true),
@@ -1616,7 +1634,7 @@ export class PlacementPage implements OnInit {
       groupId: deploymentGroup.id,
       startPosition: { x: 0, y: 0 },
       // RG_26: une unité déjà hors cohésion n'est pas contrôlée.
-      wasCoherent: this.groupCoherent(deploymentGroup.id, this.placements()),
+      wasCoherent: this.coherencyControlled(deploymentGroup.id, this.placements()),
       ghost: {
         box: Math.max(DRAG_AIM_RADIUS_PX, envelope) * 2 + 8,
         width: 0,
@@ -1703,7 +1721,7 @@ export class PlacementPage implements OnInit {
       idUnite: token.placement.idUnite,
       groupId: this.groupIdOf(token.placement.idUnite),
       startPosition: { x: token.placement.x, y: token.placement.y },
-      wasCoherent: this.groupCoherent(this.groupIdOf(token.placement.idUnite), this.placements()),
+      wasCoherent: this.coherencyControlled(this.groupIdOf(token.placement.idUnite), this.placements()),
       // RT_34: le token posé suit déjà le doigt par ses coordonnées RT_04 —
       // seul le cercle de visée s'y ajoute, pour rester lisible sous le doigt.
       ghost: this.ghostMetrics(
@@ -1744,7 +1762,7 @@ export class PlacementPage implements OnInit {
       idUnite: token.placement.idUnite,
       groupId: this.groupIdOf(token.placement.idUnite),
       startPosition: { x: token.placement.x, y: token.placement.y },
-      wasCoherent: this.groupCoherent(this.groupIdOf(token.placement.idUnite), this.placements()),
+      wasCoherent: this.coherencyControlled(this.groupIdOf(token.placement.idUnite), this.placements()),
       // RT_34: la rotation ne déplace pas le token — aucun retour de glisser
       // n'est affiché, la poignée elle-même suivant le doigt.
       ghost: this.ghostMetrics(token.rx * 2, token.ry * 2, token.shapeKind, token.color, 0, false),
@@ -2010,7 +2028,8 @@ export class PlacementPage implements OnInit {
     const detached: string[] = [];
     const trimmed: string[] = [];
     for (const groupId of touched) {
-      if (!this.groupCoherent(groupId, placements)) continue;
+      // RG_58/RT_78: contrôle désactivé — seuls les tokens choisis sont retirés.
+      if (!this.coherencyControlled(groupId, placements)) continue;
       const ids = detachedAfterRemoval(this.groupBases(groupId, remaining));
       if (ids.length === 0) continue;
       detached.push(...ids);

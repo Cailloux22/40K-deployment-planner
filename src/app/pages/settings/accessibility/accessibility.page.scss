@@ -1,0 +1,27 @@
+// RT_29: textes issus des tokens de l'application.
+// RT_30: tailles de texte de l'échelle à 5 crans.
+
+.scope {
+  display: block;
+  padding: 16px 16px 8px;
+  font-size: var(--app-font-sm);
+  color: var(--app-text-secondary);
+}
+
+ion-toggle {
+  // RT_31: toute la ligne est la cible tactile de l'interrupteur.
+  width: 100%;
+  padding: 8px 0;
+}
+
+.option-label,
+.option-help {
+  display: block;
+  white-space: normal;
+}
+
+.option-help {
+  margin-top: 4px;
+  font-size: var(--app-font-sm);
+  color: var(--app-text-secondary);
+}

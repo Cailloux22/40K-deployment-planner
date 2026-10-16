@@ -1,0 +1,35 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="back()" aria-label="Retour aux réglages">
+        <ion-icon name="arrow-back" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Accessibilité</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <!-- RG_57: options propres à cet appareil, ni synchronisées ni effacées à la déconnexion. -->
+  <ion-note class="scope">Ces options ne s'appliquent qu'à cet appareil.</ion-note>
+
+  <ion-list lines="full">
+    <!-- RG_58: désactivée par défaut — le contrôle de cohésion de RG_26 s'applique. -->
+    <ion-item>
+      <!-- RT_77/RG_24: l'état est porté par le rôle « switch » du toggle,
+           et l'explication lui est reliée par aria-describedby. -->
+      <ion-toggle
+        data-testid="coherency-check-toggle"
+        justify="space-between"
+        aria-describedby="coherency-check-help"
+        [checked]="coherencyCheckDisabled()"
+        (ionChange)="setCoherencyCheckDisabled($event.detail.checked)"
+      >
+        <span class="option-label">Désactiver le contrôle de cohésion</span>
+        <span id="coherency-check-help" class="option-help">
+          Les modèles d'une unité peuvent être posés et déplacés sans respecter la cohésion de 2" et 9".
+        </span>
+      </ion-toggle>
+    </ion-item>
+  </ion-list>
+</ion-content>

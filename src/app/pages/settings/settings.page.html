@@ -259,7 +259,16 @@
     }
   </ion-list>
 
-  <!-- ===== Bloc 5 — Version (RG_18, RG_47) =====
+  <!-- ===== Bloc 5 — Accessibilité (RG_18, RG_57) =====
+       Dans tous les contextes, connecté ou non. -->
+  <ion-list-header>Accessibilité</ion-list-header>
+  <ion-list lines="full">
+    <ion-item button detail data-testid="accessibility-link" (click)="openAccessibility()">
+      <ion-label>Options d'accessibilité</ion-label>
+    </ion-item>
+  </ion-list>
+
+  <!-- ===== Bloc 6 — Version (RG_18, RG_47) =====
        Hors du bloc « Application » : visible aussi dans l'APK. -->
   <ion-list lines="none">
     <ion-item>

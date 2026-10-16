@@ -18,7 +18,8 @@ type AuthMode = 'signIn' | 'signUp';
  *
  * RG_18: écran unique accessible depuis l'accueil par l'icône engrenage,
  * regroupant les blocs Compte, Informations utilisateur, Mentions des sources
- * tierces et, hors application empaquetée, Application (RG_41, RG_42, RG_44).
+ * tierces, Accessibilité (RG_57) et, hors application empaquetée, Application
+ * (RG_41, RG_42, RG_44).
  * Il n'existe pas d'écran « À propos » séparé.
  *
  * RT_20: la liste des mentions n'est pas codée en dur ici : elle est
@@ -195,5 +196,10 @@ export class SettingsPage implements OnInit {
 
   back(): Promise<boolean> {
     return this.router.navigate(['/home']);
+  }
+
+  /** RG_57: le bouton « Accessibilité » ouvre le sous-menu des options. */
+  openAccessibility(): Promise<boolean> {
+    return this.router.navigate(['/settings/accessibility']);
   }
 }
