@@ -4,6 +4,7 @@ import {
   autoUnitColor,
   contrastRatio,
   contrastingTextColor,
+  normalizeUnitColor,
   parseColor,
   relativeLuminance,
   selectableUnitColors,
@@ -84,7 +85,7 @@ describe('contrastingTextColor — RT_32', () => {
     expect(contrastRatio(contrastingTextColor(UNIT_COLOR_FALLBACK), UNIT_COLOR_FALLBACK)).toBeGreaterThanOrEqual(AA);
   });
 
-  it('reste conforme AA au-delà de la palette, où les couleurs sont en hsl()', () => {
+  it('reste conforme AA au-delà de la palette, où les couleurs sont générées', () => {
     // Test de non-régression du défaut principal : l'ancienne implémentation
     // renvoyait du blanc pour TOUTE notation non hexadécimale, donc dès i = 16.
     for (let i = 0; i < 60; i += 1) {
@@ -136,5 +137,25 @@ describe('palette — RG_06', () => {
   it('continue à produire des couleurs distinctes au-delà de la palette', () => {
     const couleurs = Array.from({ length: 40 }, (_, i) => autoUnitColor(i));
     expect(new Set(couleurs).size).toBe(couleurs.length);
+  });
+
+  // RT_76: le contrat de synchronisation n'accepte que #RRGGBB (RT_69).
+  it('produit toujours une couleur #RRGGBB, y compris au-delà de la palette', () => {
+    for (let i = 0; i < 300; i += 1) {
+      expect(autoUnitColor(i), `unité ${i}`).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    }
+  });
+});
+
+describe('normalizeUnitColor — RT_76', () => {
+  it('ramène hsl() et rgb() à #RRGGBB et garde une couleur déjà conforme', () => {
+    expect(normalizeUnitColor('hsl(40 65% 45%)')).toBe('#bd8c28');
+    expect(normalizeUnitColor('rgb(255, 0, 0)')).toBe('#ff0000');
+    expect(normalizeUnitColor('#e6194b')).toBe('#e6194b');
+    expect(normalizeUnitColor('#abc')).toBe('#aabbcc');
+  });
+
+  it('rend telle quelle une notation non interprétable, sans lever', () => {
+    expect(normalizeUnitColor('pas une couleur')).toBe('pas une couleur');
   });
 });

@@ -5,6 +5,7 @@
  * découpage d'une poussée.
  */
 
+import { normalizeUnitColor } from '../import/unit-colors';
 import { ArmyList, ArmyUnit, Deployment } from '../models/domain.models';
 import {
   Deletion,
@@ -42,6 +43,9 @@ export interface TombstoneLike {
 function wireUnits(units: readonly ArmyUnit[]): ArmyUnit[] {
   return units.map((unit) => ({
     ...unit,
+    // RT_76: une liste enregistrée avant RT_76 peut porter une couleur hsl(),
+    // que le serveur refuserait (RT_69) avec chacun de ses déploiements.
+    color: normalizeUnitColor(unit.color),
     modelGroups: unit.modelGroups.map(({ unresolvedReason: _reason, ...group }) => group),
   }));
 }

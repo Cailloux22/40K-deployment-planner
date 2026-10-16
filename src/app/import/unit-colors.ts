@@ -56,7 +56,31 @@ export const UNIT_COLOR_FALLBACK = '#7a7a80';
 export function autoUnitColor(index: number): string {
   if (index < UNIT_COLOR_PALETTE.length) return UNIT_COLOR_PALETTE[index].value;
   const hue = Math.round((index * 137.508) % 360);
-  return `hsl(${hue} 65% 45%)`;
+  // RT_76: convertie en #RRGGBB, seule notation acceptée par le contrat de
+  // synchronisation (RT_69) — une couleur hsl() y fait refuser la liste.
+  return toHexColor(hslToRgb(hue, 0.65, 0.45));
+}
+
+/**
+ * RT_76 — couleur ramenée à la notation `#RRGGBB`, quelle que soit la
+ * notation d'origine interprétée par `parseColor` (RT_32). Une notation non
+ * interprétable est rendue telle quelle : le serveur refuse alors cette seule
+ * liste, signalée au joueur (RG_19), au lieu d'interrompre toute la poussée.
+ */
+export function normalizeUnitColor(color: string): string {
+  try {
+    return toHexColor(parseColor(color));
+  } catch {
+    return color;
+  }
+}
+
+function toHexColor({ r, g, b }: Rgb): string {
+  const channel = (value: number): string =>
+    Math.min(255, Math.max(0, Math.round(value)))
+      .toString(16)
+      .padStart(2, '0');
+  return `#${channel(r)}${channel(g)}${channel(b)}`;
 }
 
 /** Couleurs proposées au joueur pour une réassignation manuelle (RG_06). */
@@ -92,9 +116,9 @@ function hslToRgb(h: number, s: number, l: number): Rgb {
 /**
  * RT_32 — interprétation d'une notation de couleur.
  *
- * Accepte toutes les notations que l'application produit réellement, `hsl()`
- * compris : c'est celle d'`autoUnitColor` au-delà de la 16e unité, et l'ancien
- * code la rejetait silencieusement.
+ * Accepte toutes les notations que l'application a réellement produites,
+ * `hsl()` compris : c'était celle d'`autoUnitColor` au-delà de la 16e unité
+ * avant RT_76, et des listes enregistrées alors peuvent encore la porter.
  */
 export function parseColor(color: string): Rgb {
   const text = color.trim();

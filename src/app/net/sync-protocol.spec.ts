@@ -73,6 +73,13 @@ describe('RT_68 — conversion local ↔ contrat', () => {
     expect(wire.versionToken).toBe('3');
   });
 
+  it('envoie chaque couleur d’unité en #RRGGBB, même enregistrée en hsl() avant RT_76', () => {
+    const local = list('list_a');
+    const wire = toWireList({ ...local, units: [{ ...local.units[0], color: 'hsl(40 65% 45%)' }] });
+    expect(wire.units[0].color).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    expect(wire.units[0].color).toBe('#bd8c28');
+  });
+
   it('lit un déploiement reçu sans note comme une note vide (RT_60)', () => {
     const { note: _note, ...wire } = toWireDeployment(deployment('depl_a', 'list_a'));
     const local = fromWireDeployment(wire, '9');
