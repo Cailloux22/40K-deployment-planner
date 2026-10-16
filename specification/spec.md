@@ -265,6 +265,8 @@ Une unité de plus d'un modèle doit être déployée **en cohésion**, conform�
 
 **Unités attachées.** La cohésion d'une unité attachée ([[RG_36]]) porte sur l'ensemble de ses composantes, personnages compris ([[RG_37]]).
 
+**Option d'accessibilité.** Le joueur peut désactiver tout ce contrôle — refus des gestes, retrait supplémentaire au retrait d'un token, retaillage à la sortie du mode « Règle » — depuis le sous-menu Accessibilité des Réglages ([[RG_58]]). Par défaut, le contrôle s'applique.
+
 ### RG_30 — Sélection multiple par zone de sélection et déplacement groupé
 
 Sur l'écran de placement ([[RG_03]] étape 3), le joueur peut sélectionner **plusieurs tokens posés à la fois** et les déplacer ensemble, pour repositionner d'un geste un groupe de modèles — une unité, une partie d'unité, ou des modèles de plusieurs unités — plutôt que token par token ([[RG_04]]).
@@ -394,6 +396,8 @@ Les seuils de 2" et 9" sont comparés avec une tolérance de 0,01", pour qu'un t
 **Contrôle pendant le geste.** Lors d'un dépôt ou d'un déplacement ([[RT_34]]), la cohésion est recalculée à chaque mouvement du point de contact, avec le token saisi à sa position provisoire. Un résultat hors cohésion met le token provisoire et son cercle de visée dans le même état de **dépôt refusé** qu'une sortie du rectangle de jeu ; au relâchement, aucun enregistrement de placement n'est écrit ([[RT_04]]) et un token déjà posé reprend sa position d'avant le geste. La rotation ([[RT_22]]) suit le même contrôle. Pour une unité déjà hors cohésion au début du geste (déploiement antérieur à [[RG_26]]), aucun geste n'est refusé. En mode « Règle », ce contrôle n'est pas appliqué aux déplacements ([[RT_44]]).
 
 **Retrait.** Au retrait d'un ou plusieurs tokens ([[RG_55]]), les composantes connexes du graphe restant sont calculées pour chaque unité dont au moins un token est retiré. S'il y en a plus d'une, la plus grande est conservée ; en cas d'égalité, celle qui contient le placement le plus ancien. Le placement le plus ancien est déterminé par l'ordre des enregistrements de placement du déploiement, qui suit l'ordre des dépôts. Les placements des autres composantes sont supprimés dans la même écriture que ceux des tokens retirés, après confirmation du joueur.
+
+**Option désactivant le contrôle.** Lorsque l'option de [[RG_58]] est activée, aucun des calculs ci-dessus n'est appliqué aux gestes ni au retrait ([[RT_78]]).
 
 ### RT_40 — Interaction de sélection multiple et de déplacement groupé
 
@@ -694,7 +698,8 @@ L'écran d'accueil — la bibliothèque des listes d'armée déjà importées ([
 3. **Mentions des sources tierces** : la liste des attributions requises par les référentiels tiers dont l'application dépend, qu'ils soient générés hors-ligne ([[RT_02]], « Powered by Wahapedia ») ou chargés par le réseau à l'exécution ([[RT_12]], Battlemaster) — conformément aux conditions d'usage de ces sources (voir [CLAUDE.md](../CLAUDE.md)). Chaque mention indique l'adresse de la source et la rend directement ouvrable, plutôt que de l'afficher comme un texte inerte : c'est par cette adresse que le joueur vérifie l'attribution.
 
 4. **Application**, présent seulement hors application Android empaquetée ([[EX_12]]) : l'invitation à installer l'application tant qu'elle ne l'est pas ([[RG_41]]), l'état de préparation au hors-ligne et le téléchargement des plateaux ([[RG_42]]), et l'état de conservation des données sur l'appareil ([[RG_44]]).
-5. **Version**, en bas de l'écran et dans tous les contextes (application Android comme version web) : le numéro de version de l'application ([[RG_47]]).
+5. **Accessibilité**, dans tous les contextes et connecté ou non : un bouton « Accessibilité » menant au sous-menu des options d'accessibilité réglables par le joueur ([[RG_57]]).
+6. **Version**, en bas de l'écran et dans tous les contextes (application Android comme version web) : le numéro de version de l'application ([[RG_47]]).
 
 Le bloc « Mentions des sources tierces » et la consultation des informations déjà connues du bloc « Compte » restent accessibles hors-ligne ; seules les actions qui nécessitent le réseau (création de compte, connexion, synchronisation) sont soumises à la dégradation gracieuse prévue par [[RG_09]].
 
@@ -1112,6 +1117,8 @@ En mode « Règle », le joueur mesure en déplaçant des tokens ([[RG_34]]) —
 - **Sortie de l'écran.** Quitter l'écran de placement avec le mode « Règle » actif équivaut à désactiver le mode : la même confirmation est présentée, et une annulation laisse le joueur sur l'écran, mode actif.
 
 **Second canal ([[RG_24]]).** Tant que le mode est actif, une unité qu'un déplacement libre a sortie de sa cohésion est signalée en toutes lettres (« hors cohésion ») dans le bandeau de [[RG_15]] lorsqu'il est positionné sur elle et dans son entrée du menu de [[RG_16]], pour que le joueur sache, avant de quitter le mode, quelles unités seront retaillées.
+
+**Contrôle de cohésion désactivé.** Lorsque le joueur a désactivé le contrôle de cohésion ([[RG_58]]), la sortie du mode ne retaille aucune unité, ne présente aucune confirmation pour ce motif et n'affiche pas la mention « hors cohésion » ci-dessus.
 
 ### RT_42 — Interaction et calcul de la règle
 
@@ -1712,6 +1719,63 @@ Tout texte qui dépasse la largeur est tronqué avec « … ».
 
 ---
 
+## EX_16 — Options d'accessibilité réglables par le joueur
+
+Le joueur doit pouvoir **adapter certains comportements de l'application à sa façon de jouer ou à ses besoins** au moyen d'options qu'il active ou désactive lui-même, regroupées en un seul endroit des Réglages. Chaque option est un interrupteur : sa valeur par défaut reproduit le comportement spécifié par les autres exigences, si bien qu'un joueur qui n'ouvre jamais ce menu utilise l'application exactement comme décrit ailleurs. Contrairement à [[EX_07]], qui ne modifie aucun comportement fonctionnel, une option de ce menu peut **lever une contrainte** ou changer un comportement, mais seulement à la demande explicite du joueur. Les options sont consultables et modifiables hors-ligne ([[EX_05]]).
+
+Satisfait par : [[RG_57]], [[RG_58]], [[RT_77]], [[RT_78]].
+
+### RG_57 — Bouton « Accessibilité » des Réglages et sous-menu d'options
+
+**Accès.** L'écran Réglages ([[RG_18]]) porte un bouton **« Accessibilité »**, dans tous les contextes (application Android comme version web) et que le joueur soit connecté ou non. Il ouvre un **sous-menu** dédié, avec un retour vers les Réglages.
+
+**Contenu.** Le sous-menu liste les options d'accessibilité, une par ligne : un **libellé** court, une **phrase d'explication** de l'effet de l'option, et un **interrupteur** activé/désactivé. L'état de l'interrupteur est aussi porté par son nom accessible, pas par sa seule couleur ([[RG_24]]). Chaque ligne respecte les cibles tactiles de [[RT_31]].
+
+**Effet immédiat.** Un changement d'interrupteur s'applique **aussitôt**, sans bouton « Enregistrer » ni redémarrage, et est **conservé** d'une ouverture de l'application à l'autre.
+
+**Portée : l'appareil.** Les options sont propres à l'appareil sur lequel elles sont réglées : elles ne sont **pas synchronisées** avec le compte ([[EX_06]]), ne sont pas effacées par une déconnexion ([[RG_19]]) et ne font pas partie des données d'une liste ou d'un déploiement. Un joueur peut ainsi désactiver un contrôle sur son téléphone et le garder sur sa tablette.
+
+**Options disponibles.** À ce jour, une seule : la désactivation du contrôle de cohésion d'unité ([[RG_58]]). Toute nouvelle option rejoint ce sous-menu et fait l'objet de sa propre règle de gestion.
+
+### RG_58 — Option « Désactiver le contrôle de cohésion d'unité »
+
+**Option.** Le sous-menu de [[RG_57]] propose l'option **« Désactiver le contrôle de cohésion »**, expliquée par une phrase du type « Les modèles d'une unité peuvent être posés et déplacés sans respecter la cohésion de 2" et 9" ». Par défaut, l'option est **désactivée** : le contrôle de [[RG_26]] s'applique.
+
+**Effet lorsque l'option est activée.** Le contrôle de cohésion d'unité de [[RG_26]] n'est plus appliqué, sur aucun geste de l'écran de placement :
+
+- **Aucun refus pour cohésion.** Le dépôt d'un modèle depuis le bandeau ([[RG_15]]), le dépôt groupé ([[RG_32]]), le déplacement d'un token posé, seul ou en groupe ([[RG_30]], [[RG_31]]), et la rotation ([[RG_20]]) ne sont plus refusés parce qu'ils laisseraient une unité hors cohésion, et aucun état de dépôt refusé n'est annoncé pour ce motif. Ils restent refusés, comme sans l'option, s'ils sortiraient du rectangle de jeu ([[RT_19]]).
+- **Retrait sans retrait supplémentaire.** Le retrait de tokens ([[RG_55]]) ne retire **que** les tokens choisis : la chaîne de contiguïté n'est pas rétablie et aucune confirmation de retrait supplémentaire n'est présentée.
+- **Mode « Règle ».** La sortie du mode « Règle » ([[RG_35]]) ne retaille aucune unité et ne présente aucune confirmation pour ce motif ; le mode se désactive directement.
+- **Unités attachées.** L'option s'applique de la même façon aux unités attachées ([[RG_37]]), personnages compris.
+
+**Aucune modification des déploiements.** Activer ou désactiver l'option ne déplace ni ne retire **aucun** token d'un déploiement existant ; elle ne change que les gestes à venir.
+
+**Retour au contrôle.** Lorsque le joueur désactive à nouveau l'option, les unités laissées hors cohésion entre-temps sont traitées comme les unités déjà hors cohésion de [[RG_26]] (déploiements enregistrés avant cette règle) : chargées telles quelles, leurs gestes restent permis jusqu'à ce que le joueur les corrige, et le refus ne s'applique à nouveau qu'une fois leur cohésion rétablie.
+
+**Information du joueur.** Tant que l'option est activée, l'écran de placement l'indique par une mention brève et non bloquante en texte (« Cohésion non contrôlée »), pour qu'un joueur qui a oublié l'avoir activée sache pourquoi ses gestes ne sont plus refusés.
+
+### RT_77 — Stockage des options d'accessibilité et écran du sous-menu
+
+**Stockage.** Les options sont un objet de configuration légère `{ coherencyCheckDisabled: boolean }`, lu et écrit par la paire `getConfig`/`setConfig` de [[RT_08]] sous la clé `accessibility` — point unique de substitution vers `@capacitor/preferences` en natif. Il n'est ni écrit dans les stores des listes et déploiements ([[RT_06]]), ni marqué à synchroniser, ni envoyé au serveur ([[RT_09]], [[RT_68]]) ; la déconnexion ([[RT_21]]) ne l'efface pas. Une clé absente ou illisible vaut les valeurs par défaut (toutes les options désactivées) ; une option inconnue de l'objet lu est ignorée et une option manquante prend sa valeur par défaut, pour qu'une version plus récente ou plus ancienne de l'application relise le même objet sans erreur.
+
+**Service.** Un service unique (`src/app/data/accessibility.service.ts`, à côté du stockage de [[RT_08]], fourni à la racine) charge l'objet au démarrage de l'application et l'expose sous forme de signal en lecture seule ; chaque modification met à jour le signal **avant** l'écriture par `setConfig`, pour que l'effet soit immédiat ([[RG_57]]). Un échec d'écriture est absorbé ([[RG_09]]) : l'option reste appliquée pour la session en cours et peut reprendre sa valeur précédente au lancement suivant.
+
+**Écran.** Le sous-menu est une page Ionic à part entière, déclarée dans son module et (`src/app/pages/settings/accessibility/`) chargée en différé sous la route des Réglages (`settings/accessibility`), selon le motif page/module/routage des autres écrans. Le bouton « Accessibilité » des Réglages est un `ion-item` à flèche de navigation ; chaque option est un `ion-item` contenant un `ion-toggle` dont le libellé est celui de l'option et dont la phrase d'explication est reliée par `aria-describedby`. Les icônes éventuelles sont enregistrées dans `src/app/icons.ts` ([[RT_54]]).
+
+### RT_78 — Application de l'option de cohésion dans l'éditeur de placement
+
+**Point d'application.** L'éditeur de placement ([[RT_03]]) lit le signal de [[RT_77]]. Lorsque `coherencyCheckDisabled` est vrai, l'étape de cohésion de [[RT_36]] n'est pas évaluée dans le contrôle de validité des gestes — dépôt et déplacement ([[RT_34]], [[RT_40]]), dépôt groupé ([[RT_41]]), rotation ([[RT_22]]) : seule l'appartenance au rectangle de jeu ([[RT_19]]) est retenue, comme pour les déplacements en mode « Règle » ([[RT_44]]). Le contrôle est décidé au **début** de chaque geste, à partir de la valeur courante du signal.
+
+**Retrait.** Au retrait ([[RT_73]]), le calcul des composantes connexes de [[RT_36]] n'est pas effectué : seuls les placements des tokens choisis sont supprimés, en une écriture ([[RT_04]]).
+
+**Mode « Règle ».** Lorsque l'option est activée à l'activation du mode, l'instantané de [[RT_44]] est vide ; la désactivation du mode ne calcule donc aucun retaillage. Si l'option change pendant que le mode est actif, l'instantané déjà pris est conservé, mais il n'est pas évalué à la sortie du mode si l'option est alors activée.
+
+**Exemption des unités hors cohésion.** Lorsque l'option est de nouveau désactivée, l'exemption des unités déjà hors cohésion de [[RT_36]] (évaluée au début du geste) couvre les unités laissées hors cohésion pendant que l'option était activée : aucun état supplémentaire n'est conservé.
+
+**Mention.** La mention « Cohésion non contrôlée » de [[RG_58]] est rendue en texte dans l'en-tête de l'écran de placement tant que le signal est vrai ; elle ne capte aucun geste du plateau.
+
+---
+
 ## Suivi des décisions non tranchées
 
 Les règles techniques suivantes contiennent un choix encore ouvert et doivent être mises à jour dès que la décision est prise :
@@ -1723,6 +1787,8 @@ Les règles techniques suivantes contiennent un choix encore ouvert et doivent �
 Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_71]] (serveur de production auto-hébergé à `https://api.windfallplanner.pokepuller.fr/v1` ; l'origine de la version web reste à ajouter aux origines CORS une fois [[RT_59]] tranchée), [[RT_12]] (appel direct du client vers gdmissions.app, sans relais serveur, version embarquée en dernier recours), [[RT_05]] (`playArea` mesuré à l'ingestion, image distante acceptée seulement à dimensions identiques), [[RT_27]] (store IndexedDB dédié aux blobs), [[RT_16]] (pan/zoom implémenté sans librairie tierce, sur les évènements `Pointer` et une transformation CSS), [[RT_06]]/[[RT_08]] (IndexedDB pour les enregistrements métier, stockage de configuration léger séparé) [[RT_26]] (fichier JSON versionné avec l'application, alimenté entrée par entrée par l'assistant IA du projet) et [[RT_37]] (terrain extrait des images de plateau par un script hors-ligne plutôt que saisi à la main).
 
 ## Suivi des écarts entre spécification et implémentation
+
+- **[[EX_16]] / [[RG_57]] / [[RG_58]] / [[RT_77]] / [[RT_78]] — spécifiées, non implémentées.** Ni le bouton « Accessibilité » des Réglages, ni son sous-menu, ni l'option de désactivation du contrôle de cohésion n'existent dans le code.
 
 - **[[EX_15]] / [[RG_56]] / [[RT_74]] / [[RT_75]] — implémentées, vérifiées en navigateur par Cypress ; partage natif non vérifié sur appareil.** La logique pure (lettre du layout, textes des bandeaux, géométrie, troncature, nom de fichier) est `src/app/deployment/share-image.ts`, couverte par des tests unitaires ; le dessin et la transmission sont `src/app/shared/deployment-share.service.ts`, le bouton est dans `board-viewer.component.ts`. `@capacitor/share` 8.0.3 et `@capacitor/filesystem` 8.1.4 sont ajoutés et synchronisés dans `android/` ; le `FileProvider` du gabarit Capacitor couvre déjà le répertoire de cache (`cache-path` de `file_paths.xml`). Le test `cypress/e2e/deployment-share.cy.ts` contrôle l'absence du bouton sur le « plateau seul », l'envoi direct sans choix de format par une Web Share API simulée (type `image/jpeg`, nom de fichier, titre, dimensions du rectangle de jeu plus les bandeaux) et le repli par téléchargement avec son message ; l'image produite a été relue visuellement (cadrage identique à l'éditeur, en-tête, mentions complètes). Restent des écarts :
   - **Seul point d'accès : le choix du plateau.** [sitemap.md](sitemap.md) mentionne aussi une ouverture du visualiseur « Consulter » depuis la bibliothèque de l'accueil ; ce chemin n'existe pas dans le code, le partage n'y est donc pas offert.
