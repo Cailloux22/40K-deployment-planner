@@ -518,7 +518,7 @@ Plutôt que de figer ces conventions, le script énumère les noms candidats pou
 
 Les tokens affichés doivent respecter la forme et la taille réelle du socle de chaque unité, et permettre de distinguer visuellement les unités entre elles.
 
-Satisfait par : [[RG_02]], [[RG_06]], [[RT_05]], [[RT_32]].
+Satisfait par : [[RG_02]], [[RG_06]], [[RT_05]], [[RT_32]], [[RT_76]].
 
 ### RG_06 — Couleur par unité
 
@@ -545,6 +545,12 @@ Aucun seuil de luminance n'est retenu. La couleur de texte est celle des deux ca
 La fonction accepte toutes les notations de couleur que l'application est susceptible de produire, y compris les couleurs générées au-delà de la palette de base de [[RG_06]]. Une notation qu'elle ne sait pas interpréter est une erreur de programmation et doit être signalée comme telle : retomber silencieusement sur une couleur par défaut produit exactement le défaut que cette règle existe pour empêcher — un texte blanc sur un fond clair, sans que rien ne le signale.
 
 La couleur de repli employée lorsqu'une unité n'a pas de couleur résolue respecte les mêmes seuils de contraste que les tokens de [[RT_29]].
+
+### RT_76 — Notation des couleurs d'unité
+
+Toute couleur d'unité ([[RG_06]]) est enregistrée en notation hexadécimale `#RRGGBB`, seule notation acceptée par le contrat de synchronisation ([[RT_69]]). Cela vaut aussi pour les couleurs générées au-delà de la palette de base, à l'import comme à la scission d'une unité ([[RT_52]]) : la teinte décalée par l'angle d'or est calculée puis convertie en hexadécimal avant d'être attribuée, jamais conservée sous la forme `hsl()`.
+
+Une liste enregistrée sur l'appareil avant cette règle peut encore porter une couleur dans une autre notation : à chaque envoi au serveur ([[RT_68]]), la couleur de chaque unité est ramenée à `#RRGGBB` (notation interprétée par [[RT_32]]), de sorte qu'une telle liste — et ses déploiements, refusés tant que la liste ne l'est plus sur le compte — est acceptée à la synchronisation suivante sans intervention du joueur.
 
 ---
 
