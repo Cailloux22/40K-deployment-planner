@@ -1798,6 +1798,9 @@ Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_71]] (
 
 ## Suivi des écarts entre spécification et implémentation
 
+- **[[RG_59]] / [[RT_79]] — implémentées, vérifiées en navigateur par Cypress.** L'ordre de rendu est `stackedTokens` de `placement.page.ts` ; la poignée de rotation est un groupe rendu après la boucle des tokens, à partir de `selectedToken`. `cypress/e2e/selection-stacking.cy.ts` pose deux socles qui se chevauchent, sélectionne celui du dessous et vérifie qu'il devient le dernier token rendu et l'élément atteint en son centre, puis que la poignée suit tous les tokens dans le document et n'est recouverte par aucun.
+  - **Capture du pointeur.** Sélectionner un token le déplace dans le document, ce qui peut lever la capture de pointeur posée à l'appui ; le glisser n'en dépend pas, ses écouteurs étant sur le contenu de l'écran. Aucun parcours manuel sur appareil tactile.
+
 - **[[EX_16]] / [[RG_57]] / [[RG_58]] / [[RT_77]] / [[RT_78]] — implémentées, vérifiées en navigateur par Cypress.** Le service des options est `src/app/data/accessibility.service.ts` (relecture tolérante couverte par des tests unitaires) ; le sous-menu est `src/app/pages/settings/accessibility/`. Dans l'éditeur de placement, l'option est appliquée en un seul point, `coherencyControlled` de `placement.page.ts`, qui sert au début de chaque geste, au retrait et à l'instantané du mode « Règle ». `cypress/e2e/accessibility.cy.ts` vérifie l'ouverture du sous-menu, la valeur par défaut, sa conservation après rechargement, le refus par défaut d'un dépôt hors cohésion et son acceptation une fois l'option activée.
   - **Non vérifié par un test automatisé** : le déplacement, la rotation et le retrait avec l'option activée, ainsi que la sortie du mode « Règle » ; ces cas reposent sur le même point d'application que le dépôt vérifié. Aucun parcours manuel sur appareil tactile.
 

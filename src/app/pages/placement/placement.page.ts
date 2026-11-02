@@ -573,6 +573,17 @@ export class PlacementPage implements OnInit {
     return views;
   });
 
+  /**
+   * RG_59/RT_79: ordre de rendu des tokens — le SVG n'ayant pas de z-index, la
+   * sélection est rendue après les autres tokens, chacun des deux lots dans
+   * l'ordre des placements. Seule la liste rendue est réordonnée, jamais les
+   * placements RT_04.
+   */
+  readonly stackedTokens = computed<readonly TokenView[]>(() => {
+    const tokens = this.tokens();
+    return [...tokens.filter((token) => !token.selected), ...tokens.filter((token) => token.selected)];
+  });
+
   /** RG_30: nombre de tokens posés sélectionnés. */
   readonly selectedCount = computed(() => this.tokens().filter((token) => token.selected).length);
 

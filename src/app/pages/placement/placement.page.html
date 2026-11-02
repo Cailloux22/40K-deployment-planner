@@ -95,7 +95,8 @@
             @if (visibleZonePath(); as path) {
               <path class="visible-zone" [attr.d]="path" />
             }
-            @for (token of tokens(); track token.placement.idModele) {
+            <!-- RG_59/RT_79: la sélection est rendue après les autres tokens. -->
+            @for (token of stackedTokens(); track token.placement.idModele) {
               <g
                 [attr.transform]="
                   'translate(' +
@@ -141,25 +142,40 @@
                     (pointerdown)="onTokenPointerDown($event, token)"
                   />
                 }
+              </g>
+            }
 
-                <!-- RG_20/RT_22: poignée de rotation du token sélectionné,
-                     superposée au rendu SVG et indépendante de x/y. -->
-                @if (token.placement.idModele === selectedPlacementId()) {
-                  <line
-                    class="rotate-arm"
-                    x1="0"
-                    y1="0"
-                    [attr.x2]="0"
-                    [attr.y2]="-(token.ry + 34)"
-                  />
-                  <circle
-                    class="rotate-handle"
-                    cx="0"
-                    [attr.cy]="-(token.ry + 34)"
-                    r="16"
-                    (pointerdown)="onRotatePointerDown($event, token)"
-                  />
-                }
+            <!-- RG_20/RT_22: poignée de rotation du token sélectionné,
+                 superposée au rendu SVG et indépendante de x/y.
+                 RG_59/RT_79: groupe à part, après tous les tokens, pour
+                 qu'aucun token voisin ne la recouvre ; même transformation
+                 que son token. -->
+            @if (selectedToken(); as token) {
+              <g
+                [attr.transform]="
+                  'translate(' +
+                  token.placement.x +
+                  ',' +
+                  token.placement.y +
+                  ') rotate(' +
+                  token.placement.rotation +
+                  ')'
+                "
+              >
+                <line
+                  class="rotate-arm"
+                  x1="0"
+                  y1="0"
+                  [attr.x2]="0"
+                  [attr.y2]="-(token.ry + 34)"
+                />
+                <circle
+                  class="rotate-handle"
+                  cx="0"
+                  [attr.cy]="-(token.ry + 34)"
+                  r="16"
+                  (pointerdown)="onRotatePointerDown($event, token)"
+                />
               </g>
             }
 
