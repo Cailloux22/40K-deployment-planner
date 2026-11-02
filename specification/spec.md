@@ -162,7 +162,7 @@ Le `name` de l'association donne le rôle : `"Leading"` pour un meneur, `"Suppor
 
 Le joueur doit pouvoir positionner ses unités sur une représentation du plateau de jeu, en tenant compte de la disposition de force qu'il a choisie pour la partie.
 
-Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_23]], [[RT_24]], [[RT_27]], [[RT_34]], [[RG_25]], [[RT_35]], [[RG_26]], [[RT_36]], [[RG_30]], [[RG_31]], [[RT_40]], [[RG_32]], [[RT_41]], [[RG_37]], [[RT_46]], [[RG_55]], [[RT_73]]. L'agrandissement et le déplacement de la vue du plateau relèvent de [[EX_10]].
+Satisfait par : [[RG_03]], [[RG_04]], [[RG_05]], [[RG_12]], [[RG_14]], [[RG_15]], [[RG_16]], [[RG_17]], [[RG_20]], [[RT_03]], [[RT_04]], [[RT_11]], [[RT_12]], [[RT_16]], [[RT_17]], [[RT_18]], [[RT_19]], [[RT_22]], [[RT_23]], [[RT_24]], [[RT_27]], [[RT_34]], [[RG_25]], [[RT_35]], [[RG_26]], [[RT_36]], [[RG_30]], [[RG_31]], [[RT_40]], [[RG_32]], [[RT_41]], [[RG_37]], [[RT_46]], [[RG_55]], [[RT_73]], [[RG_59]], [[RT_79]]. L'agrandissement et le déplacement de la vue du plateau relèvent de [[EX_10]].
 
 ### RG_03 — Parcours de sélection : liste → disposition adverse → plateau → placement
 
@@ -226,6 +226,14 @@ Un token posé sur le plateau représente un seul modèle physique, jamais une u
 Le joueur doit pouvoir faire pivoter un token déjà placé sur le plateau, notamment pour orienter correctement un socle non circulaire (ovale, rectangulaire...) par rapport à la disposition réelle du modèle sur la table. La rotation se manipule indépendamment de la position du token, à tout moment tant que l'écran de placement reste ouvert, et ne modifie ni son appartenance à une unité ni son statut de placement ([[RG_05]]).
 
 La rotation se fait uniquement par le geste de [[RT_22]] : l'écran ne propose ni bouton de rotation au pas fixe ni affichage de l'angle courant.
+
+### RG_59 — Token sélectionné au premier plan
+
+Sur l'écran de placement ([[RG_03]] étape 3), un token sélectionné ([[RG_29]], [[RG_30]], [[RG_31]]) est affiché **au-dessus de tous les autres tokens** du plateau, tant qu'il reste sélectionné : là où des socles se chevauchent ou se touchent, c'est lui qui est entièrement visible, et c'est lui que le joueur saisit en touchant la zone commune. Quand la sélection contient plusieurs tokens, ils passent tous au-dessus des tokens non sélectionnés, en gardant entre eux leur ordre d'affichage habituel. Désélectionner un token le rend à sa place ordinaire dans l'empilement.
+
+La poignée de rotation du token sélectionné ([[RG_20]]) est, elle aussi, affichée **au-dessus de tous les tokens**, y compris de ceux qui ne sont pas sélectionnés : elle ne doit jamais être recouverte par un token voisin, sans quoi la rotation devient impossible dès que le bras de la poignée déborde sur un autre socle.
+
+Cette mise au premier plan est purement visuelle : elle ne modifie ni la position, ni la rotation, ni l'ordre des enregistrements de placement ([[RT_04]]) — ordre dont dépend le choix du groupe conservé au retrait ([[RG_26]], [[RT_36]]) — et n'écrit rien ([[RG_07]]).
 
 ### RG_05 — Unité non totalement déployée
 
@@ -361,6 +369,10 @@ Un placement est stocké comme un enregistrement `{ idUnite, idModele, x, y, rot
 ### RT_22 — Interaction de rotation d'un token
 
 La rotation d'un token sélectionné ([[RG_20]]) se pilote par un geste dédié (poignée de rotation affichée sur le token sélectionné, ou geste tactile à deux doigts) superposé au rendu SVG du plateau ([[RT_03]]) ; elle met à jour le seul champ `rotation` de l'enregistrement de placement ([[RT_04]]) sans toucher à `x`/`y`.
+
+### RT_79 — Ordre de rendu du token sélectionné et de sa poignée de rotation
+
+Le SVG n'ayant pas de `z-index`, l'empilement de [[RG_59]] est obtenu par l'**ordre du document** dans le calque des tokens ([[RT_03]]) : les tokens non sélectionnés sont rendus d'abord, dans l'ordre des placements, puis les tokens de la sélection de [[RT_40]], dans ce même ordre. La poignée de rotation de [[RT_22]] (bras et pastille) n'est plus rendue dans le groupe de son token : elle est rendue dans un groupe à part, **après tous les tokens**, portant la même translation et la même rotation que le token sélectionné pour rester solidaire de lui pendant le geste. Ce réordonnancement ne porte que sur la liste rendue, dérivée des placements et de l'état de sélection ; la liste des enregistrements de placement du déploiement ([[RT_04]]) n'est pas réordonnée. La zone visible de [[RT_39]] reste sous les tokens ; les calques déjà rendus au-dessus des tokens (rectangle de sélection de [[RT_40]], tracé de la règle de [[RT_42]], token provisoire du glisser de [[RT_34]]) restent au-dessus de la poignée.
 
 ### RT_34 — Retour visuel du geste de glisser d'un token
 
