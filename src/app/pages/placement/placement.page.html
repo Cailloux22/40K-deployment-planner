@@ -95,6 +95,33 @@
             @if (visibleZonePath(); as path) {
               <path class="visible-zone" [attr.d]="path" />
             }
+            <!-- RG_61/RT_81: cercle de portée, au-dessus de la zone visible et
+                 sous les tokens ; contour non rempli, sans réaction aux gestes,
+                 porté par la même transformation que son token. Tracé deux
+                 fois — liseré de contraste puis couleur d'unité. -->
+            @if (rangeRingView(); as ring) {
+              <g class="range-ring" [attr.transform]="ring.transform" aria-hidden="true">
+                @for (layer of ['range-ring-halo', 'range-ring-line']; track layer) {
+                  @let stroke = layer === 'range-ring-line' ? ring.color : null;
+                  @if (ring.outline.kind === 'circle') {
+                    <circle [attr.class]="layer" [attr.r]="ring.outline.r" [attr.stroke]="stroke" />
+                  } @else if (ring.outline.kind === 'rect') {
+                    <rect
+                      [attr.class]="layer"
+                      [attr.x]="ring.outline.x"
+                      [attr.y]="ring.outline.y"
+                      [attr.width]="ring.outline.width"
+                      [attr.height]="ring.outline.height"
+                      [attr.rx]="ring.outline.r"
+                      [attr.ry]="ring.outline.r"
+                      [attr.stroke]="stroke"
+                    />
+                  } @else {
+                    <path [attr.class]="layer" [attr.d]="ring.outline.d" [attr.stroke]="stroke" />
+                  }
+                }
+              </g>
+            }
             <!-- RG_59/RT_79: la sélection est rendue après les autres tokens. -->
             @for (token of stackedTokens(); track token.placement.idModele) {
               <g
@@ -288,6 +315,41 @@
         >
           <ion-icon name="hand-left-outline" aria-hidden="true"></ion-icon>
         </button>
+        <!-- RG_60/RT_81: bouton « Portée », immédiatement à droite de la main.
+             Inactif : affiché pour un seul token sélectionné ; actif (un cercle
+             est affiché) : affiché quelle que soit la sélection. Pas de
+             `data-view-control` : un appui efface la mesure de RG_33. -->
+        @if (rangeButtonVisible()) {
+          <div class="range-tools">
+            <button
+              type="button"
+              class="board-tool range-toggle"
+              [class.active]="!!rangeRing()"
+              [attr.aria-pressed]="!!rangeRing()"
+              [attr.aria-expanded]="rangeMenuShown()"
+              aria-controls="range-radii"
+              [attr.aria-label]="rangeButtonLabel()"
+              (click)="toggleRangeButton()"
+            >
+              <ion-icon name="radio-button-on-outline" aria-hidden="true"></ion-icon>
+            </button>
+            <!-- RG_60: cinq rayons, en colonne sous le bouton, ordre croissant. -->
+            @if (rangeMenuShown()) {
+              <div id="range-radii" class="range-radii" role="group" aria-label="Rayon du cercle de portée">
+                @for (radius of rangeRadii; track radius) {
+                  <button
+                    type="button"
+                    class="board-tool range-radius"
+                    [attr.aria-label]="'Cercle de portée de ' + radius + ' pouces'"
+                    (click)="chooseRangeRadius(radius)"
+                  >
+                    {{ radius }}"
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
       </div>
       <span class="visually-hidden" aria-live="polite">{{ measureAnnouncement() }}</span>
 

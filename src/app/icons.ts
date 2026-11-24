@@ -22,6 +22,7 @@ import {
   linkOutline,
   menu,
   personCircleOutline,
+  radioButtonOnOutline,
   settingsOutline,
   shareOutline,
   shareSocialOutline,
@@ -63,6 +64,8 @@ export function registerIcons(): void {
     'link-outline': linkOutline,
     menu,
     'person-circle-outline': personCircleOutline,
+    // RG_60/RT_81: bouton « Portée » de l'écran de placement (cercle et point central).
+    'radio-button-on-outline': radioButtonOnOutline,
     'settings-outline': settingsOutline,
     'share-outline': shareOutline,
     // RT_75: partage du déploiement en image dans le visualiseur « Consulter ».

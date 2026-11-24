@@ -66,6 +66,24 @@
   pointer-events: none;
 }
 
+/* RG_61/RT_81: contour non rempli, en couleur d'unité sur un liseré de
+   contraste, à épaisseur d'écran ; il ne capte aucun geste. */
+.range-ring {
+  pointer-events: none;
+  fill: none;
+
+  .range-ring-halo {
+    stroke: var(--app-token-drag-halo);
+    stroke-width: 5;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .range-ring-line {
+    stroke-width: 2.5;
+    vector-effect: non-scaling-stroke;
+  }
+}
+
 .token {
   stroke: var(--app-token-stroke);
   stroke-width: 2;
@@ -289,6 +307,26 @@
 }
 
 .zoom-level {
+  font-size: var(--app-font-sm);
+  font-weight: 600;
+}
+
+/* RG_60/RT_81: la colonne des rayons se déplie sous le bouton « Portée »,
+   superposée au plateau, sans décaler la rangée. */
+.range-tools {
+  position: relative;
+}
+
+.range-radii {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.range-radius {
   font-size: var(--app-font-sm);
   font-weight: 600;
 }

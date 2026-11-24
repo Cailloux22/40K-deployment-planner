@@ -43,6 +43,7 @@ import {
   ZoomLevel,
   zoomViewOffset,
 } from '../../deployment/geometry';
+import { RANGE_RING_RADII, RangeRingOutline, RangeRingRadius, rangeRingOutline } from '../../deployment/range-ring';
 import { SelectionRect, idsTouchedByRect, isDoubleTap, soleSelectedUnit } from '../../deployment/selection';
 import { CoherencyBase, coherencyBase, detachedAfterRemoval, isCoherent } from '../../deployment/unit-coherency';
 import { prepareTerrain, visibilityBase, visibleZone, visibleZonePath } from '../../deployment/visibility';
@@ -82,6 +83,23 @@ interface TokenView {
   readonly selected: boolean;
   /** RG_37/RG_24: nom accessible — composante et, pour un personnage, son rôle. */
   readonly label: string;
+}
+
+/**
+ * RT_80: le cercle de portée affiché — au plus un sur le plateau (RG_61).
+ * Local à l'écran : ce n'est pas un champ du placement RT_04.
+ */
+interface RangeRingState {
+  readonly idUnite: string;
+  readonly idModele: string;
+  readonly radius: RangeRingRadius;
+}
+
+/** RT_81: le cercle prêt à être rendu, à la position courante de son token. */
+interface RangeRingView {
+  readonly outline: RangeRingOutline;
+  readonly transform: string;
+  readonly color: string;
 }
 
 type DragKind = 'new' | 'move' | 'rotate' | 'group' | 'cluster';
@@ -592,6 +610,60 @@ export class PlacementPage implements OnInit {
     this.selectedCount() === 1 ? this.tokens().find((token) => token.selected) : undefined,
   );
 
+  /**
+   * RG_60/RG_61/RT_80: le cercle de portée affiché, unique par construction ;
+   * ni persisté ni synchronisé, l'écran s'ouvre sans cercle.
+   */
+  readonly rangeRing = signal<RangeRingState | null>(null);
+  /** RG_60/RT_80: colonne des rayons dépliée sous le bouton « Portée ». */
+  readonly rangeMenuOpen = signal(false);
+  /** RG_60: 3", 6", 8", 9", 12", dans l'ordre croissant. */
+  readonly rangeRadii = RANGE_RING_RADII;
+
+  /**
+   * RG_60/RT_80: le bouton « Portée » est affiché, inactif, quand un seul
+   * token est sélectionné ; actif — un cercle est affiché —, il l'est quelle
+   * que soit la sélection, pour que le cercle puisse toujours être retiré.
+   */
+  readonly rangeButtonVisible = computed(() => this.rangeRing() !== null || this.selectedCount() === 1);
+
+  /** RT_80: la colonne n'existe qu'à l'état inactif et tant que le bouton est affiché. */
+  readonly rangeMenuShown = computed(
+    () => this.rangeMenuOpen() && this.rangeRing() === null && this.selectedCount() === 1,
+  );
+
+  /**
+   * RT_80: contour du cercle, calculé à sa création ou à un changement
+   * d'échelle (RT_05) — jamais à chaque mouvement du token, qui ne change que
+   * la transformation de son groupe (RT_81).
+   */
+  private readonly rangeRingShape = computed<{ idModele: string; outline: RangeRingOutline } | null>(() => {
+    const ring = this.rangeRing();
+    if (!ring) return null;
+    const shape = this.groupShapes().get(ring.idModele.split('#')[0]);
+    const perMm = this.pixelsPerMm();
+    return shape && perMm > 0 ? { idModele: ring.idModele, outline: rangeRingOutline(shape, ring.radius, perMm) } : null;
+  });
+
+  /**
+   * RG_61/RT_81: le cercle suit son token — position provisoire comprise
+   * pendant un glisser, seul ou groupé, ou une rotation —, sélectionné ou non.
+   */
+  readonly rangeRingView = computed<RangeRingView | null>(() => {
+    const ring = this.rangeRingShape();
+    if (!ring) return null;
+    const token = this.tokens().find((candidate) => candidate.placement.idModele === ring.idModele);
+    if (!token) return null;
+    const { x, y, rotation } = token.placement;
+    return { outline: ring.outline, transform: `translate(${x},${y}) rotate(${rotation})`, color: token.color };
+  });
+
+  /** RG_60/RG_24: nom accessible du bouton, état et action. */
+  readonly rangeButtonLabel = computed(() => {
+    const ring = this.rangeRing();
+    return ring ? `Masquer le cercle de portée de ${ring.radius}"` : 'Afficher un cercle de portée';
+  });
+
   /** RT_38: terrain du plateau prêt pour le calcul, préparé une fois par plateau. */
   private readonly preparedTerrain = computed(() => {
     const terrain = this.terrain();
@@ -727,7 +799,17 @@ export class PlacementPage implements OnInit {
     };
     const hostElement = this.host.nativeElement;
     hostElement.addEventListener('pointerdown', clearMeasure, true);
-    this.destroyRef.onDestroy(() => hostElement.removeEventListener('pointerdown', clearMeasure, true));
+    // RG_60/RT_81: tout appui hors du bouton « Portée » et de sa colonne la
+    // replie, sans bloquer son effet ordinaire.
+    const closeRangeMenu = (event: PointerEvent) => {
+      if ((event.target as Element | null)?.closest?.('.range-tools')) return;
+      this.rangeMenuOpen.set(false);
+    };
+    hostElement.addEventListener('pointerdown', closeRangeMenu, true);
+    this.destroyRef.onDestroy(() => {
+      hostElement.removeEventListener('pointerdown', clearMeasure, true);
+      hostElement.removeEventListener('pointerdown', closeRangeMenu, true);
+    });
 
     this.listId.set(this.route.snapshot.paramMap.get('listId') ?? '');
     this.opponentId.set(this.route.snapshot.paramMap.get('opponentId') ?? '');
@@ -857,6 +939,32 @@ export class PlacementPage implements OnInit {
     this.panMode.set(!this.panMode());
   }
 
+  /**
+   * RG_60: à l'état actif, un appui efface le cercle affiché, quel que soit le
+   * token sélectionné ; à l'état inactif, il déplie ou replie la colonne des rayons.
+   */
+  toggleRangeButton(): void {
+    if (this.rangeRing()) {
+      this.rangeRing.set(null);
+      this.rangeMenuOpen.set(false);
+      return;
+    }
+    this.rangeMenuOpen.set(!this.rangeMenuOpen());
+  }
+
+  /**
+   * RG_60/RT_80: le rayon choisi pose le cercle sur l'unique token sélectionné,
+   * replie la colonne et rend le bouton actif. Rien n'est écrit (RT_04, RG_07).
+   */
+  chooseRangeRadius(radius: RangeRingRadius): void {
+    this.rangeMenuOpen.set(false);
+    // RG_61: un seul cercle à la fois — le choix n'existe qu'à l'état inactif.
+    if (this.rangeRing()) return;
+    const token = this.selectedToken();
+    if (!token) return;
+    this.rangeRing.set({ idUnite: token.placement.idUnite, idModele: token.placement.idModele, radius });
+  }
+
   /** RT_47: pose le décalage de vue, borné pour que la vue ne sorte pas du plateau. */
   private setViewOffset(offset: { dx: number; dy: number }): void {
     const area = this.boardArea?.nativeElement;
@@ -885,7 +993,8 @@ export class PlacementPage implements OnInit {
     const area = this.boardArea?.nativeElement;
     const target = event.target as Element | null;
     if (!area || !target || !area.contains(target)) return false;
-    if (target.closest('[data-view-control], .selection-status')) return false;
+    // RT_48/RT_81: le bouton « Portée » et sa colonne sont des contrôles superposés.
+    if (target.closest('[data-view-control], .selection-status, .range-tools')) return false;
     return event.button === 1 || this.panMode();
   }
 
@@ -1106,6 +1215,7 @@ export class PlacementPage implements OnInit {
       : deployment.placements;
 
     this.deployment.set({ ...deployment, placements, reservedUnitIds: [...ids] });
+    this.dropOrphanRangeRing(placements);
 
     // Le token sélectionné a pu disparaître avec les placements de l'unité.
     const remaining = [...this.selection()].filter((id) => placements.some((placement) => placement.idModele === id));
@@ -2088,8 +2198,21 @@ export class PlacementPage implements OnInit {
   private mutatePlacements(update: (placements: readonly Placement[]) => Placement[]): void {
     const deployment = this.deployment();
     if (!deployment) return;
-    this.deployment.set({ ...deployment, placements: update(deployment.placements) });
+    const placements = update(deployment.placements);
+    this.deployment.set({ ...deployment, placements });
+    this.dropOrphanRangeRing(placements);
     this.scheduleSave();
+  }
+
+  /**
+   * RG_61/RT_80: un token retiré du plateau, quelle qu'en soit la cause, perd
+   * son cercle ; reposé plus tard, il revient sans cercle.
+   */
+  private dropOrphanRangeRing(placements: readonly Placement[]): void {
+    const ring = this.rangeRing();
+    if (ring && !placements.some((p) => p.idUnite === ring.idUnite && p.idModele === ring.idModele)) {
+      this.rangeRing.set(null);
+    }
   }
 
   private scheduleSave(): void {
