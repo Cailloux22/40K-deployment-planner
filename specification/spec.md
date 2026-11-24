@@ -1857,6 +1857,219 @@ Ce cercle n'est **pas** un champ de l'enregistrement de placement : l'écriture 
 
 **Cercle.** Le cercle est rendu dans le SVG de l'éditeur ([[RT_03]]), dans un calque placé **au-dessus de la zone visible** ([[RT_39]]) et **sous les tokens**, pour ne jamais recouvrir un socle. Son contour est un élément `path` (ou `circle` pour un socle rond) porté par un groupe qui reçoit la même translation et la même rotation que le rendu de son token — position provisoire comprise pendant un glisser ([[RT_34]], [[RT_40]]) ou une rotation ([[RT_22]]) —, si bien que le cercle suit le geste sans recalcul de sa forme ([[RT_80]]). Le contour n'est pas rempli (`fill: none`), son trait est dans la couleur d'unité de [[RG_06]] doublé d'un liseré de contraste pour rester visible sur tout plateau ([[RT_29]]), et son épaisseur est fixée en pixels d'écran (`vector-effect: non-scaling-stroke`), comme le tracé de [[RT_43]]. Le calque porte `pointer-events: none`. La partie qui dépasse de la surface du plateau est masquée par la zone du plateau ([[RT_47]]). Les visualiseurs de [[RT_16]] et la composition de l'image partagée de [[RT_74]] ne lisent pas cet état et restent inchangés.
 
+## EX_18 — Visite guidée de l'application
+
+Un joueur qui découvre l'application doit pouvoir **suivre une visite guidée** qui lui montre, écran par écran et sur des données d'exemple, le parcours complet : import d'une liste, bibliothèque, choix de la disposition adverse et du plateau, placement des tokens avec ses commandes et ses gestes non signalés à l'écran (double appui, glisser sur le fond…), consultation et partage d'un déploiement, puis compte et synchronisation. La visite lui est **proposée à sa première ouverture** de l'application et reste **relançable à tout moment depuis les Réglages**. Elle s'inspire des outils de visite guidée du web du type Shepherd.js : une bulle explicative ancrée sur l'élément décrit, le reste de l'écran assombri. Le joueur peut l'**arrêter à tout moment**, après confirmation, et voit **à quelle étape il en est sur le total** (« 12 / 46 »). La visite ne laisse **aucune trace** dans ses données : la liste et le déploiement d'exemple qu'elle manipule sont effacés à sa fin.
+
+Satisfait par : [[RG_62]], [[RG_63]], [[RG_64]], [[RG_65]], [[RG_66]], [[RT_82]], [[RT_83]], [[RT_84]], [[RT_85]], [[RT_86]].
+
+### RG_62 — Proposition à la première ouverture et relance depuis les Réglages
+
+**Première ouverture.** À la première ouverture de l'application **sur un appareil**, l'accueil ([[RG_18]]) affiche, une fois chargé, la première étape de la visite ([[RG_66]], étape 1) : un mot de bienvenue qui présente l'application en deux phrases et propose la visite, avec deux actions :
+
+- **« Commencer la visite »** passe à l'étape 2 ;
+- **« Pas maintenant »** ferme la bulle **sans confirmation** — la visite n'a pas encore commencé — et précise, dans la bulle même avant l'appui, que la visite reste disponible dans les Réglages.
+
+Dans les deux cas, la visite est réputée **proposée** sur cet appareil et n'est plus jamais affichée d'elle-même, qu'elle ait été suivie jusqu'au bout, arrêtée en cours ([[RG_64]]) ou déclinée. La croix de la bulle ([[RG_63]]) a, à cette étape, le même effet que « Pas maintenant ».
+
+**Ce qu'est une première ouverture.** La visite n'est proposée d'elle-même que si elle ne l'a encore jamais été sur l'appareil **et** que la bibliothèque est vide à cet instant. Un joueur qui a déjà des listes — application mise à jour vers une version qui apporte la visite, données reprises par la synchronisation ([[RG_51]]) — n'est donc pas interrompu : la visite est simplement marquée comme proposée, et reste accessible depuis les Réglages. L'information est **propre à l'appareil** : elle n'est pas synchronisée ([[EX_06]]), un nouvel appareil propose donc la visite à sa propre première ouverture.
+
+**Relance.** Les Réglages ([[RG_18]]) portent, dans un bloc **« Aide »** visible dans toutes les versions de l'application (APK comme web, [[EX_12]]), un bouton **« Visite guidée »**. Un appui ramène le joueur à l'accueil et démarre la visite à l'étape 1, quel que soit le contenu de sa bibliothèque ; à cette étape, « Pas maintenant » ramène simplement à l'accueil. La visite peut être relancée autant de fois que voulu.
+
+**Hors-ligne.** La visite est entièrement disponible sans réseau ([[EX_05]]) : ses données d'exemple sont embarquées ([[RG_65]]), et un plateau non encore téléchargé s'y affiche comme ailleurs ([[RG_42]]).
+
+### RG_63 — Interface de la visite
+
+**Bulle.** Chaque étape est présentée dans une **bulle** qui comporte, de haut en bas :
+
+- un **titre** court et une **croix « Quitter la visite »** en haut à droite ;
+- le **texte explicatif** de l'étape, de quelques phrases au plus ;
+- en bas, le **compteur d'étape « n / N »** — n le rang de l'étape affichée, N le **nombre total d'étapes de la visite**, toujours le même quel que soit l'écran ou l'appareil ([[RG_66]]) — et les boutons **« Précédent »** et **« Suivant »** (« Terminer » à la dernière étape, « Commencer la visite » / « Pas maintenant » à la première, [[RG_62]]).
+
+**Mise en évidence.** Quand l'étape décrit un élément de l'écran (bouton, champ, zone du plateau, bandeau…), cet élément est **mis en évidence** : le reste de l'écran est assombri, l'élément est découpé dans ce voile avec une marge et un contour, et la bulle est placée à côté de lui, sans le recouvrir, du côté où elle tient entièrement à l'écran ; sur un écran étroit, elle se place au-dessus ou au-dessous. Une étape qui décrit l'écran dans son ensemble ou un geste (bienvenue, fin, raccourcis du plateau) n'a pas d'élément mis en évidence — ou met en évidence toute la zone du plateau — et sa bulle est centrée. L'élément décrit est amené dans la partie visible de l'écran (défilement de la page ou du récapitulatif) avant l'affichage de la bulle.
+
+**L'application est inerte pendant la visite.** Tant qu'une bulle est affichée, **aucun élément de l'écran ne réagit** au toucher, à la souris ni au clavier, l'élément mis en évidence compris : le joueur regarde, la visite agit. Tout ce qui change pendant la visite — navigation d'un écran à l'autre, chargement de la liste d'exemple, sélection d'un token, mise en réserve d'une unité, ouverture de la consultation — est fait **par la visite elle-même**, à l'appui sur « Suivant », et annoncé dans le texte de l'étape (« La visite charge pour vous une liste d'exemple »). Le parcours est ainsi identique pour tous, et une manipulation malheureuse ne peut ni le faire dévier ni modifier les données du joueur.
+
+**Précédent.** « Précédent » revient à l'étape précédente **sur le même écran**. Il est absent de la première étape de chaque écran : la visite ne revient pas en arrière d'un écran à l'autre, ce qui défairait des actions qu'elle a faites (liste enregistrée, unité mise en réserve).
+
+**Accessibilité ([[EX_07]]).** La bulle respecte l'échelle typographique ([[RT_30]]), les cibles tactiles ([[RT_31]]) et les deux thèmes ([[RT_29]]). Le compteur est aussi énoncé aux lecteurs d'écran (« Étape 12 sur 46 »). Le voile et la mise en évidence ne reposent pas sur la seule couleur : le contour de l'élément est contrasté sur tout fond ([[RG_24]]).
+
+### RG_64 — Arrêt de la visite à tout moment
+
+**Demande d'arrêt.** À toute étape à partir de la deuxième, le joueur peut demander l'arrêt de la visite par la **croix** de la bulle, par la **touche Échap** sur un appareil à clavier, ou par le **geste/bouton retour du système** (Android, navigateur). La visite affiche alors une **fenêtre de confirmation** :
+
+> **Arrêter la visite ?**
+> Êtes-vous sûr de vouloir arrêter la visite guidée ? Vous pourrez la relancer à tout moment depuis les Réglages.
+> [ Continuer la visite ] [ Arrêter ]
+
+- **« Continuer la visite »** (action par défaut, aussi obtenue par Échap ou retour dans cette fenêtre) referme la confirmation et laisse la visite **à l'étape où elle était**, sans rien changer.
+- **« Arrêter »** met fin à la visite immédiatement : les données d'exemple sont effacées ([[RG_65]]), toute fenêtre ouverte par la visite est refermée (consultation plein écran, menu des unités…), et le joueur est ramené à l'**accueil**, dans l'état où il était avant le début de la visite.
+
+La première étape n'est pas concernée : décliner la visite avant de l'avoir commencée se fait sans confirmation ([[RG_62]]).
+
+**Fin normale.** À la dernière étape, « Terminer » met fin à la visite sans confirmation, avec le même effet qu'un arrêt : données d'exemple effacées, retour à l'accueil.
+
+**Interruption subie.** Si l'application est fermée ou rechargée pendant la visite, celle-ci **ne reprend pas** à la réouverture : elle est tenue pour arrêtée, ses données d'exemple restantes sont effacées au démarrage suivant ([[RT_85]]), et elle reste relançable depuis les Réglages.
+
+### RG_65 — Données d'exemple de la visite
+
+**Ce que la visite manipule.** Pour montrer des écrans remplis, la visite utilise :
+
+- la **liste d'exemple** embarquée dans l'application (le roster JSON de référence de [[RT_13]], une liste Adeptus Mechanicus de 2 000 points), qu'elle charge elle-même sur l'écran d'import, en lieu et place d'un fichier choisi par le joueur ;
+- un **déploiement d'exemple** de cette liste, qu'elle crée elle-même à son arrivée sur le choix du plateau, pour le premier plateau proposé : **toutes les unités posées sauf une**, qui reste dans le bandeau et n'a aucun modèle posé — le déploiement est donc « non fini » (orange, [[RG_14]]). Les positions sont fixées une fois pour toutes, en cohésion ([[RG_26]]) et dans la zone de déploiement du joueur pour sa disposition.
+
+**Isolées des données du joueur.** Ces données d'exemple apparaissent dans les écrans comme des données ordinaires (la liste d'exemple figure dans la bibliothèque de l'accueil pendant la visite), mais :
+
+- elles ne sont **jamais synchronisées** ([[EX_06]]), y compris si le joueur est connecté et qu'une synchronisation se déclenche pendant la visite ([[RT_10]]) ;
+- elles sont **effacées** à la fin de la visite, qu'elle soit terminée ou arrêtée ([[RG_64]]), ou au démarrage suivant si elle a été interrompue — le joueur ne retrouve jamais la liste d'exemple dans sa bibliothèque après la visite ;
+- elles ne touchent à **aucune** donnée du joueur : ses listes, ses déploiements et ses réglages sont les mêmes avant et après la visite.
+
+**Exception à l'import hors-ligne.** Le chargement de la liste d'exemple n'est pas un import au sens de [[RG_13]] : il reste possible sans réseau, la liste étant embarquée dans l'application.
+
+**Lancements successifs.** Chaque lancement repart de données d'exemple neuves ; deux visites ne coexistent jamais.
+
+### RG_66 — Scénario de la visite
+
+La visite suit l'ordre ci-dessous, **46 étapes** (N = 46 dans le compteur de [[RG_63]]). La colonne « Action de la visite » décrit ce que la visite fait elle-même à l'appui sur « Suivant » de l'étape, avant d'afficher la suivante ; une étape sans action se contente d'expliquer. Rien n'est jamais supprimé, dupliqué, partagé ni envoyé : les actions destructrices ou sortantes sont **montrées, jamais exécutées**.
+
+**Accueil.**
+
+| # | Élément mis en évidence | Contenu | Action de la visite |
+|---|---|---|---|
+| 1 | — (bulle centrée) | Bienvenue : l'application prépare le déploiement d'une armée sur les plateaux du jeu, socle par socle ; proposition de la visite ([[RG_62]]). | — |
+| 2 | Bouton « Importer une liste » | Tout commence par l'import de sa liste d'armée. | Ouvre l'écran d'import. |
+
+**Import de liste** ([[EX_01]], [[EX_11]]).
+
+| # | Élément mis en évidence | Contenu | Action de la visite |
+|---|---|---|---|
+| 3 | Zone de choix du fichier | Format attendu : le fichier roster JSON exporté depuis un list-builder de la famille BattleScribe / NewRecruit ([[RG_01]], [[RT_13]]) — où trouver l'export dans le list-builder, extensions acceptées. L'import demande une connexion réseau ([[RG_13]]). | Charge la liste d'exemple ([[RG_65]]) : le récapitulatif s'affiche. |
+| 4 | Champ « Nom de la liste » | Le nom est repris du fichier et reste modifiable ([[RG_22]]). | — |
+| 5 | Disposition de force | La disposition du joueur est lue dans la liste et ne lui sera plus demandée ([[RT_23]]). | — |
+| 6 | Compteurs « unités » et « modèles » | Récapitulatif de ce qui va être enregistré ([[RG_22]]). | — |
+| 7 | Socles de l'unité « Skitarii Rangers » | **Vérifier les socles** : chaque profil de modèle reçoit le socle du référentiel, regroupé par forme et taille avec un compte ; une même unité peut mêler plusieurs socles — ici le Ranger à l'arquebuse transuranique est sur un ovale ([[RG_02]]). Comparer avec ses figurines. | — |
+| 8 | Compteur « socles à assigner » | Une unité absente du référentiel est signalée ici et sur sa ligne : on lui choisit un socle connu, ou on saisit les dimensions d'un socle sur mesure mesuré sur la figurine ([[RG_02]], [[RT_28]]) ; la liste ne s'enregistre qu'une fois tous les socles assignés. La liste d'exemple n'en a aucun. | — |
+| 9 | Sélecteur de couleur d'une unité | Chaque unité reçoit une couleur, reprise par ses tokens sur le plateau, modifiable ici ([[RG_06]]). | — |
+| 10 | Bloc d'attachement des « Kataphron Breachers » | **Vérifier les meneurs** : le Tech-Priest Manipulus mène cette unité ; ils seront déployés comme une seule unité. « Détacher » défait l'association lue dans la liste ([[RG_36]]). | — |
+| 11 | Champ « Attacher à » d'un personnage non attaché | Un meneur ou un soutien que la liste n'a pas associé (ou mal) peut être attaché ici, parmi les seules unités qu'il peut rejoindre ([[RG_36]]). | — |
+| 12 | Bouton « Scinder » des « Sicarian Ruststalkers » | **Séparer une unité en deux** : une unité d'au moins 10 modèles peut être déployée en deux unités distinctes ; on répartit ensuite les modèles par glisser-déposer, chaque moitié comptant au moins 5 modèles ([[RG_40]]). La visite ne scinde pas l'unité. | — |
+| 13 | Bouton « Enregistrer la liste » | La liste n'est enregistrée qu'après cette validation ; « Annuler » n'enregistre rien ([[RG_22]]). | Enregistre la liste d'exemple et revient à l'accueil. |
+
+**Accueil — bibliothèque** ([[EX_04]]).
+
+| # | Élément mis en évidence | Contenu | Action de la visite |
+|---|---|---|---|
+| 14 | Carte de la liste d'exemple | La bibliothèque regroupe les listes importées et leurs déploiements ; toucher une liste lance la préparation d'un déploiement. | — |
+| 15 | Bouton « Actions sur la liste » | **Dupliquer** crée une copie indépendante de la liste ; **Supprimer** l'efface avec ses déploiements, après confirmation ([[RG_21]]). La visite ne fait ni l'un ni l'autre. | Ouvre la liste d'exemple : choix de la disposition adverse. |
+
+**Choix de la disposition adverse** ([[RG_03]] étape 1).
+
+| # | Élément mis en évidence | Contenu | Action de la visite |
+|---|---|---|---|
+| 16 | Disposition « Vous » | Rappel de la disposition du joueur, lue à l'import. | — |
+| 17 | Les dispositions adverses | On choisit celle de l'adversaire ; la couleur de chaque bouton résume l'avancement des 3 déploiements correspondants — légende « Que signifient les couleurs ? » ([[RG_12]]). | Choisit la première disposition adverse, ouvre le choix du plateau et y crée le déploiement d'exemple ([[RG_65]]). |
+
+**Choix du plateau** ([[RG_03]] étape 2).
+
+| # | Élément mis en évidence | Contenu | Action de la visite |
+|---|---|---|---|
+| 18 | Bandeau des deux dispositions et bouton « Missions » | Le couple de dispositions en cours ; « Missions » montre les deux cartes de mission primaire ([[RG_48]]). | — |
+| 19 | Aperçu du plateau (pager) | Trois plateaux par couple de dispositions, on passe de l'un à l'autre en glissant horizontalement ([[RG_14]]). | — |
+| 20 | Aperçu du plateau | Toucher l'aperçu l'ouvre en plein écran avec ses mesures, zoomable ([[RG_14]], [[RT_16]]). | — |
+| 21 | Bloc « Statut » | Rouge : rien de commencé ; orange : déploiement commencé ; vert : terminé ([[RG_14]]). Le plateau d'exemple est orange. | — |
+| 22 | Actions « Nouveau » / « Éditer » | « Nouveau » repart d'un plateau vide, « Éditer » reprend le déploiement, « Consulter » (au vert) le montre en lecture seule ([[RG_14]]). | Ouvre « Éditer » : écran de placement. |
+
+**Placement** ([[RG_03]] étape 3) — chaque bouton, puis chaque geste non signalé à l'écran.
+
+| # | Élément mis en évidence | Contenu | Action de la visite |
+|---|---|---|---|
+| 23 | Zone du plateau | Un token par figurine, à la taille réelle de son socle et dans la couleur de son unité ([[RG_04]], [[EX_03]]) ; le déploiement est enregistré en continu, sans bouton d'enregistrement ([[RG_07]]). | — |
+| 24 | Bandeau du bas | Unité en cours, flèches unité précédente / suivante, modèles restant à poser, à glisser un par un sur le plateau ([[RG_15]]). | — |
+| 25 | Bandeau du bas | **Raccourci** : un double appui sur le bandeau saisit tous les modèles restants, posés d'un seul glisser en grappe ([[RG_32]]). | — |
+| 26 | Case « en réserve » | Déclare l'unité en réserve : elle compte comme déployée et n'a aucun token sur le plateau ([[RG_25]]). | — |
+| 27 | Bouton du menu des unités | Vue d'ensemble de toutes les unités et de leur avancement ; toucher une unité la place dans le bandeau ([[RG_16]]). | — |
+| 28 | Bouton « Plan de jeu » | Une note libre attachée à ce déploiement ([[RG_45]]). | — |
+| 29 | Bouton « Missions » | Les cartes de mission primaire du couple de dispositions ([[RG_48]]). | — |
+| 30 | Bouton « Règle » | Mesure entre deux points en glissant sur le plateau, et mesure du déplacement d'un token ([[RG_33]], [[RG_34]]). | — |
+| 31 | Bouton d'agrandissement | Plateau en ×2 puis ×4, puis retour au plateau entier ([[RG_38]]). | — |
+| 32 | Bouton à icône de main | Mode « Déplacement » de la vue agrandie ; à la souris, maintenir le bouton du milieu déplace aussi la vue ([[RG_39]]). | Sélectionne un token posé. |
+| 33 | Token sélectionné | Toucher un token le sélectionne : la zone qu'il voit est colorée ([[RG_29]]) ; sa poignée se glisse pour le faire pivoter ([[RG_20]]). | — |
+| 34 | Bouton « Portée » | Affiche autour du token un cercle à 3, 6, 8, 9 ou 12" du bord de son socle ([[RG_60]], [[RG_61]]). | — |
+| 35 | Bouton à icône de poubelle | Retire du plateau les tokens sélectionnés, qui retournent dans le bandeau ([[RG_55]]). | Sélectionne tous les tokens de l'unité de ce token. |
+| 36 | Tokens de l'unité sélectionnée | **Raccourci** : un double appui (double clic) sur un token sélectionne toute son unité ; glisser l'un d'eux la déplace d'un bloc ([[RG_31]]). | Vide la sélection. |
+| 37 | Zone du plateau | **Raccourci** : glisser depuis un endroit sans token trace un rectangle qui sélectionne tous les tokens touchés ; Maj enfoncée, il les ajoute à la sélection ([[RG_30]]). | — |
+| 38 | Zone du plateau | **Cohésion** : un modèle posé trop loin de son unité est refusé ([[RG_26]]) ; ce contrôle se désactive dans Réglages › Accessibilité ([[RG_58]]). | Met en réserve la dernière unité du bandeau ([[RG_25]]) : le déploiement est terminé. |
+| 39 | Bandeau du bas | Plus rien à poser : le déploiement d'exemple est terminé. | Revient au choix du plateau. |
+
+**Choix du plateau — consultation et partage** ([[EX_15]]).
+
+| # | Élément mis en évidence | Contenu | Action de la visite |
+|---|---|---|---|
+| 40 | Bloc « Statut » | Le plateau est passé au vert. | — |
+| 41 | Action « Consulter » | Ouvre le déploiement terminé en plein écran, en lecture seule ([[RG_14]]). | Ouvre « Consulter ». |
+| 42 | Visualiseur plein écran | Prévisualisation du déploiement : on la zoome en pinçant, la croix la referme ([[RT_16]]). | — |
+| 43 | Bouton « Partager » | Envoie une image du déploiement à une autre application (messagerie, réseau…) ([[RG_56]]). La visite ne partage rien. | Ferme le visualiseur et ouvre les Réglages. |
+
+**Réglages** ([[EX_06]]).
+
+| # | Élément mis en évidence | Contenu | Action de la visite |
+|---|---|---|---|
+| 44 | Bloc « Compte » | Le compte est facultatif : l'application fonctionne entièrement sans ([[RG_10]]). Créer un compte ou se connecter permet de **retrouver ses listes et ses déploiements sur tous ses appareils** (téléphone, tablette, ordinateur), synchronisés automatiquement dès que le réseau est là ; une modification faite sur deux appareils à la fois est présentée au joueur, qui choisit la version à garder ([[RG_50]], [[RG_54]]). | — |
+| 45 | Bouton « Visite guidée » | La visite se relance d'ici ([[RG_62]]). | — |
+| 46 | — (bulle centrée) | Fin de la visite ; la liste d'exemple va être retirée de la bibliothèque ([[RG_65]]). | « Terminer » : efface les données d'exemple et revient à l'accueil. |
+
+**Étapes dépendant de l'appareil.** Le nombre d'étapes ne varie pas : une étape dont l'élément n'existe pas sur l'appareil en cours garde son rang et affiche sa bulle centrée, sans mise en évidence (par exemple, la mention de la souris à l'étape 32 et de la touche Maj à l'étape 37 restent dans le texte ; elles concernent un appareil à souris ou à clavier). Un texte qui cite un geste le nomme pour le toucher **et** pour la souris.
+
+**Évolution.** Toute commande ou tout geste ajouté à l'un de ces écrans par une règle ultérieure doit être ajouté au scénario, et N mis à jour en conséquence.
+
+### RT_82 — Moteur de la visite
+
+**Composant.** La visite est rendue par un composant propre à l'application, dans `src/app/tour/` : un service `TourService` qui porte l'état (étape courante, visite en cours ou non) et un composant de surcouche monté **une seule fois** à la racine de l'application (`AppComponent`), au-dessus de l'`ion-router-outlet` et des fenêtres modales Ionic, pour survivre aux changements d'écran. Le choix d'une bibliothèque tierce de visite guidée (Shepherd.js et équivalents) est **ouvert** (voir « Suivi des décisions non tranchées ») ; la surcouche est conçue pour que ce choix ne touche ni le scénario ni les écrans.
+
+**Scénario déclaratif.** Le scénario de [[RG_66]] est une **constante TypeScript** (`tour-steps.ts`), tableau ordonné d'étapes `{ id, route, cible?, titre, texte, action? }` :
+
+- `route` : l'écran sur lequel l'étape s'affiche, comme fonction des identifiants des données d'exemple (liste, disposition adverse, plateau) ;
+- `cible` : le nom d'une **ancre** posée dans le gabarit de l'écran par un attribut `data-tour="…"` (par exemple `data-tour="import-split"`) ; jamais un sélecteur CSS de structure, qu'un changement de mise en page casserait silencieusement ;
+- `action` : une fonction asynchrone exécutée à l'appui sur « Suivant », avant l'étape suivante ([[RG_66]], colonne « Action de la visite »).
+
+N est la longueur du tableau, jamais une valeur écrite à la main ; un test unitaire vérifie qu'elle vaut 46, que chaque `cible` existe dans le gabarit de son écran, et que « Précédent » n'est jamais offert sur la première étape d'un écran ([[RG_63]]).
+
+**Affichage d'une étape.** Avant d'afficher une étape, le service navigue si besoin vers sa `route` par le routeur Angular, attend la fin de l'entrée de la page Ionic (`ionViewDidEnter`), puis attend l'apparition de l'ancre dans le DOM (avec un délai maximal de quelques secondes, au-delà duquel la bulle est centrée sans mise en évidence plutôt que de bloquer). Il fait défiler l'ancre dans la vue (`scrollIntoView` ou `ion-content.scrollToPoint`), mesure son rectangle (`getBoundingClientRect`) et le remesure à chaque redimensionnement, changement d'orientation ou défilement.
+
+**Voile et découpe.** Le voile est un SVG plein écran dont le chemin évide le rectangle de l'ancre élargi d'une marge ; son contour est un token de couleur de [[RT_29]] défini dans les deux thèmes. La bulle est positionnée par calcul à côté du rectangle, du côté où elle tient, en repli au-dessus/au-dessous sur un écran étroit, sinon centrée.
+
+**Inertie.** Le voile intercepte tous les évènements `pointer`, `touch`, `wheel` et clavier hors de la bulle, y compris sur la découpe, ce qui rend l'écran inerte ([[RG_63]]) ; la racine de l'application reçoit l'attribut `inert` pendant la visite, sauf la surcouche. Les actions de la visite appellent directement les services et méthodes des écrans (enregistrement de la liste par le service d'import, `selection` de l'éditeur…), jamais en simulant des clics.
+
+**Retour et Échap.** Pendant la visite, le bouton retour Android (`@capacitor/app`, `backButton`, priorité supérieure à celle du routeur Ionic) et la touche Échap ouvrent la confirmation de [[RG_64]] au lieu de leur effet ordinaire ; dans le navigateur, la visite empile une entrée d'historique à son démarrage, et l'évènement `popstate` qui la retire ouvre la même confirmation.
+
+**Accessibilité.** La bulle est un `role="dialog"` nommé par son titre, qui reçoit le focus à chaque étape et le retient (piège de focus) ; le compteur est rendu en texte et répété dans une région `aria-live="polite"`. Les transitions de la bulle et de la découpe sont supprimées sous `prefers-reduced-motion`. Les icônes de la bulle et du bouton des Réglages sont enregistrées dans `src/app/icons.ts` ([[RT_54]]).
+
+### RT_83 — État de la visite et confirmation d'arrêt
+
+**Proposée ou non.** L'indicateur « visite proposée » de [[RG_62]] est une entrée de la configuration légère de l'appareil (`getConfig`/`setConfig` de [[RT_08]], clé `tour.proposed`, booléen), comme les options d'accessibilité de [[RT_77]] : jamais synchronisée ([[RT_09]]). Au démarrage, une fois la bibliothèque chargée, l'accueil démarre la visite à l'étape 1 si la clé est absente et la bibliothèque vide ; sinon, si la clé est absente, il l'écrit à `true` sans rien afficher. Elle est écrite à `true` dès l'affichage de l'étape 1, pour qu'une fermeture brutale ne repropose pas la visite.
+
+**En cours.** L'état « visite en cours » est en mémoire seulement : il n'est pas persisté, ce qui réalise l'absence de reprise de [[RG_64]]. Seule la présence de données d'exemple est persistée ([[RT_85]]).
+
+**Confirmation d'arrêt.** La confirmation de [[RG_64]] est un `ion-alert` (même mécanisme que les confirmations de [[RG_08]]/[[RG_21]]), créé au-dessus du voile, dont le bouton « Continuer la visite » porte le rôle `cancel` (obtenu aussi par Échap, retour ou appui hors de la fenêtre) et « Arrêter » le rôle `destructive`. « Arrêter » et « Terminer » appellent la même fin de visite : fermeture des modales ouvertes par la visite (`ModalController.getTop` jusqu'à épuisement), purge de [[RT_85]], navigation vers l'accueil avec `navigateRoot`, retrait du voile.
+
+**Relance.** Le bouton « Visite guidée » des Réglages appelle `TourService.start()`, qui purge d'abord d'éventuelles données d'exemple restantes ([[RT_85]]), navigue vers l'accueil puis affiche l'étape 1.
+
+### RT_84 — Données d'exemple : source, création et exclusion de la synchronisation
+
+**Liste d'exemple.** La liste est lue depuis `src/assets/list_import.example.json` — la fixture de [[RT_13]] —, passée par la même couche de parsing et de résolution des socles que l'import ([[RT_01]], [[RT_02]]), sans le contrôle de connectivité de [[RT_14]] ([[RG_65]], exception). Elle est copiée telle quelle dans l'application (aucun asset dédié) : le fichier est déjà dans `src/assets/` et précaché par le service worker ([[RT_54]]) ; il doit le rester, et la visite cite nommément ses unités (Skitarii Rangers, Kataphron Breachers, Sicarian Ruststalkers…), donc tout changement de la fixture implique de vérifier les étapes 7 à 12. Un test unitaire vérifie sur la fixture ce que ces étapes supposent : les Skitarii Rangers mêlent au moins deux socles, aucun socle n'est à assigner, le Tech-Priest Manipulus mène les Kataphron Breachers, au moins un personnage non attaché a des choix d'attachement, et les Sicarian Ruststalkers comptent au moins 10 modèles.
+
+**Déploiement d'exemple.** Ses placements sont une constante (`tour-demo-deployment.ts`) exprimée dans le repère en pixels d'asset de [[RT_04]], pour le premier plateau du couple (disposition de la liste d'exemple, première disposition adverse du référentiel [[RT_23]]), avec l'unité laissée dans le bandeau. Un test unitaire vérifie que chaque unité posée l'est en cohésion ([[RT_36]]), que tous les modèles des autres unités sont posés et qu'aucun modèle de l'unité restante ne l'est, pour que le statut soit orange à l'étape 21 et vert après la mise en réserve de l'étape 38.
+
+**Marquage.** La liste et le déploiement d'exemple sont écrits dans les stores IndexedDB ordinaires ([[RT_06]], [[RT_08]]) avec un champ local `demo: true`, et l'identifiant de la liste est préfixé `list_demo_`. Ce champ n'appartient pas au contrat de synchronisation ([[RT_68]], `openapi.yml` inchangé) : le client de synchronisation **exclut** de chaque push tout enregistrement marqué `demo` et toute pierre tombale qui en provient, et ne le marque jamais comme sale ; un pull ne peut pas le toucher, son identifiant n'existant pas côté serveur. Les écrans le traitent comme une liste ordinaire.
+
+### RT_85 — Purge des données d'exemple
+
+La purge supprime, **physiquement et sans pierre tombale** ([[RT_68]]), tout enregistrement marqué `demo` : la liste, ses unités, son déploiement et ses placements, ainsi que l'état de réserve et la note éventuels ([[RT_35]], [[RT_60]]). Elle est appelée à la fin de la visite (« Terminer » ou « Arrêter », [[RT_83]]), au démarrage d'une nouvelle visite, et **au démarrage de l'application**, avant le premier affichage de l'accueil et avant toute synchronisation ([[RT_10]]), ce qui efface ce qu'une visite interrompue a laissé ([[RG_64]]). Une purge sans donnée d'exemple ne fait rien.
+
+### RT_86 — Bouton « Visite guidée » des Réglages
+
+Le bloc « Aide » des Réglages est rendu hors du bloc « Application » réservé à la version web, comme le bloc « Accessibilité » ([[RT_77]]), pour être présent dans l'APK. Il contient un unique élément de liste natif « Visite guidée », à icône `help-circle-outline` enregistrée dans `src/app/icons.ts`, portant l'ancre `data-tour="settings-tour"` de l'étape 45 et offrant la cible tactile de [[RT_31]]. Pendant la visite, l'élément est inerte comme le reste de l'écran ([[RT_82]]).
+
 ---
 
 ## Suivi des décisions non tranchées
@@ -1866,6 +2079,8 @@ Les règles techniques suivantes contiennent un choix encore ouvert et doivent �
 - **[[RT_59]] — hébergeur et domaine de la version web.** Toute offre d'hébergement statique en HTTPS convient, à condition de permettre la réécriture des chemins vers `index.html` et des en-têtes de cache par fichier (Netlify, Cloudflare Pages… ; GitHub Pages ne permet pas ces en-têtes). Le domaine fixe l'origine, donc le stockage des données du joueur : en changer après publication revient à repartir d'une application vide sur chaque appareil.
 - **[[RG_49]] / [[RT_64]] — texte d'attribution des cartes de mission.** Les plateaux sont crédités à Battlemaster, source déclarée par gdmissions.app ([[RT_12]]) ; pour les cartes de mission primaire, gdmissions.app ne nomme pas d'autre source que le pack « GDM 2026 » lui-même. Reste à fixer, avant implémentation, le nom de source et le texte que le script d'ingestion écrira dans le bloc `source` de `missions.json` (au minimum « gdmissions.app », éventuellement complété de l'éditeur du pack de missions).
 - **[[RT_70]] — portée des identifiants d'enregistrement.** Les identifiants sont générés par le client (`list_<uuid>`, `depl_<uuid>`, ou repris de l'import pour les unités). [[RT_70]] suppose qu'ils sont uniques par compte — clé (`user_id`, `resource_type`, `id`) —, ce qu'exige la fusion lors d'un changement de compte ([[RG_51]]), qui verse les mêmes identifiants dans un second compte. À confirmer.
+- **[[RT_82]] — bibliothèque de visite guidée.** Trois voies : Shepherd.js, la référence citée par le product owner, est distribuée sous licence AGPL-3.0 ou commerciale (à vérifier sur la version retenue), ce qui pèse sur une application publiée ; Driver.js, sous licence MIT, offre le même voile découpé et la même bulle ancrée ; un composant propre (voile SVG, bulle positionnée, une centaine de lignes de logique) évite toute dépendance et s'accorde directement avec les fenêtres Ionic, le bouton retour Android et le mode hors-ligne. Recommandation : composant propre, ou Driver.js à défaut. [[RT_82]] est écrit pour que le scénario et les ancres `data-tour` ne dépendent pas de ce choix.
+- **[[RG_65]] — sort de la liste d'exemple à la fin de la visite.** La spécification l'efface toujours, pour que la visite ne laisse aucune trace. Variante possible : proposer, à la dernière étape, de la garder dans la bibliothèque (elle deviendrait alors une liste ordinaire, synchronisée). À confirmer par le product owner.
 
 Les décisions suivantes, précédemment ouvertes, sont tranchées : [[RT_71]] (serveur de production auto-hébergé à `https://api.windfallplanner.pokepuller.fr/v1` ; l'origine de la version web reste à ajouter aux origines CORS une fois [[RT_59]] tranchée), [[RT_12]] (appel direct du client vers gdmissions.app, sans relais serveur, version embarquée en dernier recours), [[RT_05]] (`playArea` mesuré à l'ingestion, image distante acceptée seulement à dimensions identiques), [[RT_27]] (store IndexedDB dédié aux blobs), [[RT_16]] (pan/zoom implémenté sans librairie tierce, sur les évènements `Pointer` et une transformation CSS), [[RT_06]]/[[RT_08]] (IndexedDB pour les enregistrements métier, stockage de configuration léger séparé) [[RT_26]] (fichier JSON versionné avec l'application, alimenté entrée par entrée par l'assistant IA du projet) et [[RT_37]] (terrain extrait des images de plateau par un script hors-ligne plutôt que saisi à la main).
 
