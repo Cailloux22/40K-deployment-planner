@@ -73,7 +73,10 @@
   fill: none;
 
   /* Trait fin : 1,5 px CSS (3 à 4 pixels physiques sur téléphone) sur un
-     liseré de 3 px, lisible sans masquer le plateau. */
+     liseré de 3 px, lisible sans masquer le plateau. RG_61: la demi-épaisseur
+     du liseré est RANGE_RING_OUTER_HALF_STROKE_PX (range-ring.ts), dont le
+     contour est rentré pour que le tracé reste dans la portée — à modifier
+     ensemble. */
   .range-ring-halo {
     stroke: var(--app-token-drag-halo);
     stroke-width: 3;

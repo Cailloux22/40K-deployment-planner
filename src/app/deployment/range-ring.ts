@@ -15,6 +15,14 @@ import { MM_PER_INCH } from './token-geometry';
 export const RANGE_RING_RADII = [3, 6, 8, 9, 12] as const;
 export type RangeRingRadius = (typeof RANGE_RING_RADII)[number];
 
+/**
+ * RG_61/RT_81: demi-épaisseur, en pixels CSS, du trait le plus large du
+ * cercle — le liseré de contraste de 3 px (`.range-ring-halo`,
+ * placement.page.scss). Le contour est rentré d'autant pour que le tracé
+ * reste inscrit dans la portée.
+ */
+export const RANGE_RING_OUTER_HALF_STROKE_PX = 1.5;
+
 /** RT_80: écart maximal toléré entre le polygone d'un ovale et la courbe réelle. */
 const OVAL_TOLERANCE_INCHES = 0.01;
 const MIN_OVAL_VERTICES = 32;
@@ -39,11 +47,22 @@ export type RangeRingOutline =
  * - rectangle (RT_28) : rectangle (L + 2X) × (l + 2X) à coins arrondis de rayon X ;
  * - ovale : courbe parallèle à l'ellipse à la distance X, en polygone fermé.
  *
+ * `insetPx` (pixels d'asset) rapproche le contour du socle de cette
+ * distance : un trait centré sur le contour et d'une demi-épaisseur
+ * `insetPx` a alors son bord extérieur exactement à X" — le tracé reste
+ * inscrit dans la portée. La courbe parallèle à distance X − e d'une forme
+ * convexe, épaissie de e, a pour bord extérieur la courbe parallèle à X.
+ *
  * Les axes suivent ceux du token (RT_05) : `widthMm` horizontal, `lengthMm`
  * vertical, avant rotation.
  */
-export function rangeRingOutline(shape: BaseShape, radiusInches: number, pixelsPerMm: number): RangeRingOutline {
-  const offset = radiusInches * MM_PER_INCH * pixelsPerMm;
+export function rangeRingOutline(
+  shape: BaseShape,
+  radiusInches: number,
+  pixelsPerMm: number,
+  insetPx = 0,
+): RangeRingOutline {
+  const offset = Math.max(0, radiusInches * MM_PER_INCH * pixelsPerMm - insetPx);
   const a = (shape.widthMm * pixelsPerMm) / 2;
   const b = (shape.lengthMm * pixelsPerMm) / 2;
 

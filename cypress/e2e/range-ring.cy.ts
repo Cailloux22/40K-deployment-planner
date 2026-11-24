@@ -92,17 +92,23 @@ describe('Cercle de portée autour d’un token', () => {
       .and('have.attr', 'aria-pressed', 'true')
       .and('have.attr', 'aria-label', 'Masquer le cercle de portée de 6"');
 
-    // RG_61: contour à 6" du bord du socle, quelle que soit sa forme, non
-    // rempli, sans geste — mesuré sur les boîtes du repère local (avant rotation).
+    // RG_61: tracé inscrit à 6" du bord du socle, quelle que soit sa forme, non
+    // rempli, sans geste — mesuré sur les boîtes du repère local (avant
+    // rotation). Le bord extérieur du liseré (contour + 1,5 px d'écran) tombe
+    // sur les 6", le contour lui-même un peu en deçà.
     ring().should('have.length', 1);
     cy.get('.board-surface .token').then(($token) => {
       const token = ($token[0] as unknown as SVGGraphicsElement).getBBox();
+      const svg = $token[0].ownerSVGElement!;
+      const assetPerCss = svg.viewBox.baseVal.width / svg.getBoundingClientRect().width;
       ring().should(($ring) => {
         const box = ($ring[0] as unknown as SVGGraphicsElement).getBBox();
         const offset = (box.width - token.width) / 2;
         expect((box.height - token.height) / 2).to.be.closeTo(offset, 0.5);
+        const outerEdge = offset + 1.5 * assetPerCss;
         // ≈ 1,007 px d'asset par mm (RT_05).
-        expect(offset / (6 * 25.4)).to.be.within(0.98, 1.03);
+        expect(outerEdge / (6 * 25.4)).to.be.within(0.98, 1.03);
+        expect(offset).to.be.lessThan(6 * 25.4 * 1.007);
         expect(getComputedStyle($ring[0]).fill).to.equal('none');
         expect(getComputedStyle($ring[0]).pointerEvents).to.equal('none');
       });

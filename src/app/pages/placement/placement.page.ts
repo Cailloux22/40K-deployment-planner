@@ -43,7 +43,13 @@ import {
   ZoomLevel,
   zoomViewOffset,
 } from '../../deployment/geometry';
-import { RANGE_RING_RADII, RangeRingOutline, RangeRingRadius, rangeRingOutline } from '../../deployment/range-ring';
+import {
+  RANGE_RING_OUTER_HALF_STROKE_PX,
+  RANGE_RING_RADII,
+  RangeRingOutline,
+  RangeRingRadius,
+  rangeRingOutline,
+} from '../../deployment/range-ring';
 import { SelectionRect, idsTouchedByRect, isDoubleTap, soleSelectedUnit } from '../../deployment/selection';
 import { CoherencyBase, coherencyBase, detachedAfterRemoval, isCoherent } from '../../deployment/unit-coherency';
 import { prepareTerrain, visibilityBase, visibleZone, visibleZonePath } from '../../deployment/visibility';
@@ -634,15 +640,21 @@ export class PlacementPage implements OnInit {
 
   /**
    * RT_80: contour du cercle, calculé à sa création ou à un changement
-   * d'échelle (RT_05) — jamais à chaque mouvement du token, qui ne change que
-   * la transformation de son groupe (RT_81).
+   * d'échelle (RT_05) ou d'agrandissement (RT_47) — jamais à chaque mouvement
+   * du token, qui ne change que la transformation de son groupe (RT_81).
    */
   private readonly rangeRingShape = computed<{ idModele: string; outline: RangeRingOutline } | null>(() => {
     const ring = this.rangeRing();
     if (!ring) return null;
     const shape = this.groupShapes().get(ring.idModele.split('#')[0]);
     const perMm = this.pixelsPerMm();
-    return shape && perMm > 0 ? { idModele: ring.idModele, outline: rangeRingOutline(shape, ring.radius, perMm) } : null;
+    const scale = this.scale();
+    if (!shape || perMm <= 0 || scale <= 0) return null;
+    // RG_61/RT_81: le trait, d'épaisseur fixe à l'écran, est centré sur le
+    // contour ; rentré de sa demi-épaisseur extérieure convertie en pixels
+    // d'asset, il reste tout entier à X" ou moins du bord du socle.
+    const inset = RANGE_RING_OUTER_HALF_STROKE_PX / scale;
+    return { idModele: ring.idModele, outline: rangeRingOutline(shape, ring.radius, perMm, inset) };
   });
 
   /**

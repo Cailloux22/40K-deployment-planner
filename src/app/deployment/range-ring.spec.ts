@@ -49,6 +49,31 @@ describe('range ring outline (RG_61, RT_80)', () => {
     expect(outline.r).toBeCloseTo(76.2, 9);
   });
 
+  it('pulls the outline in by the half stroke so the stroke stays within X', () => {
+    const plain = rangeRingOutline(shape('round', 44, 44), 3, 1);
+    const inset = rangeRingOutline(shape('round', 44, 44), 3, 1, 4.5);
+    if (plain.kind !== 'circle' || inset.kind !== 'circle') throw new Error('expected circles');
+    // Bord extérieur du trait (contour + demi-épaisseur) exactement à 3".
+    expect(inset.r + 4.5).toBeCloseTo(plain.r, 9);
+
+    const rect = rangeRingOutline(shape('rectangle', 60, 100), 3, 1, 4.5);
+    if (rect.kind !== 'rect') throw new Error('expected a rectangle');
+    expect(rect.r).toBeCloseTo(76.2 - 4.5, 9);
+    expect(rect.width / 2 + 4.5).toBeCloseTo(30 + 76.2, 9);
+
+    const a = 35;
+    const b = 52.5;
+    const oval = ovalOffsetPolygon(a, b, 76.2 - 4.5, 0.254);
+    const top = oval.reduce((best, p) => (p.y > best.y ? p : best));
+    expect(top.y + 4.5).toBeCloseTo(b + 76.2, 6);
+  });
+
+  it('never pulls the outline inside the base', () => {
+    const outline = rangeRingOutline(shape('round', 32, 32), 3, 1, 1000);
+    if (outline.kind !== 'circle') throw new Error('expected a circle');
+    expect(outline.r).toBe(16);
+  });
+
   it('draws an oval ring as a closed path', () => {
     const outline = rangeRingOutline(shape('oval', 70, 105), 6, 1);
     expect(outline.kind).toBe('path');
