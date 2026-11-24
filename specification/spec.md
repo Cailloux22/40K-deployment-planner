@@ -1865,7 +1865,7 @@ Il ne dépend ni de la position ni de la rotation du token, et n'est recalculé 
 
 Un joueur qui découvre l'application doit pouvoir **suivre une visite guidée** qui lui montre, écran par écran et sur des données d'exemple, le parcours complet : import d'une liste, bibliothèque, choix de la disposition adverse et du plateau, placement des tokens avec ses commandes et ses gestes non signalés à l'écran (double appui, glisser sur le fond…), consultation et partage d'un déploiement, puis compte et synchronisation. La visite lui est **proposée à sa première ouverture** de l'application et reste **relançable à tout moment depuis les Réglages**. Elle repose sur la bibliothèque de visite guidée Shepherd.js : une bulle explicative ancrée sur l'élément décrit, le reste de l'écran assombri. Le joueur peut l'**arrêter à tout moment**, après confirmation, et voit **à quelle étape il en est sur le total** (« 12 / 46 »). La liste d'exemple que la visite importe, avec le déploiement qu'elle y prépare, **reste dans la bibliothèque** du joueur après la visite, comme toute liste importée.
 
-Satisfait par : [[RG_62]], [[RG_63]], [[RG_64]], [[RG_65]], [[RG_66]], [[RT_82]], [[RT_83]], [[RT_84]], [[RT_85]], [[RT_86]]. La licence de l'application et l'accès à son code source, qu'impose la bibliothèque retenue par [[RT_82]], relèvent de [[RG_67]] et [[RT_87]].
+Satisfait par : [[RG_62]], [[RG_63]], [[RG_64]], [[RG_65]], [[RG_66]], [[RT_82]], [[RT_83]], [[RT_84]], [[RT_85]], [[RT_86]]. La licence de l'application et l'accès à son code source, qu'impose la bibliothèque retenue par [[RT_82]], relèvent de [[RG_67]] et [[RT_87]] ; le lien de soutien voisin du bloc « Aide », de [[RG_68]] et [[RT_88]].
 
 ### RG_62 — Proposition à la première ouverture et relance depuis les Réglages
 
@@ -2082,13 +2082,13 @@ N est la longueur du tableau, jamais une valeur écrite à la main ; un test uni
 
 ### RT_86 — Bouton « Visite guidée » des Réglages
 
-Le bloc « Aide » des Réglages est rendu hors du bloc « Application » réservé à la version web, comme le bloc « Accessibilité » ([[RT_77]]), pour être présent dans l'APK. Il contient un élément de liste natif « Visite guidée », suivi de l'entrée « Code source » de [[RT_87]]. L'élément « Visite guidée » a pour icône `help-circle-outline`, enregistrée dans `src/app/icons.ts` ; il porte l'ancre `data-tour="settings-tour"` de l'étape 45 et offre la cible tactile de [[RT_31]]. Pendant la visite, l'élément est inerte comme le reste de l'écran ([[RT_82]]).
+Le bloc « Aide » des Réglages est rendu hors du bloc « Application » réservé à la version web, comme le bloc « Accessibilité » ([[RT_77]]), pour être présent dans l'APK. Il contient un élément de liste natif « Visite guidée », suivi de l'entrée « Buy us a coffee » de [[RT_88]] puis de l'entrée « Code source » de [[RT_87]]. L'élément « Visite guidée » a pour icône `help-circle-outline`, enregistrée dans `src/app/icons.ts` ; il porte l'ancre `data-tour="settings-tour"` de l'étape 45 et offre la cible tactile de [[RT_31]]. Pendant la visite, l'élément est inerte comme le reste de l'écran ([[RT_82]]).
 
 ### RG_67 — Licence de l'application et accès à son code source
 
 **Licence.** Le code de l'application est publié sous **GNU Affero General Public License, version 3 ou ultérieure** (`AGPL-3.0-or-later`). Ce choix découle de [[RT_82]] : Shepherd.js n'étant distribué que sous AGPL-3.0, toute version de l'application qui l'embarque doit l'être sous une licence compatible. Le caractère non commercial de l'application n'y change rien. La licence ne couvre que le code écrit pour le projet : les référentiels et images de tiers ([[RT_02]], [[RT_12]], [[RT_37]], [[RT_64]]) restent la propriété de leurs auteurs, sous leurs propres conditions, et continuent d'être crédités par [[RT_20]].
 
-**Accès au code source depuis l'application.** Tout utilisateur de l'application — APK comme version web ([[EX_12]]) — doit pouvoir accéder à son code source complet. Le bloc « Aide » des Réglages ([[RG_62]]) porte, sous le bouton « Visite guidée », une entrée **« Code source »** qui indique la licence (« Logiciel libre sous licence AGPL-3.0 ») et l'adresse du dépôt public, affichée en toutes lettres et ouvrable directement, comme les adresses des mentions tierces ([[RG_18]]). L'adresse reste lisible hors-ligne ; seule son ouverture demande le réseau.
+**Accès au code source depuis l'application.** Tout utilisateur de l'application — APK comme version web ([[EX_12]]) — doit pouvoir accéder à son code source complet. Le bloc « Aide » des Réglages ([[RG_62]]) porte, sous le bouton « Visite guidée » et l'entrée de soutien de [[RG_68]], une entrée **« Code source »** qui indique la licence (« Logiciel libre sous licence AGPL-3.0 ») et l'adresse du dépôt public, affichée en toutes lettres et ouvrable directement, comme les adresses des mentions tierces ([[RG_18]]). L'adresse reste lisible hors-ligne ; seule son ouverture demande le réseau.
 
 **Code correspondant à chaque version.** Le code de chaque version publiée de l'application ([[RG_47]]) doit être disponible dans le dépôt public au moment de sa publication : une version n'est pas publiée depuis un commit absent du dépôt public.
 
@@ -2105,6 +2105,16 @@ Un nouveau référentiel tiers ajouté à `src/assets/referentials/` est ajouté
 **Mentions des dépendances.** Le build de production conserve l'extraction des licences des dépendances (option `extractLicenses` d'`angular.json`, active par défaut en production) : le fichier `3rdpartylicenses.txt` qu'elle produit dans `www/` est publié avec la version web et embarqué dans l'APK, et contient la licence de Shepherd.js.
 
 **Entrée « Code source ».** L'adresse du dépôt est une constante unique, `SOURCE_CODE_URL` de `src/app/app-source.ts` (sur le modèle de `src/app/app-version.ts`, [[RT_63]]), valant `https://github.com/Cailloux22/40K-deployment-planner` (le dépôt `MathieuRocher/40K-deployment-planner` y redirige) ; elle n'est écrite nulle part ailleurs dans le code. L'entrée est un élément de liste natif du bloc « Aide » de [[RT_86]], offrant la cible tactile de [[RT_31]], dont l'adresse est un lien `target="_blank"` `rel="noopener noreferrer"`, comme les adresses des mentions de [[RT_20]]. Son icône `logo-github` est enregistrée dans `src/app/icons.ts` ([[RT_54]]).
+
+### RG_68 — Lien de soutien « Buy us a coffee »
+
+Le bloc « Aide » des Réglages ([[RG_62]]) porte, **juste sous le bouton « Visite guidée »** et avant l'entrée « Code source » ([[RG_67]]), une entrée de soutien libellée **« Buy us a coffee »**, qui ouvre la page de don PayPal des auteurs (<https://paypal.me/Popiipops>). Elle est présente dans toutes les versions de l'application (APK comme web, [[EX_12]]), que le joueur soit connecté ou non. Le don est facultatif et ne débloque rien : aucune fonction de l'application n'en dépend. L'adresse est affichée en toutes lettres et ouvrable directement, comme celles des mentions tierces ([[RG_18]]) ; elle reste lisible hors-ligne, seule son ouverture demande le réseau.
+
+Comme l'entrée « Code source », c'est un lien sortant et non une commande de l'application : il n'est pas ajouté au scénario de la visite ([[RG_66]], « Évolution »), dont N reste inchangé.
+
+### RT_88 — Entrée « Buy us a coffee » des Réglages
+
+L'adresse est une constante unique, `DONATION_URL` de `src/app/app-donation.ts` (sur le modèle de `src/app/app-source.ts`, [[RT_87]]), valant `https://paypal.me/Popiipops` ; elle n'est écrite nulle part ailleurs dans le code. L'entrée est un élément de liste natif du bloc « Aide » de [[RT_86]], placé entre « Visite guidée » et « Code source », offrant la cible tactile de [[RT_31]], dont l'adresse est un lien `target="_blank"` `rel="noopener noreferrer"`, comme les adresses des mentions de [[RT_20]]. Son icône `cafe-outline` est enregistrée dans `src/app/icons.ts` ([[RT_54]]).
 
 ---
 
