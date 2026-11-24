@@ -6,7 +6,7 @@ Le **code source** de Windfall Planner est un logiciel libre : vous pouvez le re
 
 Ce programme est distribué dans l'espoir qu'il sera utile, mais **SANS AUCUNE GARANTIE**, sans même la garantie implicite de QUALITÉ MARCHANDE ou d'ADÉQUATION À UN USAGE PARTICULIER. Voir la GNU Affero General Public License pour plus de détails.
 
-Quiconque reçoit l'application — APK Android ou version web — a droit à son code source complet, disponible à l'adresse <https://github.com/MathieuRocher/40K-deployment-planner>.
+Quiconque reçoit l'application — APK Android ou version web — a droit à son code source complet, disponible à l'adresse <https://github.com/Cailloux22/40K-deployment-planner>.
 
 ## Ce que la licence ne couvre pas
 

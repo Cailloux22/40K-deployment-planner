@@ -1,6 +1,6 @@
 {
   "name": "40K-deployment-planner",
-  "version": "0.0.22",
+  "version": "0.0.23",
   "license": "AGPL-3.0-or-later",
   "author": "Ionic Framework",
   "homepage": "https://ionicframework.com/",
@@ -40,6 +40,7 @@
     "@ionic/angular": "^9.0.0",
     "ionicons": "^8.1.0",
     "rxjs": "~7.8.0",
+    "shepherd.js": "16.0.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

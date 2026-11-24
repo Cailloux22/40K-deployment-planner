@@ -25,7 +25,8 @@
   }
 
   @if (!draft()) {
-    <div class="picker">
+    <!-- RT_82: ancres de la visite guidée (EX_18). -->
+    <div class="picker" data-tour="import-picker">
       <ion-icon name="document-attach-outline"></ion-icon>
       <h2>Choisissez votre fichier de liste</h2>
       <p>
@@ -84,7 +85,7 @@
   <!-- RG_22: récapitulatif avant enregistrement. -->
   @if (draft(); as current) {
     <div class="summary">
-      <ion-item>
+      <ion-item data-tour="import-name">
         <ion-input
           label="Nom de la liste"
           labelPlacement="stacked"
@@ -96,7 +97,7 @@
 
       <!-- RT_23: la disposition du joueur, extraite de l'import et fixée dès
            maintenant (RG_02) — elle n'est plus redemandée par RG_03. -->
-      <ion-item lines="none" class="disposition">
+      <ion-item lines="none" class="disposition" data-tour="import-disposition">
         <app-disposition-icon
           slot="start"
           [disposition]="current.forceDisposition"
@@ -108,10 +109,10 @@
         </ion-label>
       </ion-item>
 
-      <div class="counts">
+      <div class="counts" data-tour="import-counts">
         <div><strong>{{ current.units.length }}</strong><span>unités</span></div>
         <div><strong>{{ totalModels() }}</strong><span>modèles</span></div>
-        <div [class.warn]="unresolvedCount() > 0">
+        <div [class.warn]="unresolvedCount() > 0" data-tour="import-unresolved">
           <strong>{{ unresolvedCount() }}</strong><span>socles à assigner</span>
         </div>
       </div>
@@ -150,7 +151,11 @@
 
       <ion-list lines="full">
         @for (row of rows(); track row.unit.id) {
-          <ion-item-group class="unit" [class.needs-attention]="row.unresolved > 0">
+          <ion-item-group
+            class="unit"
+            [class.needs-attention]="row.unresolved > 0"
+            [attr.data-tour]="tourAnchors().get(row.unit.id)?.bases ? 'import-bases' : null"
+          >
             <ion-item-divider>
               <ion-label>
                 <h2>{{ row.unit.name }}</h2>
@@ -161,6 +166,7 @@
                 slot="end"
                 interface="popover"
                 aria-label="Couleur de l'unité"
+                [attr.data-tour]="tourAnchors().get(row.unit.id)?.color ? 'import-color' : null"
                 [value]="row.unit.color"
                 (ionChange)="assignColor(row.unit, $any($event.detail.value))"
               >
@@ -177,7 +183,7 @@
                  Le joueur peut défaire un attachement, ou en constituer un
                  parmi les seuls choix structurellement permis. -->
             @if (row.attachedTo; as link) {
-              <ion-item class="attachment">
+              <ion-item class="attachment" [attr.data-tour]="tourAnchors().get(row.unit.id)?.attached ? 'import-attached' : null">
                 <ion-icon name="link-outline" slot="start" aria-hidden="true"></ion-icon>
                 <ion-label>
                   <h3>{{ link.title }} de « {{ link.name }} »</h3>
@@ -214,7 +220,7 @@
                   </ion-item>
                 }
               } @else if (row.attachOptions.length > 0) {
-                <ion-item class="attachment">
+                <ion-item class="attachment" [attr.data-tour]="tourAnchors().get(row.unit.id)?.attach ? 'import-attach' : null">
                   <ion-select
                     label="Attacher à"
                     labelPlacement="stacked"
@@ -251,7 +257,7 @@
                 (splitChange)="updateSplit($event)"
               ></app-unit-split-editor>
             } @else if (row.canSplit) {
-              <ion-item lines="none" class="split-head">
+              <ion-item lines="none" class="split-head" [attr.data-tour]="tourAnchors().get(row.unit.id)?.split ? 'import-split' : null">
                 <ion-icon name="git-branch-outline" slot="start" aria-hidden="true"></ion-icon>
                 <ion-label>
                   <p>Cette unité peut être déployée en deux unités distinctes.</p>
@@ -348,7 +354,7 @@
         <ion-button fill="clear" (click)="cancel()">Annuler</ion-button>
       </ion-buttons>
       <ion-buttons slot="end">
-        <ion-button fill="solid" [disabled]="!canConfirm()" (click)="confirm()">
+        <ion-button fill="solid" data-tour="import-save" [disabled]="!canConfirm()" (click)="confirm()">
           Enregistrer la liste
         </ion-button>
       </ion-buttons>

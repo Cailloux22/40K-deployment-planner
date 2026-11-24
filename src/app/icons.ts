@@ -18,8 +18,10 @@ import {
   folderOpenOutline,
   gitBranchOutline,
   handLeftOutline,
+  helpCircleOutline,
   libraryOutline,
   linkOutline,
+  logoGithub,
   menu,
   personCircleOutline,
   radioButtonOnOutline,
@@ -60,8 +62,12 @@ export function registerIcons(): void {
     'folder-open-outline': folderOpenOutline,
     'git-branch-outline': gitBranchOutline,
     'hand-left-outline': handLeftOutline,
+    // RG_62/RT_86: bouton « Visite guidée » du bloc « Aide » des Réglages.
+    'help-circle-outline': helpCircleOutline,
     'library-outline': libraryOutline,
     'link-outline': linkOutline,
+    // RG_67/RT_87: entrée « Code source » du bloc « Aide » des Réglages.
+    'logo-github': logoGithub,
     menu,
     'person-circle-outline': personCircleOutline,
     // RG_60/RT_81: bouton « Portée » de l'écran de placement (cercle et point central).

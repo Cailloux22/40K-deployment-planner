@@ -39,7 +39,13 @@
                 "output": "./svg"
               }
             ],
-            "styles": ["src/global.scss", "src/theme/variables.scss"],
+            "styles": [
+              "src/global.scss",
+              "src/theme/variables.scss",
+              "node_modules/shepherd.js/dist/css/shepherd.css",
+              "node_modules/shepherd.js/dist/css/theme.css",
+              "src/theme/tour.scss"
+            ],
             "scripts": []
           },
           "configurations": {

@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { Router } from '@angular/router';
 
 import { APP_VERSION } from '../../app-version';
+import { SOURCE_CODE_URL } from '../../app-source';
+import { TourService } from '../../tour/tour.service';
 import { ReferentialSource } from '../../models/referential.models';
 import { AuthError, AuthService, PASSWORD_MAX, PASSWORD_MIN } from '../../net/auth.service';
 import { ConnectivityService } from '../../net/connectivity.service';
@@ -46,6 +48,7 @@ export class SettingsPage implements OnInit {
   private readonly install = inject(InstallService);
   private readonly prefetch = inject(BoardPrefetchService);
   private readonly persistence = inject(StoragePersistenceService);
+  private readonly tour = inject(TourService);
 
   /** RG_18: le bloc « Application » n'existe que hors application empaquetée. */
   readonly webApp = this.install.webApp;
@@ -71,6 +74,8 @@ export class SettingsPage implements OnInit {
 
   /** RG_47: bloc « Version », affiché dans tous les contextes, y compris hors-ligne. */
   readonly appVersion = APP_VERSION;
+  /** RG_67/RT_87: adresse du dépôt public du code source. */
+  readonly sourceCodeUrl = SOURCE_CODE_URL;
 
   readonly online = this.connectivity.online;
   readonly signedIn = this.auth.signedIn;
@@ -199,6 +204,11 @@ export class SettingsPage implements OnInit {
   }
 
   /** RG_57: le bouton « Accessibilité » ouvre le sous-menu des options. */
+  /** RG_62/RT_86: relance de la visite guidée depuis le bloc « Aide ». */
+  startTour(): Promise<void> {
+    return this.tour.start();
+  }
+
   openAccessibility(): Promise<boolean> {
     return this.router.navigate(['/settings/accessibility']);
   }

@@ -1,0 +1,91 @@
+// RT_82 — thème de la visite guidée (EX_18).
+//
+// Les couleurs du thème de Shepherd.js (`theme.css`) sont remplacées par les
+// tokens de l'application (RT_29), définis dans les deux thèmes ; la taille du
+// texte suit l'échelle de RT_30 et les boutons la cible tactile de RT_31.
+
+.shepherd-element,
+.shepherd-modal-overlay-container,
+.shepherd-target {
+  --shepherd-accent: var(--ion-color-primary);
+  --shepherd-on-accent: var(--ion-color-primary-contrast);
+  --shepherd-ink: var(--app-text);
+  --shepherd-muted: var(--app-text-secondary);
+  --shepherd-surface: var(--app-surface-raised);
+  --shepherd-line: var(--app-border);
+  --shepherd-radius: var(--app-radius-lg);
+}
+
+.shepherd-element.app-tour-step {
+  // Au-dessus des pages Ionic, sous les fenêtres d'alerte (confirmation de RG_64).
+  max-width: min(22.5rem, calc(100vw - 32px));
+  font-family: var(--ion-font-family);
+
+  .shepherd-header {
+    padding: 18px 8px 0 24px;
+  }
+
+  .shepherd-title {
+    font-size: var(--app-font-lg);
+  }
+
+  .shepherd-text {
+    font-size: var(--app-font-md);
+    line-height: var(--app-line-normal);
+
+    p {
+      margin: 0 0 0.5em;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .shepherd-footer {
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .shepherd-button {
+    min-height: 44px;
+    font-size: var(--app-font-md);
+  }
+
+  .shepherd-cancel-icon {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+// RG_63: compteur « n / N », à gauche des boutons.
+.app-tour-counter {
+  margin-right: auto;
+  font-size: var(--app-font-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--app-text-secondary);
+}
+
+// RG_63/RG_24: contour contrasté de l'élément mis en évidence, sur tout fond.
+.shepherd-target.shepherd-enabled {
+  outline: 3px solid var(--ion-color-primary);
+  outline-offset: 4px;
+}
+
+// RG_63: région annonçant le compteur aux lecteurs d'écran.
+.app-tour-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shepherd-element,
+  .shepherd-modal-overlay-container path {
+    transition: none !important;
+  }
+}

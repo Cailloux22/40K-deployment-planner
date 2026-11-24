@@ -8,6 +8,7 @@ import { ForceDisposition } from '../models/referential.models';
 import { ConnectivityService } from '../net/connectivity.service';
 import { SyncService } from '../net/sync.service';
 import { ReferentialService } from '../referentials/referential.service';
+import { TourService } from '../tour/tour.service';
 
 interface ListCard {
   readonly list: ArmyList;
@@ -46,10 +47,13 @@ export class HomePage implements OnInit {
   private readonly alerts = inject(AlertController);
   private readonly toasts = inject(ToastController);
   private readonly actionSheets = inject(ActionSheetController);
+  private readonly tour = inject(TourService);
 
   private readonly dispositions = signal<readonly ForceDisposition[]>([]);
 
   readonly loaded = this.library.loaded;
+  /** RG_66/RT_82: la liste d'exemple de la visite en cours porte les ancres de la bibliothèque. */
+  readonly tourListId = this.tour.exampleListId;
   /** RG_13/RT_14: pilote l'état du point d'entrée d'import. */
   readonly online = this.connectivity.online;
   /** RG_11: un conflit en attente est signalé dès l'accueil. */
@@ -79,6 +83,8 @@ export class HomePage implements OnInit {
   async ngOnInit(): Promise<void> {
     await this.library.load();
     this.dispositions.set(await this.referential.allDispositions());
+    // RG_62: visite guidée proposée à la première ouverture sur l'appareil.
+    void this.tour.proposeOnFirstLaunch();
   }
 
   /**

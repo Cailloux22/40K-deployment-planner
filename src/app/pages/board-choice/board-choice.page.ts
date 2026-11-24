@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   OnInit,
   ViewChild,
@@ -19,6 +20,7 @@ import { ArmyList, BoardDeploymentStatus, Deployment } from '../../models/domain
 import { BaseShape, Board, ForceDisposition } from '../../models/referential.models';
 import { ReferentialService } from '../../referentials/referential.service';
 import { MissionsService } from '../../shared/missions.service';
+import { TourService } from '../../tour/tour.service';
 
 interface BoardSlide {
   readonly board: Board;
@@ -58,6 +60,8 @@ export class BoardChoicePage implements OnInit {
   private readonly router = inject(Router);
   private readonly alerts = inject(AlertController);
   private readonly missions = inject(MissionsService);
+  private readonly tour = inject(TourService);
+  private readonly destroyRef = inject(DestroyRef);
 
   @ViewChild('pager') pager?: ElementRef<HTMLElement>;
 
@@ -159,6 +163,13 @@ export class BoardChoicePage implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
+    // RG_66/RT_82: la visite ouvre et referme elle-même la vue « Consulter ».
+    this.destroyRef.onDestroy(
+      this.tour.register('boards', {
+        openConsult: () => this.openDeploymentView(),
+        closeConsult: () => this.closeViewer(),
+      }),
+    );
     this.listId.set(this.route.snapshot.paramMap.get('listId') ?? '');
     this.opponentId.set(this.route.snapshot.paramMap.get('opponentId') ?? '');
     await this.library.load();

@@ -61,6 +61,7 @@ import { UNIT_COLOR_FALLBACK } from '../../import/unit-colors';
 import { ReferentialService } from '../../referentials/referential.service';
 import { GameplanNoteService } from '../../shared/gameplan-note.service';
 import { SyncService } from '../../net/sync.service';
+import { TourService } from '../../tour/tour.service';
 
 /**
  * Un modèle individuel de l'unité courante restant à poser, tel que listé par
@@ -301,6 +302,7 @@ export class PlacementPage implements OnInit {
   private readonly sync = inject(SyncService);
   private readonly accessibility = inject(AccessibilityService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly tour = inject(TourService);
 
   /** RT_34: repère de positionnement du retour visuel du glisser. */
   @ViewChild('layout') layout?: ElementRef<HTMLElement>;
@@ -799,6 +801,20 @@ export class PlacementPage implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
+    // RG_66/RT_82: actions confiées à la visite guidée — sélections et mise en
+    // réserve faites par les mêmes chemins que les gestes du joueur.
+    this.destroyRef.onDestroy(
+      this.tour.register('placement', {
+        selectToken: () => this.tourSelectToken(),
+        selectUnit: () => this.tourSelectUnit(),
+        clearSelection: () => this.selection.set(new Set()),
+        reserveGroup: (groupId) => {
+          const group = this.groups().find((candidate) => candidate.id === groupId);
+          if (group && !this.reservedUnits().has(group.units[0].id)) this.setReserved(group, true);
+        },
+      }),
+    );
+
     // RG_33/RT_42: le premier appui suivant, où qu'il porte, efface le tracé.
     // En capture, avant sa cible, sans en bloquer l'effet ordinaire : le geste
     // qui commence une nouvelle mesure la crée ensuite dans son gestionnaire.
@@ -1149,6 +1165,35 @@ export class PlacementPage implements OnInit {
     if (groupId === null) return;
     const index = this.groups().findIndex((group) => group.id === groupId);
     if (index >= 0) this.selectUnitIndex(index);
+  }
+
+  /**
+   * RG_66: étape « token sélectionné » de la visite — un token d'une unité
+   * dont plusieurs modèles sont posés, pour que l'étape suivante en montre
+   * la sélection entière (RG_31).
+   */
+  private tourSelectToken(): void {
+    const placements = this.placements();
+    const countByGroup = new Map<string, number>();
+    for (const placement of placements) {
+      const groupId = this.groupIdOf(placement.idUnite);
+      countByGroup.set(groupId, (countByGroup.get(groupId) ?? 0) + 1);
+    }
+    const target =
+      placements.find((placement) => (countByGroup.get(this.groupIdOf(placement.idUnite)) ?? 0) > 1) ?? placements[0];
+    if (target) this.selectOnBoard([target.idModele]);
+  }
+
+  /** RG_31/RG_66: la visite étend la sélection à toute l'unité du token sélectionné. */
+  private tourSelectUnit(): void {
+    const selected = this.placements().find((placement) => this.selection().has(placement.idModele));
+    if (!selected) return;
+    const groupId = this.groupIdOf(selected.idUnite);
+    this.selectOnBoard(
+      this.placements()
+        .filter((placement) => this.groupIdOf(placement.idUnite) === groupId)
+        .map((placement) => placement.idModele),
+    );
   }
 
   // -------------------------------------------------------------------------

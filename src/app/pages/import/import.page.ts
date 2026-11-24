@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular/lazy';
 
@@ -23,10 +23,25 @@ import {
   halfName,
   secondHalfColors,
 } from '../../import/unit-split';
-import { ArmyUnit, AttachmentRole, UnitModelGroup } from '../../models/domain.models';
+import { ArmyList, ArmyUnit, AttachmentRole, UnitModelGroup } from '../../models/domain.models';
 import { BaseShape } from '../../models/referential.models';
 import { ConnectivityService } from '../../net/connectivity.service';
 import { ReferentialService } from '../../referentials/referential.service';
+import { TourService } from '../../tour/tour.service';
+
+/** RG_65/RT_84: liste d'exemple de la visite guidée — la fixture de RT_13. */
+const EXAMPLE_LIST_URL = 'assets/list_import.example.json';
+/** RG_65/RT_85: nom fixé de la liste d'exemple, pour la reconnaître dans la bibliothèque. */
+export const EXAMPLE_LIST_NAME = 'Liste d’exemple (visite guidée)';
+
+/** RT_82: ancres `data-tour` du récapitulatif, par unité. */
+interface UnitTourAnchors {
+  readonly bases?: boolean;
+  readonly color?: boolean;
+  readonly attached?: boolean;
+  readonly attach?: boolean;
+  readonly split?: boolean;
+}
 
 interface UnitRow {
   readonly unit: ArmyUnit;
@@ -73,6 +88,8 @@ export class ImportPage implements OnInit {
   private readonly connectivity = inject(ConnectivityService);
   private readonly router = inject(Router);
   private readonly alerts = inject(AlertController);
+  private readonly tour = inject(TourService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly shapesById = signal<ReadonlyMap<string, BaseShape>>(new Map());
 
@@ -140,6 +157,26 @@ export class ImportPage implements OnInit {
     });
   });
 
+  /**
+   * RG_66/RT_82: lignes du récapitulatif que la visite met en évidence — la
+   * première unité à plusieurs socles, la première couleur, le premier
+   * personnage attaché, le premier personnage attachable, la dernière unité
+   * scindable.
+   */
+  readonly tourAnchors = computed<ReadonlyMap<string, UnitTourAnchors>>(() => {
+    const rows = this.rows();
+    const anchors = new Map<string, UnitTourAnchors>();
+    const mark = (row: UnitRow | undefined, key: keyof UnitTourAnchors) => {
+      if (row) anchors.set(row.unit.id, { ...anchors.get(row.unit.id), [key]: true });
+    };
+    mark(rows.find((row) => row.groups.length > 1), 'bases');
+    mark(rows[0], 'color');
+    mark(rows.find((row) => row.attachedTo), 'attached');
+    mark(rows.find((row) => !row.attachedTo && row.characters.length === 0 && row.attachOptions.length > 0), 'attach');
+    mark([...rows].reverse().find((row) => row.canSplit), 'split');
+    return anchors;
+  });
+
   readonly totalModels = computed(() =>
     (this.draft()?.units ?? []).reduce((sum, unit) => sum + unit.modelCount, 0),
   );
@@ -163,6 +200,13 @@ export class ImportPage implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
+    // RG_66/RT_82: actions confiées à la visite guidée pendant que l'écran est affiché.
+    this.destroyRef.onDestroy(
+      this.tour.register('import', {
+        loadExample: () => this.loadExample(),
+        saveExample: () => this.saveExample(),
+      }),
+    );
     const shapes = await this.referential.allBaseShapes();
     this.availableShapes.set(shapes);
     this.shapesById.set(new Map(shapes.map((shape) => [shape.id, shape])));
@@ -328,13 +372,38 @@ export class ImportPage implements OnInit {
     const draft = this.draft();
     if (!draft || !this.canConfirm()) return;
 
+    await this.persist(draft);
+  }
+
+  private async persist(draft: ImportDraft): Promise<ArmyList> {
     this.saving.set(true);
     try {
-      await this.library.saveList(this.imports.toArmyList(draft));
+      const list = await this.library.saveList(this.imports.toArmyList(draft));
       await this.router.navigate(['/home'], { replaceUrl: true });
+      return list;
     } finally {
       this.saving.set(false);
     }
+  }
+
+  /**
+   * RG_65/RT_84: la visite charge la liste d'exemple embarquée par la même
+   * couche de parsing que l'import, sans le contrôle de connectivité de
+   * RT_14 — ce n'est pas un import au sens de RG_13. RT_85: son nom est fixé.
+   */
+  private async loadExample(): Promise<void> {
+    const response = await fetch(EXAMPLE_LIST_URL);
+    if (!response.ok) throw new Error(`liste d’exemple indisponible (${response.status})`);
+    const draft = await this.imports.buildDraft('list_import.example.json', await response.text());
+    this.error.set(null);
+    this.draft.set({ ...draft, name: EXAMPLE_LIST_NAME });
+  }
+
+  /** RG_65: la visite enregistre la liste d'exemple, comme « Enregistrer la liste ». */
+  private async saveExample(): Promise<ArmyList | undefined> {
+    const draft = this.draft();
+    if (!draft || !this.imports.isDraftComplete(draft)) return undefined;
+    return this.persist(draft);
   }
 
   /** RG_22: annulation — rien n'est enregistré. */

@@ -22,8 +22,9 @@
   <!-- ===== Bloc 1 — Compte (RG_18, RG_10) ===== -->
   <ion-list-header>Compte</ion-list-header>
 
+  <!-- RT_82: ancre de la visite guidée (EX_18), portée par le bloc affiché. -->
   @if (signedIn()) {
-    <ion-list lines="full">
+    <ion-list lines="full" data-tour="settings-account">
       <ion-item>
         <ion-icon name="person-circle-outline" slot="start"></ion-icon>
         <ion-label>
@@ -62,14 +63,14 @@
     <app-account-management></app-account-management>
   } @else if (!syncAvailable) {
     <!-- RT_71: aucun serveur de synchronisation configuré pour ce build. -->
-    <div class="account">
+    <div class="account" data-tour="settings-account">
       <ion-note class="local-only">
         Vous utilisez l'application en local. La synchronisation entre appareils n'est pas encore
         disponible dans cette version.
       </ion-note>
     </div>
   } @else {
-    <div class="account">
+    <div class="account" data-tour="settings-account">
       <!-- RG_10: l'application reste pleinement utilisable sans compte ; la
            création n'est nécessaire que pour synchroniser un second appareil. -->
       <ion-note class="local-only">
@@ -265,6 +266,27 @@
   <ion-list lines="full">
     <ion-item button detail data-testid="accessibility-link" (click)="openAccessibility()">
       <ion-label>Options d'accessibilité</ion-label>
+    </ion-item>
+  </ion-list>
+
+  <!-- ===== Bloc « Aide » (RG_62, RG_67 / RT_86, RT_87) =====
+       Hors du bloc « Application » : visible aussi dans l'APK. -->
+  <ion-list-header>Aide</ion-list-header>
+  <ion-list lines="full">
+    <!-- RG_62: relance de la visite guidée, quel que soit le contenu de la bibliothèque. -->
+    <ion-item button detail data-tour="settings-tour" data-testid="tour-link" (click)="startTour()">
+      <ion-icon name="help-circle-outline" slot="start" aria-hidden="true"></ion-icon>
+      <ion-label>Visite guidée</ion-label>
+    </ion-item>
+    <!-- RG_67/RT_87: accès au code source, exigé par la licence AGPL-3.0.
+         L'adresse reste lisible hors-ligne ; seule son ouverture demande le réseau. -->
+    <ion-item data-testid="source-code">
+      <ion-icon name="logo-github" slot="start" aria-hidden="true"></ion-icon>
+      <ion-label class="ion-text-wrap">
+        <h3>Code source</h3>
+        <p>Logiciel libre sous licence AGPL-3.0</p>
+        <p><a [href]="sourceCodeUrl" target="_blank" rel="noopener noreferrer">{{ sourceCodeUrl }}</a></p>
+      </ion-label>
     </ion-item>
   </ion-list>
 

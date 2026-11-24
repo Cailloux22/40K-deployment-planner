@@ -13,15 +13,18 @@ declare global {
        * où vivent les listes et déploiements (RT_08) : on la supprime avant
        * le chargement de l'application.
        */
-      visitFresh(path?: string): Chainable<void>;
+      visitFresh(path?: string, options?: { tour?: boolean }): Chainable<void>;
     }
   }
 }
 
-Cypress.Commands.add('visitFresh', (path = '/') => {
+Cypress.Commands.add('visitFresh', (path = '/', options: { tour?: boolean } = {}) => {
   cy.visit(path, {
     onBeforeLoad(win) {
       win.indexedDB.deleteDatabase(DB_NAME);
+      // RG_62: la visite guidée s'ouvre d'elle-même sur un stockage vierge ; elle
+      // est marquée comme déjà proposée, sauf pour les tests qui la parcourent.
+      if (!options.tour) win.localStorage.setItem('wfp.tour.proposed', 'true');
     },
   });
   // Ionic re-rend la page pendant sa transition d'entrée : on attend qu'elle

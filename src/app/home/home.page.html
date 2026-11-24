@@ -10,11 +10,12 @@
     <ion-buttons slot="end">
       <!-- RG_13/RT_14: point d'entrée d'import désactivé hors-ligne. -->
       @if (online()) {
-        <ion-button (click)="openImport()" aria-label="Importer une liste">
+        <!-- RT_82: ancre de la visite guidée (EX_18). -->
+        <ion-button (click)="openImport()" aria-label="Importer une liste" data-tour="home-import">
           <ion-icon name="add" slot="icon-only"></ion-icon>
         </ion-button>
       } @else {
-        <ion-button (click)="showOfflineNotice()" aria-label="Import indisponible hors-ligne">
+        <ion-button (click)="showOfflineNotice()" aria-label="Import indisponible hors-ligne" data-tour="home-import">
           <ion-icon name="cloud-offline-outline" slot="icon-only"></ion-icon>
         </ion-button>
       }
@@ -67,7 +68,13 @@
   } @else {
     <ion-list lines="none" class="lists">
       @for (card of cards(); track card.list.id) {
-        <ion-item class="list-card" button detail="false" (click)="openList(card.list)">
+        <ion-item
+          class="list-card"
+          button
+          detail="false"
+          [attr.data-tour]="card.list.id === tourListId() ? 'home-list' : null"
+          (click)="openList(card.list)"
+        >
           <!-- RT_23: l'icône de la disposition du joueur, fixée à l'import. -->
           <app-disposition-icon
             slot="start"
@@ -99,6 +106,7 @@
             slot="end"
             fill="clear"
             aria-label="Actions sur la liste"
+            [attr.data-tour]="card.list.id === tourListId() ? 'home-list-actions' : null"
             (click)="$event.stopPropagation(); openMenu(card)"
           >
             <ion-icon name="ellipsis-vertical" slot="icon-only"></ion-icon>

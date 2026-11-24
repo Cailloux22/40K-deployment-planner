@@ -14,7 +14,8 @@
        laquelle l'aperçu doit tenir en entier. -->
   <div class="page">
   <!-- Bandeau « VS » de la maquette : les 2 dispositions en jeu (RT_23). -->
-  <div class="versus">
+  <!-- RT_82: ancres de la visite guidée (EX_18). -->
+  <div class="versus" data-tour="boards-versus">
     <div class="side">
       <app-disposition-icon [disposition]="playerDisposition()" [size]="30"></app-disposition-icon>
       <span>{{ playerDisposition()?.label }}</span>
@@ -46,8 +47,8 @@
          droite du layout, reflétant le seul plateau actuellement affiché. -->
     <div class="status-bar">
       <span class="status-label">Statut</span>
-      <div class="status-actions">
-        <span class="badge" [class]="'status-' + (activeSlide()?.status ?? 'missing')">
+      <div class="status-actions" data-tour="boards-actions">
+        <span class="badge" data-tour="boards-status" [class]="'status-' + (activeSlide()?.status ?? 'missing')">
           {{ statusLabel() }}
         </span>
 
@@ -63,7 +64,7 @@
 
         <!-- RG_14: « Consulter » seulement au statut vert. -->
         @if (canConsult()) {
-          <ion-button size="small" fill="outline" (click)="openDeploymentView()">
+          <ion-button size="small" fill="outline" data-tour="boards-consult" (click)="openDeploymentView()">
             Consulter
           </ion-button>
         }
@@ -94,7 +95,7 @@
     </div>
 
     <!-- RG_14: pager glissable horizontalement, un seul plateau visible. -->
-    <div #pager class="pager" (scroll)="onPagerScroll()">
+    <div #pager class="pager" data-tour="boards-pager" (scroll)="onPagerScroll()">
       @for (slide of slides(); track slide.board.id) {
         <div class="slide">
           <!-- RG_14: zone de taille connue dans laquelle l'aperçu est borné en
@@ -105,6 +106,7 @@
           <button
             type="button"
             class="preview"
+            data-tour="boards-preview"
             [style]="previewCrop(slide.board)"
             [attr.aria-label]="'Afficher ' + boardLabel(slide.board) + ' en plein écran avec les mesures'"
             (click)="openBoardOnly(slide)"

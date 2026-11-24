@@ -8,6 +8,7 @@ import { ArmyList } from '../models/domain.models';
 import { ConnectivityService } from '../net/connectivity.service';
 import { SyncService } from '../net/sync.service';
 import { ReferentialService } from '../referentials/referential.service';
+import { TourService } from '../tour/tour.service';
 import { HomePage } from './home.page';
 
 const DISPOSITIONS = [
@@ -73,6 +74,7 @@ describe('HomePage — écran 1 (accueil / bibliothèque)', () => {
         { provide: ConnectivityService, useValue: { online, offlineMessage: () => 'hors-ligne' } },
         { provide: SyncService, useValue: { pendingConflicts: signal([]), firstConnectionChoice: signal(null) } },
         { provide: Router, useValue: { navigate } },
+        { provide: TourService, useValue: { exampleListId: signal(null), proposeOnFirstLaunch: vi.fn() } },
         { provide: AlertController, useValue: { create: alertCreate } },
         { provide: ToastController, useValue: { create: alertCreate } },
         { provide: ActionSheetController, useValue: { create: alertCreate } },

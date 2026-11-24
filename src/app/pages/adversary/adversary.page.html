@@ -20,7 +20,8 @@
          sélectionnables — autour d'un disque central qui rappelle la
          disposition du joueur, déjà connue (RG_02/RG_03). -->
     <div class="dial">
-      <svg class="ring" viewBox="0 0 100 100" role="group" aria-label="Dispositions adverses">
+      <!-- RT_82: ancres de la visite guidée (EX_18). -->
+      <svg class="ring" viewBox="0 0 100 100" role="group" aria-label="Dispositions adverses" data-tour="adversary-dial">
         @for (option of options(); track option.disposition.id) {
           <!-- RG_12: la couleur du secteur est l'indicateur agrégé du couple.
                RG_24: le nom accessible porte aussi le compteur. -->
@@ -40,7 +41,7 @@
         <circle class="hub" cx="50" cy="50" [attr.r]="innerRadius" />
       </svg>
 
-      <div class="center" [attr.aria-label]="'Votre disposition : ' + (playerDisposition()?.label ?? '')">
+      <div class="center" data-tour="adversary-player" [attr.aria-label]="'Votre disposition : ' + (playerDisposition()?.label ?? '')">
         <small aria-hidden="true">Vous</small>
         <app-disposition-icon [disposition]="playerDisposition()" [size]="34"></app-disposition-icon>
         <span aria-hidden="true">{{ playerDisposition()?.label ?? 'Disposition inconnue' }}</span>

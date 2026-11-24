@@ -11,7 +11,8 @@
            plan de jeu ; toujours disponible, quels que soient état, mode ou
            agrandissement. -->
       @if (missionsAvailable()) {
-        <ion-button (click)="openMissions()" aria-label="Voir les missions primaires">
+        <!-- RT_82: ancres de la visite guidée (EX_18). -->
+        <ion-button (click)="openMissions()" aria-label="Voir les missions primaires" data-tour="placement-missions">
           <ion-icon name="document-text-outline" slot="icon-only"></ion-icon>
         </ion-button>
       }
@@ -21,18 +22,18 @@
            ion-button relit ses attributs aria-* avant d'être initialisé et
            lève alors une erreur (voir RT_43). -->
       @if (hasNote()) {
-        <ion-button (click)="editNote()" aria-label="Modifier le plan de jeu">
+        <ion-button (click)="editNote()" aria-label="Modifier le plan de jeu" data-tour="placement-note">
           <ion-icon name="clipboard" slot="icon-only"></ion-icon>
         </ion-button>
       } @else {
-        <ion-button (click)="editNote()" aria-label="Rédiger le plan de jeu">
+        <ion-button (click)="editNote()" aria-label="Rédiger le plan de jeu" data-tour="placement-note">
           <ion-icon name="clipboard-outline" slot="icon-only"></ion-icon>
         </ion-button>
       }
       <!-- RG_07: aucun bouton d'enregistrement — la sauvegarde est continue
            (EX_04) et il n'existe qu'un déploiement par triplet. -->
       <!-- RG_16: menu burger en haut à droite de l'écran de placement. -->
-      <ion-button (click)="menuOpen.set(true)" aria-label="Ouvrir le menu des unités">
+      <ion-button (click)="menuOpen.set(true)" aria-label="Ouvrir le menu des unités" data-tour="placement-menu">
         <ion-icon name="menu" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
@@ -53,7 +54,13 @@
          RT_19: l'affichage est rogné au rectangle de jeu mesuré (`playArea`)
          — bandeau de titre, pied de légende et marges latérales exclus. -->
     <!-- RG_39/RT_48: main ouverte en mode « Déplacement », fermée pendant le geste. -->
-    <div #boardArea class="board-area" [class.pan-mode]="panMode()" [class.panning]="panning()">
+    <div
+      #boardArea
+      class="board-area"
+      data-tour="placement-board"
+      [class.pan-mode]="panMode()"
+      [class.panning]="panning()"
+    >
       @if (board(); as current) {
         <!-- RT_47: surface à l'échelle d'affichage (base × agrandissement),
              centrée puis décalée de la vue ; la zone masque ce qui dépasse. -->
@@ -125,6 +132,7 @@
             <!-- RG_59/RT_79: la sélection est rendue après les autres tokens. -->
             @for (token of stackedTokens(); track token.placement.idModele) {
               <g
+                [attr.data-tour]="token.selected && selectedCount() === 1 ? 'placement-selected' : null"
                 [attr.transform]="
                   'translate(' +
                   token.placement.x +
@@ -268,6 +276,7 @@
         <button
           type="button"
           class="board-tool ruler-toggle"
+          data-tour="placement-ruler"
           [class.active]="rulerMode()"
           [attr.aria-pressed]="rulerMode()"
           [attr.aria-label]="rulerMode() ? 'Règle activée' : 'Règle désactivée'"
@@ -281,6 +290,7 @@
         <button
           type="button"
           class="board-tool zoom-toggle"
+          data-tour="placement-zoom"
           data-view-control
           [class.active]="zoom() > 1"
           [attr.aria-pressed]="zoom() > 1"
@@ -308,6 +318,7 @@
           class="board-tool"
           data-view-control
           [class.active]="panMode()"
+          data-tour="placement-pan"
           [disabled]="zoom() === 1"
           [attr.aria-pressed]="panMode()"
           [attr.aria-label]="panMode() ? 'Déplacement de la vue activé' : 'Déplacement de la vue désactivé'"
@@ -324,6 +335,7 @@
             <button
               type="button"
               class="board-tool range-toggle"
+              data-tour="placement-range"
               [class.active]="!!rangeRing()"
               [attr.aria-pressed]="!!rangeRing()"
               [attr.aria-expanded]="rangeMenuShown()"
@@ -366,6 +378,7 @@
             [attr.aria-label]="
               selectedCount() === 1 ? 'Retirer le modèle sélectionné' : 'Retirer les ' + selectedCount() + ' modèles sélectionnés'
             "
+            data-tour="placement-trash"
             (click)="removeSelected()"
           >
             <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
@@ -391,7 +404,7 @@
 
     <!-- RG_15/RT_17: bandeau ancré en bas — nom de l'unité, flèches de part et
          d'autre, et liste défilable horizontalement des modèles individuels. -->
-    <div class="band">
+    <div class="band" data-tour="placement-band">
       <ion-button fill="clear" class="arrow" (click)="previousUnit()" aria-label="Unité précédente">
         <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
       </ion-button>
@@ -434,6 +447,7 @@
           <ion-checkbox
             #reserveBox
             class="reserve"
+            data-tour="placement-reserve"
             labelPlacement="start"
             [checked]="selectedUnitReserved()"
             [disabled]="!selectedGroup()"

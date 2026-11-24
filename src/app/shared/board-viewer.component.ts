@@ -56,7 +56,7 @@ interface PlacementView {
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="viewer" role="dialog" aria-modal="true" [attr.aria-label]="title">
+    <div class="viewer" role="dialog" aria-modal="true" data-tour="viewer" [attr.aria-label]="title">
       <!-- RT_16: croix de fermeture, toujours affichée en haut à gauche. -->
       <ion-button
         class="close"
@@ -82,6 +82,7 @@ interface PlacementView {
                 color="dark"
                 shape="round"
                 aria-label="Partager le déploiement en image"
+                data-tour="viewer-share"
                 (click)="share()"
               >
                 <ion-icon name="share-social-outline" slot="icon-only"></ion-icon>
@@ -96,6 +97,7 @@ interface PlacementView {
                 shape="round"
                 disabled="true"
                 aria-label="Préparation de l'image en cours"
+                data-tour="viewer-share"
               >
                 <ion-spinner name="crescent" slot="icon-only"></ion-spinner>
               </ion-button>
@@ -109,6 +111,7 @@ interface PlacementView {
                 shape="round"
                 disabled="true"
                 aria-label="Partage indisponible : plateau non chargé"
+                data-tour="viewer-share"
               >
                 <ion-icon name="share-social-outline" slot="icon-only"></ion-icon>
               </ion-button>

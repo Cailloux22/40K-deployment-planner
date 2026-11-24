@@ -8,6 +8,7 @@ import { ImportDraft, ListImportService } from '../../import/list-import.service
 import { ArmyUnit } from '../../models/domain.models';
 import { ConnectivityService } from '../../net/connectivity.service';
 import { ReferentialService } from '../../referentials/referential.service';
+import { TourService } from '../../tour/tour.service';
 import { ImportPage } from './import.page';
 
 /** RG_02: seule l'assignation manuelle d'un socle est couverte ici. */
@@ -43,6 +44,7 @@ describe('ImportPage.assignShape — RG_02', () => {
         { provide: LibraryService, useValue: {} },
         { provide: ConnectivityService, useValue: { online: signal(true) } },
         { provide: Router, useValue: { navigate: vi.fn() } },
+        { provide: TourService, useValue: { register: () => () => undefined } },
         { provide: AlertController, useValue: { create: vi.fn() } },
       ],
     }).compileComponents();
@@ -105,6 +107,7 @@ describe('ImportPage.assignCustomRectangle — RG_02/RT_28', () => {
         { provide: LibraryService, useValue: {} },
         { provide: ConnectivityService, useValue: { online: signal(true) } },
         { provide: Router, useValue: { navigate: vi.fn() } },
+        { provide: TourService, useValue: { register: () => () => undefined } },
         { provide: AlertController, useValue: { create: vi.fn() } },
       ],
     }).compileComponents();

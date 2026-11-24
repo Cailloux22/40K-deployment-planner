@@ -22,7 +22,7 @@
       "installMode": "prefetch",
       "updateMode": "prefetch",
       "resources": {
-        "files": ["/assets/referentials/*.json"]
+        "files": ["/assets/referentials/*.json", "/assets/list_import.example.json"]
       }
     },
     {
