@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 
 import { APP_VERSION } from '../../app-version';
 import { SOURCE_CODE_URL } from '../../app-source';
+import { DONATION_URL } from '../../app-donation';
 import { TourService } from '../../tour/tour.service';
 import { ReferentialSource } from '../../models/referential.models';
 import { AuthError, AuthService, PASSWORD_MAX, PASSWORD_MIN } from '../../net/auth.service';
@@ -76,6 +77,8 @@ export class SettingsPage implements OnInit {
   readonly appVersion = APP_VERSION;
   /** RG_67/RT_87: adresse du dépôt public du code source. */
   readonly sourceCodeUrl = SOURCE_CODE_URL;
+  /** RG_68/RT_88: page de don « Buy us a coffee ». */
+  readonly donationUrl = DONATION_URL;
 
   readonly online = this.connectivity.online;
   readonly signedIn = this.auth.signedIn;

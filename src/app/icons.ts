@@ -2,6 +2,7 @@ import { addIcons } from 'ionicons';
 import {
   add,
   alertCircleOutline,
+  cafeOutline,
   arrowBack,
   chevronBack,
   chevronForward,
@@ -45,6 +46,8 @@ export function registerIcons(): void {
     add,
     'alert-circle-outline': alertCircleOutline,
     'arrow-back': arrowBack,
+    // RG_68/RT_88: entrée « Buy us a coffee » du bloc « Aide » des Réglages.
+    'cafe-outline': cafeOutline,
     'chevron-back': chevronBack,
     'chevron-forward': chevronForward,
     // RT_61/RT_62: note de plan de jeu — contour sans note, plein avec note.

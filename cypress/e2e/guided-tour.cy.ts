@@ -87,4 +87,15 @@ describe('Visite guidée — EX_18', () => {
     cy.location('pathname').should('eq', '/home');
     counter(1);
   });
+
+  it('propose « Buy us a coffee » juste sous « Visite guidée » (RG_68/RT_88)', () => {
+    cy.visitFresh('/settings');
+    cy.get('[data-testid="tour-link"]').next().should('have.attr', 'data-testid', 'donation');
+    cy.get('[data-testid="donation"]')
+      .should('contain.text', 'Buy us a coffee')
+      .find('a')
+      .should('have.attr', 'href', 'https://paypal.me/Popiipops')
+      .and('have.attr', 'target', '_blank')
+      .and('have.attr', 'rel', 'noopener noreferrer');
+  });
 });

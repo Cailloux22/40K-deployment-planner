@@ -278,6 +278,15 @@
       <ion-icon name="help-circle-outline" slot="start" aria-hidden="true"></ion-icon>
       <ion-label>Visite guidée</ion-label>
     </ion-item>
+    <!-- RG_68/RT_88: lien de soutien, juste sous « Visite guidée ». Lien sortant,
+         hors du scénario de la visite (RG_66) ; lisible hors-ligne. -->
+    <ion-item data-testid="donation">
+      <ion-icon name="cafe-outline" slot="start" aria-hidden="true"></ion-icon>
+      <ion-label class="ion-text-wrap">
+        <h3>Buy us a coffee</h3>
+        <p><a [href]="donationUrl" target="_blank" rel="noopener noreferrer">{{ donationUrl }}</a></p>
+      </ion-label>
+    </ion-item>
     <!-- RG_67/RT_87: accès au code source, exigé par la licence AGPL-3.0.
          L'adresse reste lisible hors-ligne ; seule son ouverture demande le réseau. -->
     <ion-item data-testid="source-code">
